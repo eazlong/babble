@@ -115,6 +115,31 @@ importers:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@20.19.39)
 
+  services/reward-service:
+    dependencies:
+      '@fastify/cors':
+        specifier: ^9.0.0
+        version: 9.0.1
+      '@supabase/supabase-js':
+        specifier: ^2.43.0
+        version: 2.103.3
+      fastify:
+        specifier: ^4.28.0
+        version: 4.29.1
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.39
+      tsx:
+        specifier: ^4.7.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@20.19.39)
+
   services/spirit-coach-service:
     dependencies:
       '@fastify/cors':
