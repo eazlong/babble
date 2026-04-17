@@ -1,0 +1,20 @@
+执行 LinguaQuest MVP 开发计划 - 轨道 C（家长控制台）
+
+请阅读 docs/plans/2026-04-16-mvp-implementation.md 并严格按步骤执行。
+
+你负责以下阶段：
+- 阶段 0: 基础设施（仅 monorepo 根配置部分）
+- 阶段 8: 儿童模式与家长控制台（Task 8.1-8.2）
+  - Task 8.1: 儿童模式客户端守卫（ChildModeGuard + TimeManager）
+  - Task 8.2: 家长控制台 Web 应用（Next.js）
+
+注意：Task 8.1 的文件在 apps/game-client/src/security/，
+       Task 8.2 的文件在 apps/parent-dashboard/
+
+执行规则：
+1. 先初始化 monorepo 根配置（如果不存在），然后跳到阶段 8
+2. 每个任务：写测试 → 验证失败 → 写实现 → 验证通过 → git commit
+3. 每完成一个任务报告进度
+4. 遇到阻塞时报告具体错误，不要跳过
+
+文件范围：apps/game-client/src/security/*, apps/parent-dashboard/*
