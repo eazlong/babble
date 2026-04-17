@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - services/dialogue-service
+          - services/voice-service
+          - services/spirit-coach-service
+          - services/quest-service
+          - services/assessment-service
+          - services/reward-service
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm --filter ${{ matrix.service }} lint
+
+      - name: Type check
+        run: pnpm --filter ${{ matrix.service }} exec tsc --noEmit
+
+      - name: Test
+        run: pnpm --filter ${{ matrix.service }} test
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        if: matrix.service == 'services/dialogue-service'
