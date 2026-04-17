@@ -6,6 +6,11 @@ node_modules/
 dist/
 *.tsbuildinfo
 
+# Build outputs
+dist/
+.next/
+out/
+
 # Environment
 .env
 .env.local
@@ -14,6 +19,8 @@ dist/
 # IDE
 .vscode/
 .idea/
+.idea/
+.vscode/
 *.swp
 *.swo
 
@@ -41,3 +48,11 @@ docker-compose.override.yml
 
 # Turbo
 .turbo/
+npm-debug.log*
+pnpm-debug.log*
+
+# Turbo
+.turbo/
+
+# Coverage
+coverage/
