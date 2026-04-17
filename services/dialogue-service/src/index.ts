@@ -1,9 +1,12 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import { registerDialogueRoutes } from './routes/dialogue.js'
 
 const app = Fastify({ logger: true })
 
 app.register(cors, { origin: true })
+
+app.register(registerDialogueRoutes)
 
 app.get('/health', async () => ({
   status: 'ok',
@@ -21,7 +24,6 @@ const start = async () => {
   }
 }
 
-// Only start the server if not running in test mode
 if (process.env.NODE_ENV !== 'test') {
   start()
 }
