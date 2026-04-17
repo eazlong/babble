@@ -25,7 +25,11 @@ export class MessageConsumer {
         if (!result) continue
 
         for (const [stream, messages] of result) {
-          for (const [messageId, data] of messages) {
+          for (const [messageId, raw] of messages) {
+            const data: Record<string, string> = {}
+            for (let i = 0; i < raw.length; i += 2) {
+              data[raw[i]] = raw[i + 1] || ''
+            }
             await this.processMessage(data)
             await this.redis.xdel('spirit_coach_queue', messageId)
           }

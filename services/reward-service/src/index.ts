@@ -18,7 +18,7 @@ const start = async () => {
     await app.listen({ port: 8007, host: '0.0.0.0' })
     app.log.info('Reward service running on port 8007')
   } catch (err) {
-    app.error(err)
+    app.log.error(err)
     process.exit(1)
   }
 }

@@ -1,6 +1,7 @@
 {
   "name": "linguaquest",
   "private": true,
+  "packageManager": "pnpm@10.11.0",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",

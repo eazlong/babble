@@ -19,7 +19,7 @@ const start = async () => {
     await app.listen({ port: 8002, host: '0.0.0.0' })
     app.log.info('Dialogue service running on port 8002')
   } catch (err) {
-    app.error(err)
+    app.log.error(err)
     process.exit(1)
   }
 }

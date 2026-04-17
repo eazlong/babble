@@ -18,7 +18,7 @@ const start = async () => {
     await app.listen({ port: 8006, host: '0.0.0.0' })
     app.log.info('Quest service running on port 8006')
   } catch (err) {
-    app.error(err)
+    app.log.error(err)
     process.exit(1)
   }
 }

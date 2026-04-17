@@ -34,7 +34,7 @@ const start = async () => {
     await app.listen({ port: 8003, host: '0.0.0.0' })
     app.log.info('Auth service running on port 8003')
   } catch (err) {
-    app.error(err)
+    app.log.error(err)
     process.exit(1)
   }
 }

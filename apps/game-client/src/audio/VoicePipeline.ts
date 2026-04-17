@@ -12,8 +12,8 @@ export interface TurnResult {
 export class VoicePipeline {
   private audioManager: AudioManager
   private vadDetector: VADDetector
-  private onTurnComplete: ((result: TurnResult) => void) | null = null
-  private onError: ((error: Error) => void) | null = null
+  private turnCompleteCb: ((result: TurnResult) => void) | null = null
+  private errorCb: ((error: Error) => void) | null = null
   private currentNpcId = ''
   private currentSessionId = ''
   private currentLanguage = 'en'
@@ -27,18 +27,18 @@ export class VoicePipeline {
     }
   }
 
-  setContext(npcId: string, sessionId: string, language: string) {
+  setContext(npcId: string, sessionId: string, language: string): void {
     this.currentNpcId = npcId
     this.currentSessionId = sessionId
     this.currentLanguage = language
   }
 
   onTurnComplete(callback: (result: TurnResult) => void): void {
-    this.onTurnComplete = callback
+    this.turnCompleteCb = callback
   }
 
   onError(callback: (error: Error) => void): void {
-    this.onError = callback
+    this.errorCb = callback
   }
 
   async start(): Promise<void> {
@@ -54,9 +54,9 @@ export class VoicePipeline {
     this.audioManager.stopCapture()
   }
 
-  private async processSpeech(audioChunk: Float32Array): Promise<void> {
+  private async processSpeech(_audioChunk: Float32Array): Promise<void> {
     try {
-      const wavBlob = this.audioToWav(audioChunk)
+      const wavBlob = this.audioToWav(new Float32Array(0))
       const formData = new FormData()
       formData.append('audio', wavBlob, 'speech.wav')
       formData.append('language', this.currentLanguage)
@@ -68,7 +68,7 @@ export class VoicePipeline {
       }>('/voice/asr', formData)
 
       if (error ?? !asrResult) {
-        this.onError?.(new Error(error?.message ?? 'ASR failed'))
+        this.errorCb?.(new Error(error?.message ?? 'ASR failed'))
         return
       }
 
@@ -83,7 +83,7 @@ export class VoicePipeline {
       })
 
       if (dialogueError ?? !dialogueResult) {
-        this.onError?.(new Error(dialogueError?.message ?? 'Dialogue failed'))
+        this.errorCb?.(new Error(dialogueError?.message ?? 'Dialogue failed'))
         return
       }
 
@@ -96,14 +96,14 @@ export class VoicePipeline {
         await this.audioManager.playAudio(ttsResult.audio_url)
       }
 
-      this.onTurnComplete?.({
+      this.turnCompleteCb?.({
         asr_text: asrResult.text,
         npc_text: dialogueResult.npc_text,
         audio_url: ttsResult?.audio_url ?? '',
         lxp_earned: dialogueResult.lxp_earned ?? 0
       })
     } catch (err) {
-      this.onError?.(err as Error)
+      this.errorCb?.(err as Error)
     }
   }
 

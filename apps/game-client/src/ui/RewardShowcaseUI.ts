@@ -1,4 +1,4 @@
-import { Label, Node, tween } from 'cc'
+import { Label, Node, tween, Vec3 } from 'cc'
 
 export interface BadgeInfo {
   badge_id: string
@@ -30,14 +30,14 @@ export class RewardShowcaseUI {
     this.levelLabel.string = `Level ${info.level}`
   }
 
-  showNewBadge(badge: BadgeInfo): void {
-    // Create a new badge node and animate it
-    const badgeNode = new Node(`badge_${badge.badge_id}`)
+  showNewBadge(_badge: BadgeInfo): void {
+    // Animate badge appearance
+    const badgeNode = new Node('badge')
     this.badgeContainer.addChild(badgeNode)
+    badgeNode.setPosition(new Vec3(0, 0, 0))
 
     tween(badgeNode)
-      .from(0, { scale: new (class { x: number; y: number; z: number } = class { x = 0; y = 0; z = 0 }) })
-      .to(0.5, { scale: new (class { x: number; y: number; z: number } = class { x = 1; y = 1; z = 1 }) })
+      .to(0.5, { scale: new Vec3(1, 1, 1) })
       .start()
   }
 

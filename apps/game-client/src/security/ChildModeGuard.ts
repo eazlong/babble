@@ -10,9 +10,9 @@ export class ChildModeGuard {
     this.isChildModeFlag = accountType === 'child'
 
     if (this.isChildModeFlag) {
-      const { data: childAccount } = await http.get(`/child-accounts/${userId}`)
+      const { data: childAccount } = await http.get<{ daily_time_limit_minutes?: number }>(`/child-accounts/${userId}`)
       if (childAccount) {
-        this.dailyLimitMinutes = childAccount.daily_time_limit_minutes || 60
+        this.dailyLimitMinutes = childAccount.daily_time_limit_minutes ?? 60
       }
 
       this.timeManager = new TimeManager(this.dailyLimitMinutes)

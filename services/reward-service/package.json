@@ -12,7 +12,8 @@
   "dependencies": {
     "@fastify/cors": "^9.0.0",
     "@supabase/supabase-js": "^2.43.0",
-    "fastify": "^4.28.0"
+    "fastify": "^4.28.0",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

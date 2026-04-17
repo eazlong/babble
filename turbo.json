@@ -2,8 +2,8 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "dev": { "persistent": true },
-    "build": { "dependsOn": ["^build"], "outputs": ["dist/**"] },
-    "test": { "dependsOn": ["build"] },
+    "build": { "dependsOn": ["^build"], "outputs": ["dist/**", "e2e-report/**"] },
+    "test": { "dependsOn": ["^build"] },
     "lint": {}
   }
 }
