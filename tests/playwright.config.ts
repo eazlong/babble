@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000'
-const API_URL = process.env.API_URL || 'http://localhost:8002'
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3300'
+const API_URL = process.env.API_URL || 'http://localhost:8302'
 
 export default defineConfig({
   testDir: './e2e',
@@ -32,7 +32,7 @@ export default defineConfig({
   webServer: process.env.NO_WEBSERVER ? undefined : [
     {
       command: 'cd .. && pnpm --filter @linguaquest/parent-dashboard dev',
-      url: 'http://localhost:3001',
+      url: 'http://localhost:3300',
       reuseExistingServer: true,
       timeout: 60000,
     },

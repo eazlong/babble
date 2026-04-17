@@ -18,8 +18,8 @@ app.post('/api/v1/moderation/check', async (request, reply) => {
 
 const start = async () => {
   try {
-    await app.listen({ port: 8004, host: '0.0.0.0' })
-    app.log.info('Content filter service running on port 8004')
+    await app.listen({ port: 8304, host: '0.0.0.0' })
+    app.log.info('Content filter service running on port 8304')
   } catch (err) {
     app.log.error(err)
     process.exit(1)

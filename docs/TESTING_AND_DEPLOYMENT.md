@@ -259,13 +259,13 @@ docker-compose -f docker-compose.dev.yml up -d
 pnpm dev
 
 # 单独启动某个服务
-pnpm --filter @linguaquest/dialogue-service dev    # :8002
-pnpm --filter @linguaquest/auth-service dev         # :8003
-pnpm --filter @linguaquest/parent-dashboard dev     # :3000
+pnpm --filter @linguaquest/dialogue-service dev    # :8302
+pnpm --filter @linguaquest/auth-service dev         # :8303
+pnpm --filter @linguaquest/parent-dashboard dev     # :3300
 
 # 启动家长控制台 (Next.js)
 pnpm --filter @linguaquest/parent-dashboard dev
-# 访问 http://localhost:3000
+# 访问 http://localhost:3300
 ```
 
 ### 方式二：开发会话脚本
@@ -282,14 +282,14 @@ pnpm --filter @linguaquest/parent-dashboard dev
 
 | 服务 | 端口 | 健康检查 |
 |------|------|---------|
-| Voice Service | 8001 | `GET /health` |
-| Dialogue Service | 8002 | `GET /health` |
-| Auth Service | 8003 | `GET /health` |
-| Content Filter Service | 8004 | `GET /health` |
-| Spirit Coach Service | 8005 | `GET /health` |
-| Quest Service | 8006 | `GET /health` |
-| Reward Service | 8007 | `GET /health` |
-| Parent Dashboard | 3000 | `GET /` |
+| Voice Service | 8301 | `GET /health` |
+| Dialogue Service | 8302 | `GET /health` |
+| Auth Service | 8303 | `GET /health` |
+| Content Filter Service | 8304 | `GET /health` |
+| Spirit Coach Service | 8305 | `GET /health` |
+| Quest Service | 8306 | `GET /health` |
+| Reward Service | 8307 | `GET /health` |
+| Parent Dashboard | 3300 | `GET /` |
 | Redis | 6379 | `redis-cli ping` |
 | PostgreSQL | 5432 | `pg_isready` |
 
@@ -322,13 +322,13 @@ docker build -t linguaquest/dialogue-service:latest ./services/dialogue-service
 # 运行容器
 docker run -d \
   --name dialogue-service \
-  -p 8002:8002 \
+  -p 8302:8302 \
   -e DATABASE_URL=postgresql://postgres:postgres@host.docker.internal:5432/linguaquest \
   -e REDIS_URL=redis://host.docker.internal:6379 \
   linguaquest/dialogue-service:latest
 
 # 验证健康检查
-docker exec dialogue-service wget -qO- http://localhost:8002/health
+docker exec dialogue-service wget -qO- http://localhost:8302/health
 ```
 
 ### 生产 Docker Compose (待创建)
@@ -508,7 +508,7 @@ cd tests && npx vitest run tests/performance/
 
 ```bash
 # 检查所有服务健康状态
-for port in 8001 8002 8003 8004 8005 8006 8007; do
+for port in 8301 8302 8303 8304 8305 8306 8307; do
   echo -n "Service on port $port: "
   curl -s http://localhost:$port/health | jq -r '.status' 2>/dev/null || echo "DOWN"
 done
@@ -516,11 +516,11 @@ done
 
 预期输出:
 ```
-Service on port 8001: ok
-Service on port 8002: ok
-Service on port 8003: ok
-Service on port 8004: ok
-Service on port 8005: ok
-Service on port 8006: ok
-Service on port 8007: ok
+Service on port 8301: ok
+Service on port 8302: ok
+Service on port 8303: ok
+Service on port 8304: ok
+Service on port 8305: ok
+Service on port 8306: ok
+Service on port 8307: ok
 ```

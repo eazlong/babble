@@ -2970,16 +2970,15 @@ linguaquest/
 
 | 服务 | 端口 | 语言 |
 |------|------|------|
-| Voice Service | 8001 | Python/FastAPI |
-| Dialogue Service | 8002 | Node.js/Fastify |
-| Spirit Coach Service | 8003 | Node.js/Fastify |
-| Quest Service | 8004 | Node.js/Fastify |
-| Assessment Service | 8005 | Python/FastAPI |
-| Reward Service | 8006 | Node.js/Fastify |
-| Content Filter | 8007 | Python/FastAPI |
-| CMS (Strapi) | 8008 | Node.js |
-| Parent Dashboard | 8009 | Next.js |
-| Subscription | 8010 | Node.js/Fastify |
+| Voice Service | 8301 | Python/FastAPI |
+| Dialogue Service | 8302 | Node.js/Fastify |
+| Auth Service | 8303 | Node.js/Fastify |
+| Content Filter Service | 8304 | Python/FastAPI |
+| Spirit Coach Service | 8305 | Node.js/Fastify |
+| Quest Service | 8306 | Node.js/Fastify |
+| Assessment Service | 8307 | Python/FastAPI |
+| Reward Service | 8308 | Node.js/Fastify |
+| Parent Dashboard | 3300 | Next.js |
 
 ### 关键 API 端点
 

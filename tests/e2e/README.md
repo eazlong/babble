@@ -34,7 +34,7 @@ pnpm test:all
 ## 环境要求
 
 - 所有微服务运行中 (`pnpm dev`)
-- Parent Dashboard 运行在 `localhost:3001`
+- Parent Dashboard 运行在 `localhost:3300`
 - 可选：设置 `TEST_API_TOKEN` 和 `TEST_USER_ID` 环境变量
 
 ## 报告

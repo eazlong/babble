@@ -16,8 +16,8 @@ app.get('/health', async () => ({
 
 const start = async () => {
   try {
-    await app.listen({ port: 8002, host: '0.0.0.0' })
-    app.log.info('Dialogue service running on port 8002')
+    await app.listen({ port: 8302, host: '0.0.0.0' })
+    app.log.info('Dialogue service running on port 8302')
   } catch (err) {
     app.log.error(err)
     process.exit(1)

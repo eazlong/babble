@@ -31,8 +31,8 @@ app.get('/health', async () => ({
 
 const start = async () => {
   try {
-    await app.listen({ port: 8003, host: '0.0.0.0' })
-    app.log.info('Auth service running on port 8003')
+    await app.listen({ port: 8303, host: '0.0.0.0' })
+    app.log.info('Auth service running on port 8303')
   } catch (err) {
     app.log.error(err)
     process.exit(1)

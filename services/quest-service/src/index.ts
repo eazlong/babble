@@ -15,8 +15,8 @@ app.get('/health', async () => ({
 
 const start = async () => {
   try {
-    await app.listen({ port: 8006, host: '0.0.0.0' })
-    app.log.info('Quest service running on port 8006')
+    await app.listen({ port: 8306, host: '0.0.0.0' })
+    app.log.info('Quest service running on port 8306')
   } catch (err) {
     app.log.error(err)
     process.exit(1)

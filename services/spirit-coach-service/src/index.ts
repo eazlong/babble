@@ -15,8 +15,8 @@ app.get('/health', async () => ({
 
 const start = async () => {
   try {
-    await app.listen({ port: 8005, host: '0.0.0.0' })
-    app.log.info('Spirit coach service running on port 8005')
+    await app.listen({ port: 8305, host: '0.0.0.0' })
+    app.log.info('Spirit coach service running on port 8305')
   } catch (err) {
     app.log.error(err)
     process.exit(1)
