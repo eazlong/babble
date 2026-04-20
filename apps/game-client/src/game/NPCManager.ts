@@ -9,6 +9,9 @@ export interface NPCConfig {
   cefr_level: string
   greeting: string
   topics: string[]
+  teaches: string
+  scene_id: string
+  personality: string
 }
 
 export class NPCManager {
@@ -42,5 +45,11 @@ export class NPCManager {
 
   getActiveNPC(): NPCConfig | null {
     return this.activeNPC
+  }
+
+  getNPCTeachingTopics(npcId: string): string[] {
+    const npc = this.npcs.get(npcId)
+    if (!npc) return []
+    return [npc.teaches, ...npc.topics]
   }
 }

@@ -6,7 +6,18 @@ export interface SceneConfig {
   scene_type: string
   visual_assets_ref: string
   ambient_audio_ref: string
+  description: string
   npcs: Array<{ npc_id: string; position: { x: number; y: number } }>
+  vocabulary_focus: string[]
+  tasks: Array<{
+    task_id: string
+    title: string
+    title_en: string
+    description: string
+    required_lxp: number
+  }>
+  badge_id: string
+  required_lxp: number
   interactable_zones: Array<{
     zone_id: string
     trigger_type: 'proximity' | 'dialogue'
@@ -14,9 +25,18 @@ export interface SceneConfig {
   }>
 }
 
+export interface SceneProgress {
+  scene_id: string
+  completed_tasks: string[]
+  total_tasks: number
+  badge_earned: boolean
+  visited_at: string
+}
+
 export class SceneManager {
   private currentScene: SceneConfig | null = null
   private sceneAssets: Map<string, unknown> = new Map()
+  private sceneProgress: Map<string, SceneProgress> = new Map()
 
   async loadScene(sceneId: string): Promise<SceneConfig> {
     const { data, error } = await http.get<SceneConfig>(`/scenes/${sceneId}`)
@@ -51,5 +71,19 @@ export class SceneManager {
   unlockNextScene(_cefrLevel: string): string | null {
     // TODO: Implement CEFR-based scene unlocking logic
     return null
+  }
+
+  isSceneUnlocked(userLxp: number): boolean {
+    if (!this.currentScene) return false
+    return userLxp >= this.currentScene.required_lxp
+  }
+
+  getSceneProgress(): SceneProgress | null {
+    if (!this.currentScene) return null
+    return this.sceneProgress.get(this.currentScene.scene_id) ?? null
+  }
+
+  updateSceneProgress(progress: SceneProgress): void {
+    this.sceneProgress.set(progress.scene_id, progress)
   }
 }
