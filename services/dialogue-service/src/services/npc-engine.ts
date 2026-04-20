@@ -60,18 +60,18 @@ export class NPCEngine {
     npc: NPCProfile,
     history: Array<{speaker: string, text: string}>
   ): Promise<DialogueResponse> {
-    const systemPrompt = PromptManager.buildNPCSystemPrompt(npc, request.cefr_level)
-    const context = PromptManager.buildDialogueContext(history)
+    let systemPrompt = PromptManager.buildNPCSystemPrompt(npc, request.cefr_level)
 
     const teachingContext = this.buildTeachingContext(npc)
+    if (teachingContext) {
+      systemPrompt = `${systemPrompt}\n\n${teachingContext}`
+    }
 
-    let userPrompt = context
+    const context = PromptManager.buildDialogueContext(history)
+
+    const userPrompt = context
       ? `${context}\n\nPlayer: ${request.player_input}\n\nRespond as ${npc.name}:`
       : `Player: ${request.player_input}\n\nRespond as ${npc.name}:`
-
-    if (teachingContext) {
-      userPrompt = `${userPrompt}\n\n[${teachingContext}]`
-    }
 
     const fullPrompt = request.quest_context
       ? `${userPrompt}\n\n[Current quest: ${request.quest_context}]`

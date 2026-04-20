@@ -5,16 +5,15 @@ import { NPCEngine, DialogueRequest } from '../services/npc-engine'
 test('buildNPCSystemPrompt generates correct prompt', () => {
   const npc: NPCProfile = {
     name: '集市商人老王',
-    npc_type: 'merchant',
-    language_style: '市侩但友善',
-    formality: 'informal',
-    vocabulary_level: 'basic',
+    name_cn: '老王',
+    role: 'merchant',
+    cefr_level: 'A1',
     personality: '热情好客'
   }
 
   const prompt = PromptManager.buildNPCSystemPrompt(npc, 'A1')
   expect(prompt).toContain('集市商人老王')
-  expect(prompt).toContain('merchant')
+  expect(prompt).toContain('老王')
   expect(prompt).toContain('A1')
 })
 
@@ -36,11 +35,10 @@ test('processDialogue returns NPC response with LXP', async () => {
   const engine = new NPCEngine()
   const npc: NPCProfile = {
     name: 'Test NPC',
-    npc_type: 'merchant',
-    language_style: 'friendly',
-    formality: 'informal',
-    vocabulary_level: 'basic',
-    personality: 'kind'
+    role: 'merchant',
+    cefr_level: 'A1',
+    personality: 'kind',
+    teaches: ['greetings']
   }
 
   const request: DialogueRequest = {
