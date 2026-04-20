@@ -1,0 +1,35 @@
+{
+  "scene_id": "rainbow_garden",
+  "scene_name": "彩虹花园",
+  "scene_name_en": "Rainbow Garden",
+  "order": 3,
+  "description": "探索自然，学习天气、动物、方位",
+  "npcs": [
+    {
+      "npc_id": "petalia",
+      "position": { "x": 0, "y": 100 }
+    }
+  ],
+  "vocabulary_focus": ["weather", "animals", "plants", "positions", "emotions"],
+  "tasks": ["fix_weather_crystal", "find_lost_animals", "plant_flowers"],
+  "badge_id": "garden_badge",
+  "required_lxp": 90,
+  "interactable_zones": [
+    {
+      "zone_id": "weather_crystal_zone",
+      "trigger_type": "dialogue",
+      "action": "start_weather_crystal_repair"
+    },
+    {
+      "zone_id": "lost_animals_zone",
+      "trigger_type": "proximity",
+      "action": "start_animal_search"
+    },
+    {
+      "zone_id": "planting_zone",
+      "trigger_type": "proximity",
+      "action": "start_flower_planting"
+    }
+  ],
+  "cc_scene_name": "RainbowGarden"
+}

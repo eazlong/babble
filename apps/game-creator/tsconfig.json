@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ES2020",
+    "moduleResolution": "node",
+    "outDir": "dist",
+    "rootDir": "assets",
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@linguaquest/game-client/*": ["../game-client/src/*"]
+    },
+    "typeRoots": ["../game-client/src/cc.d.ts"]
+  },
+  "include": ["assets/**/*"],
+  "exclude": ["node_modules", "build", "library", "temp", "profiles"]
+}

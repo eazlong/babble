@@ -1,0 +1,13 @@
+{
+  "builder": {},
+  "project": {
+    "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  },
+  "general": {
+    "designResolution": {
+      "width": 1280,
+      "height": 720,
+      "policy": "SHOW_ALL"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@linguaquest/game-creator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CocosCreator game client for LinguaQuest RPG",
+  "dependencies": {
+    "@linguaquest/game-client": "workspace:*"
+  }
+}

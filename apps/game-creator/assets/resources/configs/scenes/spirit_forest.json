@@ -1,0 +1,35 @@
+{
+  "scene_id": "spirit_forest",
+  "scene_name": "精灵森林",
+  "scene_name_en": "Spirit Forest",
+  "order": 1,
+  "description": "初识魔法，学习问候语、颜色和数字",
+  "npcs": [
+    {
+      "npc_id": "oakley",
+      "position": { "x": 300, "y": 50 }
+    }
+  ],
+  "vocabulary_focus": ["greetings", "colors", "numbers"],
+  "tasks": ["greet_oakley", "activate_flowers", "open_chest"],
+  "badge_id": "forest_badge",
+  "required_lxp": 30,
+  "interactable_zones": [
+    {
+      "zone_id": "greet_zone",
+      "trigger_type": "dialogue",
+      "action": "start_greeting_quest"
+    },
+    {
+      "zone_id": "flower_zone",
+      "trigger_type": "proximity",
+      "action": "start_flower_activation"
+    },
+    {
+      "zone_id": "chest_zone",
+      "trigger_type": "proximity",
+      "action": "start_chest_unlock"
+    }
+  ],
+  "cc_scene_name": "SpiritForest"
+}

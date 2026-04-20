@@ -1,0 +1,13 @@
+{
+  "engine": {
+    "name": "Cocos Creator",
+    "version": "3.8.3"
+  },
+  "packages": {},
+  "id": "linguaquest-game-creator",
+  "title": "LinguaQuest RPG",
+  "type": "native",
+  "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "creatorVersion": "3.8.3",
+  "scripts": {}
+}
