@@ -1,0 +1,54 @@
+[
+  {
+    "badge_id": "forest_badge",
+    "name": "森林徽章",
+    "name_en": "Forest Badge",
+    "description": "完成精灵森林挑战",
+    "description_en": "Complete the Spirit Forest challenge",
+    "icon_ref": "icon_forest",
+    "unlock_condition": "complete_spirit_forest",
+    "scene_id": "spirit_forest",
+    "reward_type": "visual_effect",
+    "reward_value": "color_magic_effect",
+    "required_lxp": 30
+  },
+  {
+    "badge_id": "library_badge",
+    "name": "图书馆徽章",
+    "name_en": "Library Badge",
+    "description": "完成咒语图书馆挑战",
+    "description_en": "Complete the Spell Library challenge",
+    "icon_ref": "icon_library",
+    "unlock_condition": "complete_spell_library",
+    "scene_id": "spell_library",
+    "reward_type": "companion",
+    "reward_value": "floating_book_pet",
+    "required_lxp": 60
+  },
+  {
+    "badge_id": "garden_badge",
+    "name": "花园徽章",
+    "name_en": "Garden Badge",
+    "description": "完成彩虹花园挑战",
+    "description_en": "Complete the Rainbow Garden challenge",
+    "icon_ref": "icon_garden",
+    "unlock_condition": "complete_rainbow_garden",
+    "scene_id": "rainbow_garden",
+    "reward_type": "background",
+    "reward_value": "rainbow_background",
+    "required_lxp": 90
+  },
+  {
+    "badge_id": "apprentice_title",
+    "name": "魔法学徒",
+    "name_en": "Magic Apprentice",
+    "description": "集齐所有徽章获得称号",
+    "description_en": "Collect all badges to earn the title",
+    "icon_ref": "icon_apprentice",
+    "unlock_condition": "collect_all_badges",
+    "scene_id": null,
+    "reward_type": "title",
+    "reward_value": "apprentice_title",
+    "required_lxp": 0
+  }
+]
