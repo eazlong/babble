@@ -1,0 +1,38 @@
+[
+  {
+    "scene_id": "spirit_forest",
+    "scene_name": "精灵森林",
+    "scene_name_en": "Spirit Forest",
+    "order": 1,
+    "description": "初识魔法，学习问候语、颜色和数字",
+    "npcs": ["oakley"],
+    "vocabulary_focus": ["greetings", "colors", "numbers"],
+    "tasks": ["greet_oakley", "activate_flowers", "open_chest"],
+    "badge_id": "forest_badge",
+    "required_lxp": 30
+  },
+  {
+    "scene_id": "spell_library",
+    "scene_name": "咒语图书馆",
+    "scene_name_en": "Spell Library",
+    "order": 2,
+    "description": "学习课堂用语和学习用品",
+    "npcs": ["bookmark", "luna"],
+    "vocabulary_focus": ["classroom_items", "commands", "actions"],
+    "tasks": ["organize_books", "follow_commands", "practice_dialogue"],
+    "badge_id": "library_badge",
+    "required_lxp": 60
+  },
+  {
+    "scene_id": "rainbow_garden",
+    "scene_name": "彩虹花园",
+    "scene_name_en": "Rainbow Garden",
+    "order": 3,
+    "description": "探索自然，学习天气、动物、方位",
+    "npcs": ["petalia"],
+    "vocabulary_focus": ["weather", "animals", "plants", "positions", "emotions"],
+    "tasks": ["fix_weather_crystal", "find_lost_animals", "plant_flowers"],
+    "badge_id": "garden_badge",
+    "required_lxp": 90
+  }
+]
