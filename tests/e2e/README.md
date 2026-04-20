@@ -30,6 +30,7 @@ pnpm test:all
 | `quest-flow.test.ts` | 任务接受、完成、进度持久化 |
 | `child-mode.test.ts` | 儿童模式、时间限制、内容过滤、家长控制台 |
 | `reward-drop.test.ts` | LXP 奖励、徽章、语法纠错、奖励面板 |
+| `chapter1-flow.test.ts` | 第一章完整流程、词汇互动、精灵教练、降级重试、徽章收集 |
 
 ## 环境要求
 
