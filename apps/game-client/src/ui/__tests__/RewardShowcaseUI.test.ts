@@ -1,25 +1,7 @@
 import { test, expect, vi, beforeEach, describe } from 'vitest'
 
 // Mock CocosCreator module
-const mockLabel = { string: '', color: { r: 255, g: 255, b: 255, a: 255 } }
-const createMockNode = (name: string) => ({
-  name,
-  children: [
-    { active: false, getComponent: () => ({ ...mockLabel }) },
-    { active: false, getComponent: () => ({ ...mockLabel }) },
-    { active: false, getComponent: () => ({ ...mockLabel }) },
-  ],
-  active: false,
-  getComponent: vi.fn(() => mockLabel),
-  addChild: vi.fn(),
-  setPosition: vi.fn(),
-  setScale: vi.fn(),
-  destroy: vi.fn(),
-  addComponent: vi.fn(() => ({})),
-  getChildByName: vi.fn(() => ({ active: false, getComponent: vi.fn(() => mockLabel) })),
-})
-
-const mockTweenCalls: any[] = []
+const tweenCalls: string[] = []
 
 vi.mock('cc', () => ({
   Label: class {},
@@ -27,32 +9,54 @@ vi.mock('cc', () => ({
     name: string
     children: any[]
     active = false
-    getComponent = vi.fn()
-    addChild = vi.fn()
-    setPosition = vi.fn()
-    setScale = vi.fn()
-    destroy = vi.fn()
-    addComponent = vi.fn(() => ({}))
-    getChildByName = vi.fn()
+    _position: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 }
+    _scale: { x: number; y: number; z: number } = { x: 1, y: 1, z: 1 }
+    _label = { string: '', color: { r: 255, g: 255, b: 255, a: 255 } }
+    _sprite: any = null
+
     constructor(name: string) {
-      const m = createMockNode(name)
       this.name = name
-      this.children = m.children
-      this.getComponent = m.getComponent
-      this.addChild = m.addChild
-      this.setPosition = m.setPosition
-      this.setScale = m.setScale
-      this.destroy = m.destroy
-      this.addComponent = m.addComponent
-      this.getChildByName = m.getChildByName
+      this.children = [
+        { active: false, getComponent: () => ({ string: '', color: { r: 255, g: 255, b: 255, a: 255 } }) },
+        { active: false, getComponent: () => ({ string: '', color: { r: 255, g: 255, b: 255, a: 255 } }) },
+        { active: false, getComponent: () => ({ string: '', color: { r: 255, g: 255, b: 255, a: 255 } }) },
+      ]
+    }
+
+    getComponent(_cls: any) {
+      return this._label
+    }
+
+    setPosition(pos: any) {
+      this._position = { x: pos.x, y: pos.y, z: pos.z }
+    }
+
+    setScale(s: any) {
+      this._scale = { x: s.x, y: s.y, z: s.z }
+    }
+
+    addChild(_child: any) {}
+
+    addComponent(cls: any) {
+      if (cls.name === 'Sprite') {
+        this._sprite = {}
+        return this._sprite
+      }
+      return {}
+    }
+
+    destroy() {}
+
+    getChildByName(_name: string) {
+      return { active: false, getComponent: () => ({ string: '', color: { r: 255, g: 255, b: 255, a: 255 } }) }
     }
   },
   tween: vi.fn(() => {
     const chain = {
-      to: vi.fn(function (this: any) { mockTweenCalls.push('to'); return this }),
-      start: vi.fn(function (this: any) { mockTweenCalls.push('start'); return this }),
-      delay: vi.fn(function (this: any) { mockTweenCalls.push('delay'); return this }),
-      call: vi.fn(function (this: any) { mockTweenCalls.push('call'); return this }),
+      to: vi.fn(function (this: any) { tweenCalls.push('to'); return this }),
+      start: vi.fn(function (this: any) { tweenCalls.push('start'); return this }),
+      delay: vi.fn(function (this: any) { tweenCalls.push('delay'); return this }),
+      call: vi.fn(function (this: any) { tweenCalls.push('call'); return this }),
     }
     return chain
   }),
@@ -60,42 +64,69 @@ vi.mock('cc', () => ({
     constructor(public x = 0, public y = 0, public z = 0) {}
   },
   Sprite: class {},
+  Color: class {
+    constructor(public r = 255, public g = 255, public b = 255, public a = 255) {}
+  },
 }))
 
 import { RewardShowcaseUI } from '../RewardShowcaseUI'
+
+function createRootNode() {
+  const labels: Record<string, { string: string }> = {
+    LXPLabel: { string: '' },
+    LevelLabel: { string: '' },
+  }
+  const badgeContainer = { active: true, children: [], addChild: vi.fn() }
+  const badgeListContainer = {
+    active: false,
+    children: [
+      { active: false, getComponent: () => ({ string: '', color: { r: 255, g: 255, b: 255, a: 255 } }) },
+      { active: false, getComponent: () => ({ string: '', color: { r: 255, g: 255, b: 255, a: 255 } }) },
+      { active: false, getComponent: () => ({ string: '', color: { r: 255, g: 255, b: 255, a: 255 } }) },
+    ],
+  }
+
+  const rootNode = {
+    getChildByName: vi.fn((name: string) => {
+      if (name === 'BadgeContainer') return badgeContainer
+      if (name === 'BadgeListContainer') return badgeListContainer
+      return {
+        active: false,
+        getComponent: vi.fn(() => labels[name] || { string: '' }),
+      }
+    }),
+    labels,
+    badgeContainer,
+    badgeListContainer,
+  }
+
+  return rootNode
+}
 
 describe('RewardShowcaseUI', () => {
   let rootNode: any
 
   beforeEach(() => {
     vi.clearAllMocks()
-    mockTweenCalls.length = 0
-    rootNode = {
-      getChildByName: vi.fn((name: string) => {
-        const node = createMockNode(name)
-        if (name === 'LXPLabel' || name === 'LevelLabel') {
-          node.getComponent = vi.fn(() => mockLabel)
-        }
-        return node
-      }),
-    }
+    tweenCalls.length = 0
+    rootNode = createRootNode()
   })
 
   test('updateLXP displays current LXP and level', () => {
     const ui = new RewardShowcaseUI(rootNode)
     ui.updateLXP({ current: 150, to_next_level: 200, level: 3 })
 
-    expect(mockLabel.string).toContain('150/200')
-    expect(mockLabel.string).toContain('Level 3')
+    expect(rootNode.labels.LXPLabel.string).toContain('150/200')
+    expect(rootNode.labels.LevelLabel.string).toContain('Level 3')
   })
 
   test('show and hide toggle container visibility', () => {
     const ui = new RewardShowcaseUI(rootNode)
     ui.hide()
-    expect(rootNode.getChildByName('BadgeContainer')().active).toBe(false)
+    expect(rootNode.badgeContainer.active).toBe(false)
 
     ui.show()
-    expect(rootNode.getChildByName('BadgeContainer')()).toBeDefined()
+    expect(rootNode.badgeContainer.active).toBe(true)
   })
 
   test('showNewBadge creates animated badge node', () => {
@@ -109,8 +140,8 @@ describe('RewardShowcaseUI', () => {
       reward_preview: '+50 LXP',
     })
 
-    expect(mockTweenCalls).toContain('to')
-    expect(mockTweenCalls).toContain('start')
+    expect(tweenCalls).toContain('to')
+    expect(tweenCalls).toContain('start')
   })
 
   test('showBadgeUnlockAnimation creates animation for earned badge', () => {
@@ -120,27 +151,28 @@ describe('RewardShowcaseUI', () => {
       name: 'Forest Badge',
       description: 'Complete the forest',
       icon_ref: 'forest_icon',
+      earned_at: '2026-04-18',
       unlock_condition: 'Complete forest scene',
       reward_preview: '+100 LXP',
     }
 
     ui.setBadges([badge], [])
-    mockTweenCalls.length = 0
+    tweenCalls.length = 0
 
     ui.showBadgeUnlockAnimation('badge-forest')
 
-    expect(mockTweenCalls).toContain('to')
-    expect(mockTweenCalls).toContain('start')
+    expect(tweenCalls).toContain('to')
+    expect(tweenCalls).toContain('start')
   })
 
   test('showBadgeUnlockAnimation does nothing for unknown badge', () => {
     const ui = new RewardShowcaseUI(rootNode)
     ui.setBadges([], [])
-    mockTweenCalls.length = 0
+    tweenCalls.length = 0
 
     ui.showBadgeUnlockAnimation('nonexistent')
 
-    expect(mockTweenCalls).toHaveLength(0)
+    expect(tweenCalls).toHaveLength(0)
   })
 
   test('setBadges stores earned and unearned badges', () => {

@@ -92,7 +92,11 @@ export class GameWorld {
   }
 
   getStoryProgress(): StoryProgress {
-    return { ...this.storyProgress }
+    return {
+      ...this.storyProgress,
+      completed_quests: [...this.storyProgress.completed_quests],
+      earned_badges: [...this.storyProgress.earned_badges],
+    }
   }
 
   getEarnedBadges(): string[] {

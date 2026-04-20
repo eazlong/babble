@@ -1,4 +1,4 @@
-import { Label, Node, tween, Vec3, Sprite } from 'cc'
+import { Label, Node, tween, Vec3, Sprite, Color } from 'cc'
 
 export interface BadgeInfo {
   badge_id: string
@@ -118,7 +118,7 @@ export class RewardShowcaseUI {
         const label = node.getComponent(Label)
         if (label) {
           label.string = `[?] ${badge.unlock_condition}`
-          label.color = { r: 128, g: 128, b: 128, a: 255 } as unknown as ReturnType<Label['color']>
+          label.color = new Color(128, 128, 128, 255)
         }
       }
       index++

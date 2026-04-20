@@ -1,33 +1,16 @@
 import { test, expect, vi, beforeEach, describe } from 'vitest'
 
-// Mock CocosCreator module
-const mockLabel = { string: '' }
-const mockProgressBar = { progress: 0 }
-const createMockNode = (name: string) => ({
-  name,
-  children: [
-    { active: false, getComponent: () => ({ string: '' }) },
-    { active: false, getComponent: () => ({ string: '' }) },
-    { active: false, getComponent: () => ({ string: '' }) },
-    { active: false, getComponent: () => ({ string: '' }) },
-    { active: false, getComponent: () => ({ string: '' }) },
-  ],
-  active: false,
-  getComponent: vi.fn(() => name.includes('Label') ? mockLabel : name.includes('Progress') ? mockProgressBar : null),
-  getChildByName: vi.fn((childName: string) => {
-    if (childName === 'StarRating' || childName === 'SubQuestContainer' || childName === 'BadgeContainer' || childName === 'BadgeListContainer') {
-      return {
-        children: [
-          { active: false, getComponent: () => ({ string: '' }) },
-          { active: false, getComponent: () => ({ string: '' }) },
-          { active: false, getComponent: () => ({ string: '' }) },
-        ],
-        active: false,
-      }
-    }
-    return { active: false, getComponent: vi.fn(() => mockLabel) }
-  }),
-})
+// Mock CocosCreator module with separate label instances per node
+const labelInstances: Record<string, { string: string }> = {}
+
+const mockProgressBarInstance = { progress: 0 }
+
+function getOrCreateLabel(name: string) {
+  if (!labelInstances[name]) {
+    labelInstances[name] = { string: '' }
+  }
+  return labelInstances[name]
+}
 
 vi.mock('cc', () => ({
   Label: class {},
@@ -35,14 +18,36 @@ vi.mock('cc', () => ({
     name: string
     children: any[]
     active = false
-    getComponent = vi.fn()
-    getChildByName = vi.fn()
+    _labels: Record<string, { string: string }> = {}
+    _progress: { progress: number } = { progress: 0 }
+
     constructor(name: string) {
-      const m = createMockNode(name)
       this.name = name
-      this.children = m.children
-      this.getComponent = m.getComponent
-      this.getChildByName = m.getChildByName
+      this.children = [
+        { active: false, getComponent: () => ({ string: '' }) },
+        { active: false, getComponent: () => ({ string: '' }) },
+        { active: false, getComponent: () => ({ string: '' }) },
+        { active: false, getComponent: () => ({ string: '' }) },
+        { active: false, getComponent: () => ({ string: '' }) },
+      ]
+    }
+
+    getComponent(_cls: any) {
+      if (this.name.includes('Progress')) {
+        return mockProgressBarInstance
+      }
+      return getOrCreateLabel(this.name)
+    }
+
+    getChildByName(childName: string) {
+      const child = new (vi.mocked('cc').Node as any)(childName)
+      child.getComponent = function () {
+        if (childName.includes('Progress')) {
+          return mockProgressBarInstance
+        }
+        return getOrCreateLabel(childName)
+      }
+      return child
     }
   },
   ProgressBar: class {},
@@ -60,23 +65,73 @@ vi.mock('cc', () => ({
 
 import { QuestUI } from '../QuestUI'
 
+// Create a proper mock root node with tracked labels
+function createRootNode() {
+  const labels: Record<string, { string: string }> = {
+    QuestTitle: { string: '' },
+    QuestDesc: { string: '' },
+    QuestProgress: { string: '' },
+  }
+  const progressBar = { progress: 0 }
+
+  const starRatingChildren = [
+    { active: false },
+    { active: false },
+    { active: false },
+    { active: false },
+    { active: false },
+  ]
+  const subQuestChildren = [
+    { active: false, getComponent: () => ({ string: '' }) },
+    { active: false, getComponent: () => ({ string: '' }) },
+    { active: false, getComponent: () => ({ string: '' }) },
+  ]
+
+  const starRatingNode = {
+    children: starRatingChildren,
+    active: false,
+  }
+  const subQuestNode = {
+    children: subQuestChildren,
+    active: false,
+  }
+
+  const questPanelNode = {
+    active: false,
+    children: [],
+    getChildByName: vi.fn(() => ({ active: false })),
+    getComponent: vi.fn(() => null),
+  }
+
+  const rootNode = {
+    getChildByName: vi.fn((name: string) => {
+      if (name === 'QuestPanel') return questPanelNode
+      if (name === 'StarRating') return starRatingNode
+      if (name === 'SubQuestContainer') return subQuestNode
+      return {
+        active: false,
+        getComponent: vi.fn(() => {
+          if (name === 'QuestProgressBar') return progressBar
+          return labels[name] || { string: '' }
+        }),
+      }
+    }),
+    labels,
+    progressBar,
+    questPanel: questPanelNode,
+    starRating: starRatingNode,
+    subQuest: subQuestNode,
+  }
+
+  return rootNode
+}
+
 describe('QuestUI', () => {
   let rootNode: any
 
   beforeEach(() => {
     vi.clearAllMocks()
-    rootNode = {
-      getChildByName: vi.fn((name: string) => {
-        const node = createMockNode(name)
-        if (name === 'QuestTitle' || name === 'QuestDesc' || name === 'QuestProgress') {
-          node.getComponent = vi.fn(() => mockLabel)
-        }
-        if (name === 'QuestProgressBar') {
-          node.getComponent = vi.fn(() => mockProgressBar)
-        }
-        return node
-      }),
-    }
+    rootNode = createRootNode()
   })
 
   test('displays quest with bilingual title', () => {
@@ -91,7 +146,7 @@ describe('QuestUI', () => {
       star_rating: 3,
     })
 
-    expect(mockLabel.string).toBe('寻找宝藏 / Find the Treasure')
+    expect(rootNode.labels.QuestTitle.string).toBe('寻找宝藏 / Find the Treasure')
   })
 
   test('displays progress and LXP reward', () => {
@@ -106,8 +161,8 @@ describe('QuestUI', () => {
       star_rating: 0,
     })
 
-    expect(mockLabel.string).toContain('2/5')
-    expect(mockLabel.string).toContain('30 LXP')
+    expect(rootNode.labels.QuestProgress.string).toContain('2/5')
+    expect(rootNode.labels.QuestProgress.string).toContain('30 LXP')
   })
 
   test('updates progress bar', () => {
@@ -122,7 +177,7 @@ describe('QuestUI', () => {
       star_rating: 0,
     })
 
-    expect(mockProgressBar.progress).toBe(0)
+    expect(rootNode.progressBar.progress).toBe(0)
   })
 
   test('updateProgress updates both label and progress bar', () => {
@@ -138,7 +193,7 @@ describe('QuestUI', () => {
     })
 
     ui.updateProgress(7, 10)
-    expect(mockProgressBar.progress).toBe(0.7)
+    expect(rootNode.progressBar.progress).toBe(0.7)
   })
 
   test('hide sets panel inactive', () => {
@@ -154,6 +209,6 @@ describe('QuestUI', () => {
     })
 
     ui.hide()
-    expect(rootNode.getChildByName('QuestPanel')().active).toBe(false)
+    expect(rootNode.questPanel.active).toBe(false)
   })
 })

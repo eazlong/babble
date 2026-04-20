@@ -11,7 +11,9 @@ declare module 'cc' {
     getChildByName(name: string): Node | null
     getComponent<T>(cls: new (...args: unknown[]) => T): T | null
     setPosition(x: number | Vec3, y?: number, z?: number): void
+    setScale(x: number | Vec3, y?: number, z?: number): void
     addChild(child: Node): void
+    addComponent<T>(cls: new (...args: unknown[]) => T): T
     destroy(): boolean
     destroyAllChildren(): void
     constructor(name?: string)
@@ -25,6 +27,7 @@ declare module 'cc' {
   export class Label extends Component {
     string: string
     fontSize: number
+    color: Color
   }
   export class Sprite extends Component {
     color: Color
@@ -59,9 +62,13 @@ declare module 'cc' {
   export class JsonAsset extends Asset {
     data: unknown
   }
+  export interface TweenOptions {
+    easing?: string
+    onComplete?: () => void
+  }
   export function tween<T extends object>(target: T): Tween<T>
   export interface Tween<T> {
-    to(duration: number, props: Partial<T>): Tween<T>
+    to(duration: number, props: Partial<T>, opts?: TweenOptions): Tween<T>
     by(duration: number, props: Partial<T>): Tween<T>
     delay(duration: number): Tween<T>
     call(cb: () => void): Tween<T>
