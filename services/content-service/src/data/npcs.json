@@ -1,0 +1,57 @@
+[
+  {
+    "npc_id": "spark",
+    "name": "Spark",
+    "name_cn": "小灵",
+    "role": "spirit_coach",
+    "personality": "活泼热情，全程陪伴",
+    "cefr_level": "A1",
+    "voice_style": "cheerful_childlike",
+    "greeting": "Hi! I'm Spark! Welcome to the Magic Academy!",
+    "is_persistent": true
+  },
+  {
+    "npc_id": "oakley",
+    "name": "Oakley",
+    "role": "forest_guardian",
+    "personality": "智慧温和，语速较慢",
+    "cefr_level": "A1",
+    "voice_style": "wise_slow",
+    "greeting": "Welcome, young student. I am Oakley, guardian of this forest.",
+    "scene_id": "spirit_forest",
+    "teaches": ["greetings", "colors", "numbers"]
+  },
+  {
+    "npc_id": "bookmark",
+    "name": "Bookmark",
+    "role": "librarian",
+    "personality": "博学稳重，慢慢来",
+    "cefr_level": "A1",
+    "voice_style": "calm_elderly",
+    "greeting": "Welcome to the Spell Library. Take your time, young one.",
+    "scene_id": "spell_library",
+    "teaches": ["classroom_items", "commands"]
+  },
+  {
+    "npc_id": "luna",
+    "name": "Luna",
+    "role": "apprentice",
+    "personality": "活泼可爱，像好朋友",
+    "cefr_level": "A1",
+    "voice_style": "friendly_peer",
+    "greeting": "Hey! I'm Luna! Let's practice magic spells together!",
+    "scene_id": "spell_library",
+    "teaches": ["actions", "dialogue_practice"]
+  },
+  {
+    "npc_id": "petalia",
+    "name": "Petalia",
+    "role": "flower_fairy",
+    "personality": "温柔耐心，充满母性关怀",
+    "cefr_level": "A1",
+    "voice_style": "gentle_warm",
+    "greeting": "Hello dear! I'm Petalia. Can you help me with the garden?",
+    "scene_id": "rainbow_garden",
+    "teaches": ["weather", "animals", "positions", "emotions"]
+  }
+]

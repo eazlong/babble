@@ -33,6 +33,13 @@ class SimpleContentFilter {
   }
 }
 
+const ENCOURAGING_RESPONSES: string[] = [
+  "Good try! Let me help you.",
+  "That's close! Try saying it this way.",
+  "You're doing great! Let's try again.",
+  "Nice effort! Here's how we say it.",
+]
+
 export class NPCEngine {
   private llmRouter: LLMRouter
   private contentFilter: SimpleContentFilter
@@ -40,6 +47,12 @@ export class NPCEngine {
   constructor() {
     this.llmRouter = new LLMRouter()
     this.contentFilter = new SimpleContentFilter()
+  }
+
+  buildTeachingContext(npc: NPCProfile): string | null {
+    if (!npc.teaches || npc.teaches.length === 0) return null
+    const topics = npc.teaches.join(', ')
+    return `I am teaching: ${topics}. Use simple A1-level English. Encourage the student.`
   }
 
   async processDialogue(
@@ -50,9 +63,15 @@ export class NPCEngine {
     const systemPrompt = PromptManager.buildNPCSystemPrompt(npc, request.cefr_level)
     const context = PromptManager.buildDialogueContext(history)
 
-    const userPrompt = context
+    const teachingContext = this.buildTeachingContext(npc)
+
+    let userPrompt = context
       ? `${context}\n\nPlayer: ${request.player_input}\n\nRespond as ${npc.name}:`
       : `Player: ${request.player_input}\n\nRespond as ${npc.name}:`
+
+    if (teachingContext) {
+      userPrompt = `${userPrompt}\n\n[${teachingContext}]`
+    }
 
     const fullPrompt = request.quest_context
       ? `${userPrompt}\n\n[Current quest: ${request.quest_context}]`
@@ -68,7 +87,9 @@ export class NPCEngine {
 
     if (!moderation.safe) {
       return {
-        npc_text: 'I am not sure how to respond to that. Let us continue our conversation.',
+        npc_text: ENCOURAGING_RESPONSES[
+          Math.floor(Math.random() * ENCOURAGING_RESPONSES.length)
+        ],
         audio_url: '',
         lxp_earned: 0,
         flagged: true

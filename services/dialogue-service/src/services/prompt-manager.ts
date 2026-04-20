@@ -5,6 +5,7 @@ export interface NPCProfile {
   formality: 'formal' | 'informal' | 'mixed'
   vocabulary_level: 'basic' | 'intermediate' | 'advanced'
   personality: string
+  teaches?: string[]
 }
 
 export class PromptManager {
