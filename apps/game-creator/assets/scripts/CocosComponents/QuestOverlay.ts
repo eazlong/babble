@@ -4,7 +4,7 @@
  */
 
 import { _decorator, Component, Node, instantiate, Prefab } from 'cc'
-import { QuestUI } from '@linguaquest/game-client/ui/QuestUI'
+import { QuestUI } from '../game-client/ui/QuestUI'
 import { CCGlobalState } from '../Integration/CCGlobalState'
 
 const { ccclass, property } = _decorator

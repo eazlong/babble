@@ -4,7 +4,7 @@
  */
 
 import { _decorator, Component, director, assetManager, SceneAsset } from 'cc'
-import { SceneManager, SceneConfig } from '@linguaquest/game-client/game/SceneManager'
+import { SceneManager, SceneConfig } from '../game-client/game/SceneManager'
 import { CCGlobalState } from './CCGlobalState'
 
 const { ccclass, property } = _decorator

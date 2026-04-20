@@ -4,7 +4,7 @@
  */
 
 import { _decorator, Component } from 'cc'
-import { VoicePipeline } from '@linguaquest/game-client/audio/VoicePipeline'
+import { VoicePipeline } from '../game-client/audio/VoicePipeline'
 
 const { ccclass, property } = _decorator
 

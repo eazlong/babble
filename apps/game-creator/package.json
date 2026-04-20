@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "description": "CocosCreator game client for LinguaQuest RPG",
-  "dependencies": {
-    "@linguaquest/game-client": "workspace:*"
-  }
+  "creator": {
+    "version": "3.8.8"
+  },
+  "uuid": "ccb57e00-2f79-478e-9df4-fe8d1d74b5b1"
 }

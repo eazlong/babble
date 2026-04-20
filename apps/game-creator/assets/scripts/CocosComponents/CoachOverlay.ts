@@ -4,7 +4,7 @@
  */
 
 import { _decorator, Component, Node, instantiate, Prefab } from 'cc'
-import { SpiritCoachUI } from '@linguaquest/game-client/ui/SpiritCoachUI'
+import { SpiritCoachUI } from '../game-client/ui/SpiritCoachUI'
 
 const { ccclass, property } = _decorator
 

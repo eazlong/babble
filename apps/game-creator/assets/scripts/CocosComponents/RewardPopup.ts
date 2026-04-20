@@ -4,7 +4,7 @@
  */
 
 import { _decorator, Component, Node, instantiate, Prefab } from 'cc'
-import { RewardShowcaseUI } from '@linguaquest/game-client/ui/RewardShowcaseUI'
+import { RewardShowcaseUI } from '../game-client/ui/RewardShowcaseUI'
 
 const { ccclass, property } = _decorator
 

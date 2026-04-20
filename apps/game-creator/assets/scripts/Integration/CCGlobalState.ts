@@ -4,7 +4,7 @@
  */
 
 import { _decorator, Component, Node, game } from 'cc'
-import { GameWorld } from '@linguaquest/game-client/game/GameWorld'
+import { GameWorld } from '../game-client/game/GameWorld'
 
 const { ccclass, property } = _decorator
 

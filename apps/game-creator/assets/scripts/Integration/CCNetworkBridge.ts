@@ -4,8 +4,8 @@
  */
 
 import { _decorator, Component } from 'cc'
-import { http } from '@linguaquest/game-client/network/HttpClient'
-import { ws } from '@linguaquest/game-client/network/WebSocketClient'
+import { http } from '../game-client/network/HttpClient'
+import { ws } from '../game-client/network/WebSocketClient'
 
 const { ccclass, property } = _decorator
 
