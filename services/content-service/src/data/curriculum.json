@@ -1,0 +1,196 @@
+{
+  "greetings": {
+    "category": "问候与自我介绍",
+    "category_en": "Greetings & Self-introduction",
+    "scene": "spirit_forest",
+    "items": [
+      { "en": "Hello!", "cn": "你好！", "audio_ref": "audio_greeting_hello", "difficulty": 1 },
+      { "en": "Hi!", "cn": "嗨！", "audio_ref": "audio_greeting_hi", "difficulty": 1 },
+      { "en": "Good morning!", "cn": "早上好！", "audio_ref": "audio_greeting_morning", "difficulty": 1 },
+      { "en": "Good afternoon!", "cn": "下午好！", "audio_ref": "audio_greeting_afternoon", "difficulty": 1 },
+      { "en": "What's your name?", "cn": "你叫什么名字？", "audio_ref": "audio_greeting_name_q", "difficulty": 2 },
+      { "en": "I'm ___.", "cn": "我叫___。", "audio_ref": "audio_greeting_name_a", "difficulty": 2 },
+      { "en": "Nice to meet you!", "cn": "很高兴认识你！", "audio_ref": "audio_greeting_nice", "difficulty": 2 },
+      { "en": "How are you?", "cn": "你好吗？", "audio_ref": "audio_greeting_how", "difficulty": 2 },
+      { "en": "I'm fine, thank you.", "cn": "我很好，谢谢。", "audio_ref": "audio_greeting_fine", "difficulty": 2 },
+      { "en": "Goodbye!", "cn": "再见！", "audio_ref": "audio_greeting_bye", "difficulty": 1 },
+      { "en": "See you!", "cn": "再见！", "audio_ref": "audio_greeting_see", "difficulty": 1 }
+    ]
+  },
+  "colors": {
+    "category": "颜色",
+    "category_en": "Colors",
+    "scene": "spirit_forest",
+    "items": [
+      { "en": "Red", "cn": "红色", "audio_ref": "audio_color_red", "difficulty": 1 },
+      { "en": "Blue", "cn": "蓝色", "audio_ref": "audio_color_blue", "difficulty": 1 },
+      { "en": "Yellow", "cn": "黄色", "audio_ref": "audio_color_yellow", "difficulty": 1 },
+      { "en": "Green", "cn": "绿色", "audio_ref": "audio_color_green", "difficulty": 1 },
+      { "en": "Orange", "cn": "橙色", "audio_ref": "audio_color_orange", "difficulty": 1 },
+      { "en": "Purple", "cn": "紫色", "audio_ref": "audio_color_purple", "difficulty": 1 },
+      { "en": "Black", "cn": "黑色", "audio_ref": "audio_color_black", "difficulty": 1 },
+      { "en": "White", "cn": "白色", "audio_ref": "audio_color_white", "difficulty": 1 },
+      { "en": "What color is it?", "cn": "它是什么颜色？", "audio_ref": "audio_color_q", "difficulty": 2 },
+      { "en": "It's ___." , "cn": "它是___。", "audio_ref": "audio_color_a", "difficulty": 2 }
+    ]
+  },
+  "numbers": {
+    "category": "数字 1-20",
+    "category_en": "Numbers 1-20",
+    "scene": "spirit_forest",
+    "items": [
+      { "en": "One", "cn": "一", "audio_ref": "audio_num_1", "difficulty": 1, "value": 1 },
+      { "en": "Two", "cn": "二", "audio_ref": "audio_num_2", "difficulty": 1, "value": 2 },
+      { "en": "Three", "cn": "三", "audio_ref": "audio_num_3", "difficulty": 1, "value": 3 },
+      { "en": "Four", "cn": "四", "audio_ref": "audio_num_4", "difficulty": 1, "value": 4 },
+      { "en": "Five", "cn": "五", "audio_ref": "audio_num_5", "difficulty": 1, "value": 5 },
+      { "en": "Six", "cn": "六", "audio_ref": "audio_num_6", "difficulty": 1, "value": 6 },
+      { "en": "Seven", "cn": "七", "audio_ref": "audio_num_7", "difficulty": 1, "value": 7 },
+      { "en": "Eight", "cn": "八", "audio_ref": "audio_num_8", "difficulty": 1, "value": 8 },
+      { "en": "Nine", "cn": "九", "audio_ref": "audio_num_9", "difficulty": 1, "value": 9 },
+      { "en": "Ten", "cn": "十", "audio_ref": "audio_num_10", "difficulty": 1, "value": 10 },
+      { "en": "Eleven", "cn": "十一", "audio_ref": "audio_num_11", "difficulty": 2, "value": 11 },
+      { "en": "Twelve", "cn": "十二", "audio_ref": "audio_num_12", "difficulty": 2, "value": 12 },
+      { "en": "Thirteen", "cn": "十三", "audio_ref": "audio_num_13", "difficulty": 2, "value": 13 },
+      { "en": "Fourteen", "cn": "十四", "audio_ref": "audio_num_14", "difficulty": 2, "value": 14 },
+      { "en": "Fifteen", "cn": "十五", "audio_ref": "audio_num_15", "difficulty": 2, "value": 15 },
+      { "en": "Sixteen", "cn": "十六", "audio_ref": "audio_num_16", "difficulty": 2, "value": 16 },
+      { "en": "Seventeen", "cn": "十七", "audio_ref": "audio_num_17", "difficulty": 2, "value": 17 },
+      { "en": "Eighteen", "cn": "十八", "audio_ref": "audio_num_18", "difficulty": 2, "value": 18 },
+      { "en": "Nineteen", "cn": "十九", "audio_ref": "audio_num_19", "difficulty": 2, "value": 19 },
+      { "en": "Twenty", "cn": "二十", "audio_ref": "audio_num_20", "difficulty": 2, "value": 20 },
+      { "en": "How many?", "cn": "多少？", "audio_ref": "audio_num_q", "difficulty": 2 }
+    ]
+  },
+  "classroom_items": {
+    "category": "学习用品",
+    "category_en": "Classroom Items",
+    "scene": "spell_library",
+    "items": [
+      { "en": "pen", "cn": "钢笔", "audio_ref": "audio_item_pen", "difficulty": 1 },
+      { "en": "pencil", "cn": "铅笔", "audio_ref": "audio_item_pencil", "difficulty": 1 },
+      { "en": "book", "cn": "书", "audio_ref": "audio_item_book", "difficulty": 1 },
+      { "en": "bag", "cn": "书包", "audio_ref": "audio_item_bag", "difficulty": 1 },
+      { "en": "ruler", "cn": "尺子", "audio_ref": "audio_item_ruler", "difficulty": 1 },
+      { "en": "eraser", "cn": "橡皮", "audio_ref": "audio_item_eraser", "difficulty": 1 },
+      { "en": "desk", "cn": "课桌", "audio_ref": "audio_item_desk", "difficulty": 1 },
+      { "en": "chair", "cn": "椅子", "audio_ref": "audio_item_chair", "difficulty": 1 },
+      { "en": "What's this?", "cn": "这是什么？", "audio_ref": "audio_item_q", "difficulty": 2 },
+      { "en": "It's a ___." , "cn": "它是一个___。", "audio_ref": "audio_item_a", "difficulty": 2 }
+    ]
+  },
+  "commands": {
+    "category": "课堂指令",
+    "category_en": "Classroom Commands",
+    "scene": "spell_library",
+    "items": [
+      { "en": "Stand up.", "cn": "起立。", "audio_ref": "audio_cmd_stand", "difficulty": 1 },
+      { "en": "Sit down.", "cn": "坐下。", "audio_ref": "audio_cmd_sit", "difficulty": 1 },
+      { "en": "Open your book.", "cn": "打开书。", "audio_ref": "audio_cmd_open", "difficulty": 1 },
+      { "en": "Close your book.", "cn": "合上书。", "audio_ref": "audio_cmd_close", "difficulty": 1 },
+      { "en": "Listen.", "cn": "听。", "audio_ref": "audio_cmd_listen", "difficulty": 1 },
+      { "en": "Read.", "cn": "读。", "audio_ref": "audio_cmd_read", "difficulty": 1 },
+      { "en": "Write.", "cn": "写。", "audio_ref": "audio_cmd_write", "difficulty": 1 },
+      { "en": "Look.", "cn": "看。", "audio_ref": "audio_cmd_look", "difficulty": 1 },
+      { "en": "Say it.", "cn": "说出来。", "audio_ref": "audio_cmd_say", "difficulty": 1 },
+      { "en": "Draw.", "cn": "画。", "audio_ref": "audio_cmd_draw", "difficulty": 1 },
+      { "en": "Count.", "cn": "数。", "audio_ref": "audio_cmd_count", "difficulty": 1 }
+    ]
+  },
+  "actions": {
+    "category": "动作动词",
+    "category_en": "Action Verbs",
+    "scene": "spell_library",
+    "items": [
+      { "en": "look", "cn": "看", "audio_ref": "audio_action_look", "difficulty": 1 },
+      { "en": "listen", "cn": "听", "audio_ref": "audio_action_listen", "difficulty": 1 },
+      { "en": "read", "cn": "读", "audio_ref": "audio_action_read", "difficulty": 1 },
+      { "en": "write", "cn": "写", "audio_ref": "audio_action_write", "difficulty": 1 },
+      { "en": "draw", "cn": "画", "audio_ref": "audio_action_draw", "difficulty": 1 },
+      { "en": "count", "cn": "数", "audio_ref": "audio_action_count", "difficulty": 1 },
+      { "en": "say", "cn": "说", "audio_ref": "audio_action_say", "difficulty": 1 },
+      { "en": "run", "cn": "跑", "audio_ref": "audio_action_run", "difficulty": 1 },
+      { "en": "jump", "cn": "跳", "audio_ref": "audio_action_jump", "difficulty": 1 },
+      { "en": "walk", "cn": "走", "audio_ref": "audio_action_walk", "difficulty": 1 },
+      { "en": "clap", "cn": "拍手", "audio_ref": "audio_action_clap", "difficulty": 1 },
+      { "en": "touch", "cn": "摸", "audio_ref": "audio_action_touch", "difficulty": 1 }
+    ]
+  },
+  "weather": {
+    "category": "天气",
+    "category_en": "Weather",
+    "scene": "rainbow_garden",
+    "items": [
+      { "en": "Sunny", "cn": "晴天", "audio_ref": "audio_weather_sunny", "difficulty": 1 },
+      { "en": "Cloudy", "cn": "多云", "audio_ref": "audio_weather_cloudy", "difficulty": 1 },
+      { "en": "Rainy", "cn": "雨天", "audio_ref": "audio_weather_rainy", "difficulty": 1 },
+      { "en": "Windy", "cn": "刮风", "audio_ref": "audio_weather_windy", "difficulty": 1 },
+      { "en": "Snowy", "cn": "下雪", "audio_ref": "audio_weather_snowy", "difficulty": 1 },
+      { "en": "Warm", "cn": "温暖", "audio_ref": "audio_weather_warm", "difficulty": 1 },
+      { "en": "Cold", "cn": "寒冷", "audio_ref": "audio_weather_cold", "difficulty": 1 },
+      { "en": "Hot", "cn": "炎热", "audio_ref": "audio_weather_hot", "difficulty": 1 },
+      { "en": "How's the weather?", "cn": "天气怎么样？", "audio_ref": "audio_weather_q", "difficulty": 2 },
+      { "en": "It's sunny.", "cn": "晴天。", "audio_ref": "audio_weather_a", "difficulty": 2 }
+    ]
+  },
+  "animals": {
+    "category": "动物",
+    "category_en": "Animals",
+    "scene": "rainbow_garden",
+    "items": [
+      { "en": "Cat", "cn": "猫", "audio_ref": "audio_animal_cat", "difficulty": 1 },
+      { "en": "Dog", "cn": "狗", "audio_ref": "audio_animal_dog", "difficulty": 1 },
+      { "en": "Bird", "cn": "鸟", "audio_ref": "audio_animal_bird", "difficulty": 1 },
+      { "en": "Fish", "cn": "鱼", "audio_ref": "audio_animal_fish", "difficulty": 1 },
+      { "en": "Rabbit", "cn": "兔子", "audio_ref": "audio_animal_rabbit", "difficulty": 1 },
+      { "en": "Butterfly", "cn": "蝴蝶", "audio_ref": "audio_animal_butterfly", "difficulty": 2 },
+      { "en": "Bee", "cn": "蜜蜂", "audio_ref": "audio_animal_bee", "difficulty": 1 },
+      { "en": "Panda", "cn": "熊猫", "audio_ref": "audio_animal_panda", "difficulty": 1 },
+      { "en": "Monkey", "cn": "猴子", "audio_ref": "audio_animal_monkey", "difficulty": 1 },
+      { "en": "Elephant", "cn": "大象", "audio_ref": "audio_animal_elephant", "difficulty": 2 },
+      { "en": "Tiger", "cn": "老虎", "audio_ref": "audio_animal_tiger", "difficulty": 1 },
+      { "en": "What's this?", "cn": "这是什么？", "audio_ref": "audio_animal_q", "difficulty": 2 },
+      { "en": "It's a cat.", "cn": "它是一只猫。", "audio_ref": "audio_animal_a", "difficulty": 2 }
+    ]
+  },
+  "plants": {
+    "category": "植物",
+    "category_en": "Plants",
+    "scene": "rainbow_garden",
+    "items": [
+      { "en": "flower", "cn": "花", "audio_ref": "audio_plant_flower", "difficulty": 1 },
+      { "en": "tree", "cn": "树", "audio_ref": "audio_plant_tree", "difficulty": 1 },
+      { "en": "grass", "cn": "草", "audio_ref": "audio_plant_grass", "difficulty": 1 },
+      { "en": "leaf", "cn": "叶子", "audio_ref": "audio_plant_leaf", "difficulty": 1 },
+      { "en": "fruit", "cn": "水果", "audio_ref": "audio_plant_fruit", "difficulty": 1 }
+    ]
+  },
+  "positions": {
+    "category": "方位",
+    "category_en": "Positions",
+    "scene": "rainbow_garden",
+    "items": [
+      { "en": "in", "cn": "在...里", "audio_ref": "audio_pos_in", "difficulty": 1 },
+      { "en": "on", "cn": "在...上", "audio_ref": "audio_pos_on", "difficulty": 1 },
+      { "en": "under", "cn": "在...下", "audio_ref": "audio_pos_under", "difficulty": 1 },
+      { "en": "behind", "cn": "在...后", "audio_ref": "audio_pos_behind", "difficulty": 2 },
+      { "en": "next to", "cn": "在...旁边", "audio_ref": "audio_pos_next", "difficulty": 2 },
+      { "en": "Where is the cat?", "cn": "猫在哪里？", "audio_ref": "audio_pos_q", "difficulty": 2 },
+      { "en": "The cat is on the table.", "cn": "猫在桌子上。", "audio_ref": "audio_pos_a", "difficulty": 2 }
+    ]
+  },
+  "emotions": {
+    "category": "情感",
+    "category_en": "Emotions",
+    "scene": "rainbow_garden",
+    "items": [
+      { "en": "Happy", "cn": "开心", "audio_ref": "audio_emotion_happy", "difficulty": 1 },
+      { "en": "Sad", "cn": "难过", "audio_ref": "audio_emotion_sad", "difficulty": 1 },
+      { "en": "Tired", "cn": "累", "audio_ref": "audio_emotion_tired", "difficulty": 1 },
+      { "en": "Hungry", "cn": "饿", "audio_ref": "audio_emotion_hungry", "difficulty": 1 },
+      { "en": "Excited", "cn": "兴奋", "audio_ref": "audio_emotion_excited", "difficulty": 2 },
+      { "en": "I'm happy.", "cn": "我很开心。", "audio_ref": "audio_emotion_a", "difficulty": 2 },
+      { "en": "How do you feel?", "cn": "你感觉怎么样？", "audio_ref": "audio_emotion_q", "difficulty": 2 }
+    ]
+  }
+}
