@@ -5,6 +5,7 @@
 
 import { _decorator, Component, Node, instantiate, Prefab } from 'cc'
 import { RewardShowcaseUI } from '../game-client/ui/RewardShowcaseUI'
+import { CCGlobalState } from '../Integration/CCGlobalState'
 
 const { ccclass, property } = _decorator
 
@@ -19,6 +20,16 @@ export class RewardPopup extends Component {
     this.node.on('show_rewards', (data) => {
       this.show(data)
     })
+
+    // Listen for badge unlocks
+    this.node.on('badge_unlocked', (data: { badgeId: string }) => {
+      this.showBadgeEarned(data.badgeId)
+    })
+
+    // Listen for chapter completion
+    this.node.on('chapter_complete', () => {
+      this.showChapterComplete()
+    })
   }
 
   show(data: { lxp: number; level: number; badges: string[] }): void {
@@ -27,8 +38,29 @@ export class RewardPopup extends Component {
       this.node.addChild(this.activeNode)
       this.rewardUI = new RewardShowcaseUI(this.activeNode)
     }
-
     this.rewardUI?.showRewards(data.lxp, data.level, data.badges)
+  }
+
+  showBadgeEarned(badgeId: string): void {
+    const state = CCGlobalState.getInstance()
+    const progress = state.gameWorld.getStoryProgress()
+
+    this.show({
+      lxp: progress.total_lxp,
+      level: 1,
+      badges: [badgeId],
+    })
+  }
+
+  showChapterComplete(): void {
+    const state = CCGlobalState.getInstance()
+    const progress = state.gameWorld.getStoryProgress()
+
+    this.show({
+      lxp: progress.total_lxp,
+      level: 1,
+      badges: progress.earned_badges,
+    })
   }
 
   hide(): void {
