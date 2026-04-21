@@ -1,10 +1,10 @@
-# CocosCreator generated
+# CocosCreator generated (do NOT ignore .meta files - they must be tracked)
 build/
 library/
 temp/
 profiles/
 local/
-*.meta
+*.userprefs
 
 # Dependencies
 node_modules/
