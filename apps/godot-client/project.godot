@@ -1,0 +1,30 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are mostly internal.
+
+config_version=5
+
+[application]
+
+config/name="LinguaQuest RPG"
+run/main_scene="res://assets/scenes/MainMenu.tscn"
+config/features=PackedStringArray("4.3", "Forward Plus")
+config/icon="res://icon.svg"
+
+[autoload]
+
+GameManager="*res://assets/scripts/autoload/GameManager.gd"
+HybridAPI="*res://assets/scripts/autoload/HybridAPI.gd"
+VoicePipeline="*res://assets/scripts/autoload/VoicePipeline.gd"
+DialogueManager="*res://assets/scripts/autoload/DialogueManager.gd"
+AudioManager="*res://assets/scripts/autoload/AudioManager.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+
+[rendering]
+
+renderer/rendering_method="mobile"
