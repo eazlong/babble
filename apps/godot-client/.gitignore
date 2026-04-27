@@ -20,3 +20,19 @@ Thumbs.db
 *.swo
 .idea/
 .vscode/
+
+# Logs and backups
+logs/
+*.log
+*.tmp
+*.bak
+*~
+*.crash
+
+# Security - NEVER commit keys
+*.key
+*.keystore
+
+# Export directories
+android/
+ios/
