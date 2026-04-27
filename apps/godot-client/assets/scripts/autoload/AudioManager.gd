@@ -46,11 +46,15 @@ func _on_tts_finished() -> void:
 
 func play_audio_from_base64(base64_data: String, format: String = "wav") -> void:
 	var bytes = Marshalls.base64_to_raw(base64_data)
+	if bytes.is_empty():
+		push_error("Invalid base64 audio data")
+		return
+
 	var stream: AudioStream
 
 	if format == "wav":
 		stream = AudioStreamWAV.new()
-		# Note: 需要根据实际音频格式设置参数
+		stream.data = bytes  # Critical fix: assign WAV data to stream
 	elif format == "ogg":
 		stream = AudioStreamOggVorbis.load_from_buffer(bytes)
 

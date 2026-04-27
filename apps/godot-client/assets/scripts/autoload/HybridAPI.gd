@@ -30,8 +30,6 @@ func synthesize_tts(text: String, voice_id: String = "spirit", lang: String = "z
 	var error = http_request.request(API_BASE_URL + "/tts/synthesize", HTTPClient.METHOD_POST, headers, body)
 	if error != OK:
 		api_error.emit("TTS request failed: " + str(error))
-		return
-	await http_request.request_completed
 
 func recognize_speech(audio_data: PackedByteArray, lang: String = "zh") -> void:
 	var body = JSON.stringify({
@@ -42,8 +40,6 @@ func recognize_speech(audio_data: PackedByteArray, lang: String = "zh") -> void:
 	var error = http_request.request(API_BASE_URL + "/asr/recognize", HTTPClient.METHOD_POST, headers, body)
 	if error != OK:
 		api_error.emit("ASR request failed: " + str(error))
-		return
-	await http_request.request_completed
 
 func send_dialogue(user_text: String, npc_id: String, context: Array = []) -> void:
 	var body = JSON.stringify({
@@ -56,8 +52,6 @@ func send_dialogue(user_text: String, npc_id: String, context: Array = []) -> vo
 	var error = http_request.request(API_BASE_URL + "/dialogue/generate", HTTPClient.METHOD_POST, headers, body)
 	if error != OK:
 		api_error.emit("Dialogue request failed: " + str(error))
-		return
-	await http_request.request_completed
 
 func process_voice_dialogue(audio_data: PackedByteArray, npc_id: String, lang: String = "zh") -> Dictionary:
 	recognize_speech(audio_data, lang)

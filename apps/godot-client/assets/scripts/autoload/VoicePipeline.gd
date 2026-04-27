@@ -1,5 +1,7 @@
 extends Node
 
+const MAX_BUFFER_SIZE: int = 2646000  # ~30 seconds at 44100Hz stereo 16-bit
+
 var is_recording: bool = false
 var is_listening: bool = false
 var audio_buffer: PackedByteArray = PackedByteArray()
@@ -35,6 +37,8 @@ func start_listening() -> void:
 func stop_listening() -> void:
 	is_listening = false
 	is_recording = false
+	audio_buffer.clear()
+	audio_capture.clear_buffer()
 	listening_stopped.emit()
 
 func _process(delta: float) -> void:
@@ -52,7 +56,10 @@ func _process(delta: float) -> void:
 				voice_started.emit()
 
 			last_voice_time = Time.get_ticks_msec() / 1000.0
-			audio_buffer.append_array(frames.to_byte_array())
+			# Check buffer size limit before appending
+			var new_bytes = frames.to_byte_array()
+			if audio_buffer.size() + new_bytes.size() <= MAX_BUFFER_SIZE:
+				audio_buffer.append_array(new_bytes)
 
 		elif is_recording:
 			var current_time = Time.get_ticks_msec() / 1000.0
