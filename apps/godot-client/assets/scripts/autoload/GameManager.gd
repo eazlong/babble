@@ -61,10 +61,20 @@ func load_progress() -> bool:
 				player_name = data.get("player_name", "")
 				player_age = data.get("player_age", 0)
 				current_lang = data.get("current_lang", "zh")
-				unlocked_areas = data.get("unlocked_areas", ["SpiritForest"])
+				# Convert arrays to typed Array[String]
+				var areas_data = data.get("unlocked_areas", ["SpiritForest"])
+				unlocked_areas.clear()
+				for area in areas_data:
+					unlocked_areas.append(area)
 				lxp_score = data.get("lxp_score", 0)
-				completed_dialogues = data.get("completed_dialogues", [])
-				vocabulary_learned = data.get("vocabulary_learned", [])
+				var dialogues_data = data.get("completed_dialogues", [])
+				completed_dialogues.clear()
+				for dialogue in dialogues_data:
+					completed_dialogues.append(dialogue)
+				var vocab_data = data.get("vocabulary_learned", [])
+				vocabulary_learned.clear()
+				for vocab in vocab_data:
+					vocabulary_learned.append(vocab)
 				return true
 	return false
 

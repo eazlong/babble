@@ -1,34 +1,82 @@
-[gd_scene load_steps=3 format=3 uid="uid://main_menu_001"]
+[gd_scene format=3 uid="uid://cfwp6ryr61toa"]
 
-[ext_resource type="Script" path="res://assets/scripts/components/MainMenuController.gd" id="1_controller"]
-[ext_resource type="Script" path="res://assets/scripts/components/CoachOverlay.gd" id="2_coach"]
+[ext_resource type="Script" uid="uid://fiydu56sj0ml" path="res://assets/scripts/components/MainMenuController.gd" id="1_jrfyc"]
+[ext_resource type="Script" uid="uid://c8frsxljiqqlp" path="res://assets/scripts/components/CoachOverlay.gd" id="2_coach"]
+[ext_resource type="Texture2D" uid="uid://dmttaep8kl4kj" path="res://assets/resources/sprites/spark/57_480x270.png" id="3_jrfyc"]
+[ext_resource type="Texture2D" uid="uid://b5qwsd7w8m3a4" path="res://assets/resources/sprites/spark/58_480x270.png" id="4_qk4kp"]
+[ext_resource type="Texture2D" uid="uid://ct5ifu6ybt33d" path="res://assets/resources/sprites/spark/59_480x270.png" id="5_tq3dc"]
+[ext_resource type="Texture2D" uid="uid://dv01mfdohyrdi" path="res://assets/resources/sprites/spark/60_480x270.png" id="6_2js0o"]
+[ext_resource type="Texture2D" uid="uid://b3icndn0k8g42" path="res://assets/resources/sprites/spark/61_480x270.png" id="7_2nkee"]
+[ext_resource type="Texture2D" uid="uid://cvum2t5x801th" path="res://assets/resources/sprites/spark/62_480x270.png" id="8_okxhj"]
+[ext_resource type="Texture2D" uid="uid://pxbjt0mdfhyh" path="res://assets/resources/sprites/spark/63_480x270.png" id="9_vscvj"]
+[ext_resource type="Texture2D" uid="uid://cr0kg0qkyiy5o" path="res://assets/resources/sprites/spark/64_480x270.png" id="10_gii3d"]
+[ext_resource type="Texture2D" uid="uid://bydxyb37nclba" path="res://assets/resources/sprites/spark/spark_idle.jpg" id="11_wkjvu"]
 
-[node name="MainMenu" type="Node2D"]
-script = ExtResource("1_controller")
+[sub_resource type="SpriteFrames" id="SpriteFrames_t6dbj"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_jrfyc")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_qk4kp")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_tq3dc")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_2js0o")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_2nkee")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_okxhj")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_vscvj")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_gii3d")
+}],
+"loop": true,
+"name": &"fly",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("11_wkjvu")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}]
 
-[node name="Background" type="TextureRect" parent="."]
-layout_mode = 3
+[node name="MainMenu" type="Node2D" unique_id=1150430353]
+script = ExtResource("1_jrfyc")
+
+[node name="Background" type="TextureRect" parent="." unique_id=1419426979]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_right = 1280.0
+offset_bottom = 720.0
 grow_horizontal = 2
 grow_vertical = 2
-size = Vector2(1280, 720)
 
-[node name="TitleLabel" type="Label" parent="."]
-layout_mode = 1
+[node name="TitleLabel" type="Label" parent="." unique_id=609199787]
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -200.0
-offset_right = 200.0
 offset_top = 50.0
+offset_right = 200.0
 offset_bottom = 100.0
 grow_horizontal = 2
 text = "LinguaQuest RPG"
 horizontal_alignment = 1
 
-[node name="CoachOverlay" type="Control" parent="."]
+[node name="CoachOverlay" type="Control" parent="." unique_id=2003197651]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -36,29 +84,36 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_coach")
+metadata/_edit_use_anchors_ = true
 
-[node name="CoachSprite" type="AnimatedSprite2D" parent="CoachOverlay"]
-position = Vector2(540, 300)
+[node name="CoachSprite" type="AnimatedSprite2D" parent="CoachOverlay" unique_id=1007497228]
+visible = false
+position = Vector2(1508, 691)
+sprite_frames = SubResource("SpriteFrames_t6dbj")
+animation = &"fly"
 
-[node name="DialogueBubble" type="Panel" parent="CoachOverlay"]
+[node name="DialogueBubble" type="Panel" parent="CoachOverlay" unique_id=80702915]
 visible = false
 layout_mode = 1
 offset_left = 350.0
-offset_right = 650.0
 offset_top = 100.0
+offset_right = 650.0
 offset_bottom = 250.0
 
-[node name="DialogueText" type="RichTextLabel" parent="CoachOverlay/DialogueBubble"]
+[node name="DialogueText" type="RichTextLabel" parent="CoachOverlay/DialogueBubble" unique_id=1775918710]
 layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 10.0
 offset_top = 10.0
 offset_right = -10.0
 offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
 bbcode_enabled = true
 
-[node name="LangPanel" type="Control" parent="."]
+[node name="LangPanel" type="Control" parent="." unique_id=74705143]
 visible = false
 layout_mode = 3
 anchors_preset = 15
@@ -67,19 +122,19 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="LangZhButton" type="Button" parent="LangPanel"]
+[node name="LangZhButton" type="Button" parent="LangPanel" unique_id=2038318469]
 layout_mode = 1
 offset_left = 100.0
-offset_right = 200.0
 offset_top = 100.0
+offset_right = 200.0
 offset_bottom = 150.0
 text = "中文"
 
-[node name="LangEnButton" type="Button" parent="LangPanel"]
+[node name="LangEnButton" type="Button" parent="LangPanel" unique_id=668459580]
 layout_mode = 1
 offset_left = 440.0
-offset_right = 540.0
 offset_top = 100.0
+offset_right = 540.0
 offset_bottom = 150.0
 text = "English"
 

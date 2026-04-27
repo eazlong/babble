@@ -1,4 +1,5 @@
 extends Control
+class_name CoachOverlay
 
 @onready var coach_sprite: AnimatedSprite2D = $CoachSprite
 @onready var dialogue_bubble: Panel = $DialogueBubble
@@ -10,8 +11,12 @@ signal fly_in_completed()
 signal hint_shown()
 
 func fly_in_from(start_pos: Vector2, end_pos: Vector2, duration: float = fly_duration, callback: Callable = Callable()) -> void:
+	print("[CoachOverlay] Starting fly_in animation from ", start_pos, " to ", end_pos)
 	coach_sprite.position = start_pos
 	coach_sprite.visible = true
+	coach_sprite.play("fly")
+	print("[CoachOverlay] Sprite visible: ", coach_sprite.visible, " position: ", coach_sprite.position)
+	print("[CoachOverlay] Animation playing: ", coach_sprite.animation, " frame: ", coach_sprite.frame)
 
 	var tween = create_tween()
 	tween.set_ease(Tween.EASE_IN_OUT)
