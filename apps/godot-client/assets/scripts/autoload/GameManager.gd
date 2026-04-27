@@ -40,7 +40,8 @@ func save_progress() -> void:
 		"current_lang": current_lang,
 		"unlocked_areas": unlocked_areas,
 		"lxp_score": lxp_score,
-		"completed_dialogues": completed_dialogues
+		"completed_dialogues": completed_dialogues,
+		"vocabulary_learned": vocabulary_learned
 	}
 
 	var file = FileAccess.open("user://save.json", FileAccess.WRITE)
@@ -56,13 +57,14 @@ func load_progress() -> bool:
 			var json_string = file.get_as_text()
 			file.close()
 			var data = JSON.parse_string(json_string)
-			if data:
+			if data and data is Dictionary:
 				player_name = data.get("player_name", "")
 				player_age = data.get("player_age", 0)
 				current_lang = data.get("current_lang", "zh")
 				unlocked_areas = data.get("unlocked_areas", ["SpiritForest"])
 				lxp_score = data.get("lxp_score", 0)
 				completed_dialogues = data.get("completed_dialogues", [])
+				vocabulary_learned = data.get("vocabulary_learned", [])
 				return true
 	return false
 
