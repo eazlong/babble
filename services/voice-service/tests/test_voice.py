@@ -27,7 +27,7 @@ async def test_asr_endpoint():
 @pytest.mark.asyncio
 async def test_tts_endpoint():
     with patch('src.api.routes.tts.tts_service.synthesize_audio', new_callable=AsyncMock) as mock_synthesize:
-        mock_synthesize.return_value = "base64encodedaudio"
+        mock_synthesize.return_value = ("base64encodedaudio", "wav")
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:

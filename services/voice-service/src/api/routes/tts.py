@@ -15,8 +15,7 @@ class TTSRequest(BaseModel):
 @router.post("/api/v1/voice/tts")
 async def synthesize_speech(req: TTSRequest):
     """Return audio data directly as base64."""
-    audio_data = await tts_service.synthesize_audio(req.text, req.voice_id)
-    format_type = "wav" if tts_service.fish_available else "mp3"
+    audio_data, format_type = await tts_service.synthesize_audio(req.text, req.voice_id)
     return {
         "audio_data": audio_data,
         "duration_ms": len(req.text) * 50,

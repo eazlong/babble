@@ -45,14 +45,18 @@ class TTSService:
         if not self.fish_available:
             logger.warning("Fish Speech unavailable, using fallback")
 
-    async def synthesize_audio(self, text: str, voice_id: str = "spirit") -> str:
-        """Synthesize text and return base64 encoded audio."""
+    async def synthesize_audio(self, text: str, voice_id: str = "spirit") -> tuple[str, str]:
+        """Synthesize text and return (base64 encoded audio, format).
+
+        Returns:
+            Tuple of (base64_audio, format_string)
+        """
         # Try Fish Speech first
         if self.fish_available:
             try:
                 ref_audio = self.ref_manager.get_reference(voice_id)
                 audio_bytes = await self.fish_client.synthesize(text, ref_audio)
-                return base64.b64encode(audio_bytes).decode("utf-8")
+                return base64.b64encode(audio_bytes).decode("utf-8"), "wav"
             except Exception as e:
                 logger.error(f"Fish Speech error: {e}, falling back")
 
@@ -67,12 +71,12 @@ class TTSService:
                     output_format="mp3_44100_128",
                 )
                 audio_bytes = b"".join(audio)
-                return base64.b64encode(audio_bytes).decode("utf-8")
+                return base64.b64encode(audio_bytes).decode("utf-8"), "mp3"
             except Exception as e:
                 logger.error(f"ElevenLabs error: {e}")
 
         # Silent fallback
-        return self._generate_silent_wav(duration_ms=len(text) * 50)
+        return self._generate_silent_wav(duration_ms=len(text) * 50), "wav"
 
     def _generate_silent_wav(self, duration_ms: int = 1000) -> str:
         """Generate a valid silent WAV file as base64."""
