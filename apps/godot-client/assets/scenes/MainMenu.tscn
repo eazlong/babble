@@ -1,0 +1,87 @@
+[gd_scene load_steps=3 format=3 uid="uid://main_menu_001"]
+
+[ext_resource type="Script" path="res://assets/scripts/components/MainMenuController.gd" id="1_controller"]
+[ext_resource type="Script" path="res://assets/scripts/components/CoachOverlay.gd" id="2_coach"]
+
+[node name="MainMenu" type="Node2D"]
+script = ExtResource("1_controller")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size = Vector2(1280, 720)
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_right = 200.0
+offset_top = 50.0
+offset_bottom = 100.0
+grow_horizontal = 2
+text = "LinguaQuest RPG"
+horizontal_alignment = 1
+
+[node name="CoachOverlay" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_coach")
+
+[node name="CoachSprite" type="AnimatedSprite2D" parent="CoachOverlay"]
+position = Vector2(540, 300)
+
+[node name="DialogueBubble" type="Panel" parent="CoachOverlay"]
+visible = false
+layout_mode = 1
+offset_left = 350.0
+offset_right = 650.0
+offset_top = 100.0
+offset_bottom = 250.0
+
+[node name="DialogueText" type="RichTextLabel" parent="CoachOverlay/DialogueBubble"]
+layout_mode = 1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+bbcode_enabled = true
+
+[node name="LangPanel" type="Control" parent="."]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LangZhButton" type="Button" parent="LangPanel"]
+layout_mode = 1
+offset_left = 100.0
+offset_right = 200.0
+offset_top = 100.0
+offset_bottom = 150.0
+text = "中文"
+
+[node name="LangEnButton" type="Button" parent="LangPanel"]
+layout_mode = 1
+offset_left = 440.0
+offset_right = 540.0
+offset_top = 100.0
+offset_bottom = 150.0
+text = "English"
+
+[connection signal="pressed" from="LangPanel/LangZhButton" to="." method="_on_lang_zh_button_pressed"]
+[connection signal="pressed" from="LangPanel/LangEnButton" to="." method="_on_lang_en_button_pressed"]

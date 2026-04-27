@@ -1,0 +1,38 @@
+# Godot-specific ignores
+.import/
+*.import
+export.cfg
+export_presets.cfg
+
+# Imported assets
+*.translated
+*.translation
+
+# Godot 4 specific
+.godot/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# IDE
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Logs and backups
+logs/
+*.log
+*.tmp
+*.bak
+*~
+*.crash
+
+# Security - NEVER commit keys
+*.key
+*.keystore
+
+# Export directories
+android/
+ios/

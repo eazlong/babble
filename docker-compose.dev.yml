@@ -13,6 +13,17 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  fish-speech:
+    image: fishaudio/fish-speech:latest
+    ports: ["8002:8002"]
+    environment:
+      MODEL_SIZE: ${FISH_MODEL_SIZE:-small}
+      DEVICE: ${FISH_DEVICE:-cpu}
+    volumes:
+      - ./models:/models
+      - ./services/voice-service/assets/voices:/voices
+    profiles: ["full"]
+
   dialogue-service:
     build: ./services/dialogue-service
     ports: ["8302:8302"]
@@ -24,9 +35,15 @@ services:
   voice-service:
     build: ./services/voice-service
     ports: ["8301:8301"]
+    env_file:
+      - ./services/voice-service/.env
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY}
+      FISH_SPEECH_URL: ${FISH_SPEECH_URL:-http://fish-speech:8002}
+      WHISPER_MODEL_SIZE: ${WHISPER_MODEL_SIZE:-small}
+      WHISPER_DEVICE: ${WHISPER_DEVICE:-cpu}
+      WHISPER_COMPUTE_TYPE: ${WHISPER_COMPUTE_TYPE:-int8}
     depends_on: [redis]
 
 volumes:

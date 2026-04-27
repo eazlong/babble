@@ -1,0 +1,99 @@
+[gd_scene load_steps=4 format=3 uid="uid://spirit_forest_001"]
+
+[ext_resource type="Script" path="res://assets/scripts/components/PlayerController.gd" id="1_player"]
+[ext_resource type="Script" path="res://assets/scripts/components/NPCController.gd" id="2_npc"]
+[ext_resource type="Script" path="res://assets/scripts/components/DialogueBox.gd" id="3_dialogue"]
+
+[node name="SpiritForest" type="Node2D"]
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size = Vector2(1280, 720)
+
+[node name="Player" type="CharacterBody2D" parent="."]
+position = Vector2(200, 400)
+script = ExtResource("1_player")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="Player"]
+position = Vector2(0, 0)
+
+[node name="CollisionShape" type="CollisionShape2D" parent="Player"]
+shape = SubResource("CircleShape2D_1")
+
+[node name="SparkNPC" type="StaticBody2D" parent="."]
+position = Vector2(600, 400)
+script = ExtResource("2_npc")
+npc_id = "spark"
+npc_name_zh = "精灵教练 Spark"
+npc_name_en = "Spirit Coach Spark"
+greeting_zh = "你好！我是 Spark，你的语言学习伙伴！"
+greeting_en = "Hello! I'm Spark, your language learning companion!"
+
+[node name="Sprite" type="AnimatedSprite2D" parent="SparkNPC"]
+
+[node name="CollisionShape" type="CollisionShape2D" parent="SparkNPC"]
+shape = SubResource("CircleShape2D_2")
+
+[node name="DialogueTrigger" type="Area2D" parent="SparkNPC"]
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape" type="CollisionShape2D" parent="SparkNPC/DialogueTrigger"]
+shape = SubResource("CircleShape2D_3")
+radius = 100.0
+
+[node name="DialogueBox" type="CanvasLayer" parent="."]
+layer = 10
+script = ExtResource("3_dialogue")
+
+[node name="DialoguePanel" type="Panel" parent="DialogueBox"]
+visible = false
+offset_left = 160.0
+offset_right = 1120.0
+offset_top = 500.0
+offset_bottom = 680.0
+
+[node name="NPCNameLabel" type="Label" parent="DialogueBox/DialoguePanel"]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 5.0
+offset_right = 150.0
+offset_bottom = 30.0
+
+[node name="DialogueText" type="RichTextLabel" parent="DialogueBox/DialoguePanel"]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 35.0
+offset_right = 940.0
+offset_bottom = 160.0
+bbcode_enabled = true
+
+[node name="VoiceIndicator" type="Control" parent="DialogueBox/DialoguePanel"]
+visible = false
+layout_mode = 1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -25.0
+offset_right = 25.0
+offset_top = -30.0
+offset_bottom = 0.0
+
+[node name="BGMPlayer" type="AudioStreamPlayer" parent="."]
+volume_db = -6.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_1"]
+radius = 30.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_2"]
+radius = 50.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_3"]
+radius = 100.0
+
+[connection signal="body_entered" from="SparkNPC/DialogueTrigger" to="SparkNPC" method="_on_body_entered"]
+[connection signal="body_exited" from="SparkNPC/DialogueTrigger" to="SparkNPC" method="_on_body_exited"]
