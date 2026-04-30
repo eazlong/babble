@@ -19,6 +19,7 @@ var _poll_count: int = 0
 var _frame_count: int = 0
 var _max_vol: float = 0.0
 var _last_debug_time: float = 0.0
+var _dumped_samples: bool = false
 
 signal voice_started()
 signal voice_ended(audio_data: PackedByteArray)
@@ -45,6 +46,7 @@ func start_listening() -> void:
 	_poll_count = 0
 	_frame_count = 0
 	_max_vol = 0.0
+	_dumped_samples = false
 	_last_debug_time = Time.get_ticks_msec() / 1000.0
 	listening_started.emit()
 	print("[VoicePipeline] start_listening: threshold=", silence_threshold)
@@ -63,13 +65,26 @@ func _start_microphone() -> void:
 	if mic_player and mic_player.playing:
 		return
 
+	# Print all available input devices
 	var input_devices = AudioServer.get_input_device_list()
+	print("[VoicePipeline] Input devices (", input_devices.size(), "):")
+	for i in range(input_devices.size()):
+		print("  [", i, "] ", input_devices[i])
+
 	if input_devices.is_empty():
 		push_warning("[VoicePipeline] No audio input devices found!")
 		return
 
-	AudioServer.set_input_device(input_devices[0])
-	print("[VoicePipeline] Using input device: ", input_devices[0])
+	# Try to find a non-default, non-aggregate device first
+	var selected_device = input_devices[0]
+	for device in input_devices:
+		var lower = device.to_lower()
+		if "microphone" in lower or "mic" in lower or "built-in" in lower:
+			selected_device = device
+			break
+
+	AudioServer.set_input_device(selected_device)
+	print("[VoicePipeline] Selected input device: ", selected_device)
 
 	var mic_stream = AudioStreamMicrophone.new()
 	mic_player = AudioStreamPlayer.new()
@@ -79,7 +94,7 @@ func _start_microphone() -> void:
 	add_child(mic_player)
 	mic_player.play()
 
-	print("[VoicePipeline] MicPlayer created on Record bus, playing=", mic_player.playing)
+	print("[VoicePipeline] MicPlayer on bus=", mic_player.bus, " playing=", mic_player.playing)
 
 func _stop_microphone() -> void:
 	if not mic_player:
@@ -102,6 +117,14 @@ func _process(delta: float) -> void:
 
 		if frames.size() > 0:
 			_frame_count += 1
+
+			# Dump first few raw samples for debugging
+			if not _dumped_samples and _frame_count <= 3:
+				_dumped_samples = true
+				print("[VoicePipeline] Raw samples (first 10 frames):")
+				for i in range(mini(10, frames.size())):
+					print("  frame[", i, "] x=", frames[i].x, " y=", frames[i].y)
+
 			var volume = calculate_volume(frames)
 			if volume > _max_vol:
 				_max_vol = volume
