@@ -47,3 +47,8 @@ func hide_hint() -> void:
 
 func set_emotion(emotion: String) -> void:
 	coach_sprite.play(emotion)
+
+func show_hint_for_duration(text: String, emotion: String, ttl_ms: int) -> void:
+	show_hint(text, emotion)
+	await get_tree().create_timer(float(ttl_ms) / 1000.0).timeout
+	hide_hint()

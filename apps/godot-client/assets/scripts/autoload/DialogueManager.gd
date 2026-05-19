@@ -14,6 +14,7 @@ func _ready() -> void:
 	HybridAPI.dialogue_received.connect(_on_dialogue_received)
 	HybridAPI.tts_received.connect(_on_tts_received)
 	VoicePipeline.voice_ended.connect(_on_voice_ended)
+	CoachClient.intervention_received.connect(_on_coach_intervention)
 
 func start_npc_dialogue(npc_id: String, greeting: String) -> void:
 	current_npc_id = npc_id
@@ -30,6 +31,8 @@ func start_npc_dialogue(npc_id: String, greeting: String) -> void:
 	await AudioManager.tts_finished
 	VoicePipeline.start_listening()
 	DialogueBox.show_voice_listening()
+
+	CoachClient.connect_for_session("dialogue-" + str(Time.get_unix_time_from_system()))
 
 func _on_voice_ended(audio_data: PackedByteArray) -> void:
 	if dialogue_state != "active":
@@ -60,6 +63,16 @@ func _on_voice_ended(audio_data: PackedByteArray) -> void:
 	VoicePipeline.start_listening()
 	DialogueBox.show_voice_listening()
 
+func _on_coach_intervention(payload: Dictionary) -> void:
+	CoachOverlay.show_hint_for_duration(
+		payload.get("text", ""),
+		payload.get("emotion", "neutral"),
+		payload.get("ttl_ms", 8000)
+	)
+	if payload.get("should_tts", false):
+		var phrase = payload.get("repeat_phrase", payload.get("text", ""))
+		HybridAPI.synthesize_tts(phrase, "spirit", GameManager.current_lang)
+
 func _on_asr_received(result: Dictionary) -> void:
 	pass
 
@@ -73,6 +86,7 @@ func end_dialogue() -> void:
 	dialogue_state = "idle"
 	VoicePipeline.stop_listening()
 	DialogueBox.hide_message()
+	CoachClient.disconnect_socket()
 	dialogue_ended.emit()
 
 	GameManager.completed_dialogues.append(current_npc_id)
