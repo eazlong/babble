@@ -1,17 +1,24 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import Redis from 'ioredis'
 import { registerDialogueRoutes } from './routes/dialogue.js'
+import { CoachPublisher } from './services/coach-publisher.js'
 
 const app = Fastify({ logger: true })
 
+const redisUrl = process.env.REDIS_URL ?? 'redis://localhost:6380'
+const coachPublisher = new CoachPublisher(new Redis(redisUrl))
+
 app.register(cors, { origin: true })
 
-app.register(registerDialogueRoutes)
+app.register(async (instance) => {
+  await registerDialogueRoutes(instance, coachPublisher)
+})
 
 app.get('/health', async () => ({
   status: 'ok',
   service: 'dialogue-service',
-  timestamp: new Date().toISOString()
+  timestamp: new Date().toISOString(),
 }))
 
 const start = async () => {
