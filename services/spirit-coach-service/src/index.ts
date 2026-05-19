@@ -32,7 +32,9 @@ const consumer = new CoachInputConsumer(
 
 app.register(cors, { origin: true })
 app.register(websocket)
-app.register(registerCoachRoutes)
+app.register(async (instance) => {
+  await registerCoachRoutes(instance, redis)
+})
 app.register(async (instance) => {
   await registerCoachWsRoute(instance, sessionManager)
 })

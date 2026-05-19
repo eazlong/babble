@@ -1,6 +1,6 @@
 extends Node
 
-const API_BASE_URL = "http://localhost:3000/api"
+const API_BASE_URL = "http://localhost:8301"
 
 var http_request: HTTPRequest
 
@@ -10,13 +10,18 @@ signal asr_received(result: Dictionary)
 signal dialogue_received(result: Dictionary)
 signal api_error(error: String)
 
+var coach_http_request: HTTPRequest
+
 func _ready() -> void:
 	http_request = HTTPRequest.new()
 	add_child(http_request)
 	http_request.request_completed.connect(_on_request_completed)
 
+	coach_http_request = HTTPRequest.new()
+	add_child(coach_http_request)
+
 func ping_services() -> void:
-	var error = http_request.request(API_BASE_URL + "/ping", HTTPClient.METHOD_GET)
+	var error = http_request.request(API_BASE_URL + "/ping", [], HTTPClient.METHOD_GET)
 	if error != OK:
 		api_error.emit("Failed to ping services: " + str(error))
 
@@ -27,7 +32,7 @@ func synthesize_tts(text: String, voice_id: String = "spirit", lang: String = "z
 		"lang": lang
 	})
 	var headers = ["Content-Type: application/json"]
-	var error = http_request.request(API_BASE_URL + "/tts/synthesize", HTTPClient.METHOD_POST, headers, body)
+	var error = http_request.request(API_BASE_URL + "/tts/synthesize", headers, HTTPClient.METHOD_POST, body)
 	if error != OK:
 		api_error.emit("TTS request failed: " + str(error))
 
@@ -37,7 +42,7 @@ func recognize_speech(audio_data: PackedByteArray, lang: String = "zh") -> void:
 		"lang": lang
 	})
 	var headers = ["Content-Type: application/json"]
-	var error = http_request.request(API_BASE_URL + "/asr/recognize", HTTPClient.METHOD_POST, headers, body)
+	var error = http_request.request(API_BASE_URL + "/api/v1/voice/asr/json", headers, HTTPClient.METHOD_POST, body)
 	if error != OK:
 		api_error.emit("ASR request failed: " + str(error))
 
@@ -49,7 +54,7 @@ func send_dialogue(user_text: String, npc_id: String, context: Array = []) -> vo
 		"lang": GameManager.current_lang
 	})
 	var headers = ["Content-Type: application/json"]
-	var error = http_request.request(API_BASE_URL + "/dialogue/generate", HTTPClient.METHOD_POST, headers, body)
+	var error = http_request.request("http://localhost:8302/api/v1/dialogue", headers, HTTPClient.METHOD_POST, body)
 	if error != OK:
 		api_error.emit("Dialogue request failed: " + str(error))
 
@@ -90,10 +95,41 @@ func _on_request_completed(result: int, response_code: int, headers: PackedStrin
 		return
 
 	if json.has("audio_data"):
+		# Play TTS audio immediately via AudioManager
+		var audio_data: String = json.get("audio_data", "")
+		var format_type: String = json.get("format", "wav")
+		AudioManager.play_audio_from_base64(audio_data, format_type)
 		tts_received.emit(json)
 	elif json.has("text"):
 		asr_received.emit(json)
-	elif json.has("response"):
+	elif json.has("npc_text") or json.has("response"):
+		# Normalize dialogue response format
+		if json.has("npc_text") and not json.has("response"):
+			json["response"] = json["npc_text"]
 		dialogue_received.emit(json)
 	else:
 		services_ready.emit()
+
+func publish_coach_silence_timeout(session_id: String, npc_id: String, silence_ms: int) -> void:
+	var body = JSON.stringify({
+		"event_type": "silence_timeout",
+		"session_id": session_id,
+		"user_id": "anonymous",
+		"npc_id": npc_id,
+		"silence_ms": silence_ms,
+		"timestamp": Time.get_unix_time_from_system() * 1000,
+	})
+	var headers = ["Content-Type: application/json"]
+	coach_http_request.request("http://localhost:8305/api/v1/coach/events", headers, HTTPClient.METHOD_POST, body)
+
+func publish_coach_wake_request(session_id: String, npc_id: String, player_text: String) -> void:
+	var body = JSON.stringify({
+		"event_type": "wake_request",
+		"session_id": session_id,
+		"user_id": "anonymous",
+		"npc_id": npc_id,
+		"player_text": player_text,
+		"timestamp": Time.get_unix_time_from_system() * 1000,
+	})
+	var headers = ["Content-Type: application/json"]
+	coach_http_request.request("http://localhost:8305/api/v1/coach/events", headers, HTTPClient.METHOD_POST, body)

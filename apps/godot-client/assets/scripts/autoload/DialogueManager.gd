@@ -3,6 +3,8 @@ extends Node
 var current_npc_id: String = ""
 var dialogue_history: Array[Dictionary] = []
 var dialogue_state: String = "idle"
+var coach_session_id: String = ""
+var silence_timer: Timer
 
 signal dialogue_started(npc_id: String)
 signal dialogue_ended()
@@ -15,6 +17,11 @@ func _ready() -> void:
 	HybridAPI.tts_received.connect(_on_tts_received)
 	VoicePipeline.voice_ended.connect(_on_voice_ended)
 	CoachClient.intervention_received.connect(_on_coach_intervention)
+
+	silence_timer = Timer.new()
+	silence_timer.one_shot = true
+	silence_timer.timeout.connect(_on_silence_timeout)
+	add_child(silence_timer)
 
 func start_npc_dialogue(npc_id: String, greeting: String) -> void:
 	current_npc_id = npc_id
@@ -32,7 +39,9 @@ func start_npc_dialogue(npc_id: String, greeting: String) -> void:
 	VoicePipeline.start_listening()
 	DialogueBox.show_voice_listening()
 
-	CoachClient.connect_for_session("dialogue-" + str(Time.get_unix_time_from_system()))
+	coach_session_id = "dialogue-" + str(Time.get_unix_time_from_system())
+	CoachClient.connect_for_session(coach_session_id)
+	_reset_silence_watch()
 
 func _on_voice_ended(audio_data: PackedByteArray) -> void:
 	if dialogue_state != "active":
@@ -42,6 +51,9 @@ func _on_voice_ended(audio_data: PackedByteArray) -> void:
 	DialogueBox.hide_voice_listening()
 
 	var result = await HybridAPI.process_voice_dialogue(audio_data, current_npc_id, GameManager.current_lang)
+
+	if _is_wake_request(result.get("user_text", "")):
+		HybridAPI.publish_coach_wake_request(coach_session_id, current_npc_id, result.user_text)
 
 	if result.has("error"):
 		DialogueBox.show_message(current_npc_id, "抱歉，我没听清楚，请再说一次。")
@@ -62,6 +74,7 @@ func _on_voice_ended(audio_data: PackedByteArray) -> void:
 	dialogue_state = "active"
 	VoicePipeline.start_listening()
 	DialogueBox.show_voice_listening()
+	_reset_silence_watch()
 
 func _on_coach_intervention(payload: Dictionary) -> void:
 	CoachOverlay.show_hint_for_duration(
@@ -84,6 +97,7 @@ func _on_tts_received(result: Dictionary) -> void:
 
 func end_dialogue() -> void:
 	dialogue_state = "idle"
+	silence_timer.stop()
 	VoicePipeline.stop_listening()
 	DialogueBox.hide_message()
 	CoachClient.disconnect_socket()
@@ -91,3 +105,15 @@ func end_dialogue() -> void:
 
 	GameManager.completed_dialogues.append(current_npc_id)
 	GameManager.save_progress()
+
+func _reset_silence_watch() -> void:
+	silence_timer.start(15.0)
+
+func _on_silence_timeout() -> void:
+	if dialogue_state != "active" and dialogue_state != "waiting_response":
+		return
+	HybridAPI.publish_coach_silence_timeout(coach_session_id, current_npc_id, 15000)
+
+func _is_wake_request(text: String) -> bool:
+	var lower = text.to_lower()
+	return lower.containsn("help") or lower.containsn("help me") or lower.containsn("帮帮我") or lower.containsn("帮助")
