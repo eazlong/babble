@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { CoachInputConsumer } from '../workers/coach-input-consumer.js'
+import { CoachSessionManager } from '../services/coach-session-manager.js'
 import { ErrorDetector } from '../services/error-detector.js'
 import { TriggerClassifier } from '../services/trigger-classifier.js'
 import { InterventionPolicy } from '../services/intervention-policy.js'
@@ -67,5 +68,19 @@ describe('CoachInputConsumer', () => {
     expect(redis.added[0].stream).toBe('coach.intervention')
     expect(redis.added[0].values.trigger).toBe('wake')
     expect(sessionManager.push).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('CoachSessionManager', () => {
+  it('pushes payloads to the matching session connection', async () => {
+    const sent: string[] = []
+    const socket = { send: vi.fn((message: string) => sent.push(message)) }
+    const manager = new CoachSessionManager()
+
+    manager.attach('session-1', socket as never)
+    await manager.push('session-1', { trigger: 'wake', text: 'hello' })
+
+    expect(socket.send).toHaveBeenCalledTimes(1)
+    expect(sent[0]).toContain('wake')
   })
 })
