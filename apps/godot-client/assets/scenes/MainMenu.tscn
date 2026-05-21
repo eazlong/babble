@@ -10,7 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://cvum2t5x801th" path="res://assets/resources/sprites/spark/62_480x270.png" id="8_okxhj"]
 [ext_resource type="Texture2D" uid="uid://pxbjt0mdfhyh" path="res://assets/resources/sprites/spark/63_480x270.png" id="9_vscvj"]
 [ext_resource type="Texture2D" uid="uid://cr0kg0qkyiy5o" path="res://assets/resources/sprites/spark/64_480x270.png" id="10_gii3d"]
-[ext_resource type="Texture2D" uid="uid://bydxyb37nclba" path="res://assets/resources/sprites/spark/spark_idle.jpg" id="11_wkjvu"]
+[ext_resource type="Texture2D" uid="uid://cscran6sftqi7" path="res://assets/resources/sprites/spark/spark_idle.png" id="11_jrfyc"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_t6dbj"]
 animations = [{
@@ -45,7 +45,7 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("11_wkjvu")
+"texture": ExtResource("11_jrfyc")
 }],
 "loop": true,
 "name": &"idle",
@@ -90,7 +90,7 @@ metadata/_edit_use_anchors_ = true
 visible = false
 position = Vector2(1508, 691)
 sprite_frames = SubResource("SpriteFrames_t6dbj")
-animation = &"fly"
+animation = &"idle"
 
 [node name="DialogueBubble" type="Panel" parent="CoachOverlay" unique_id=80702915]
 visible = false
@@ -112,6 +112,32 @@ offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
 bbcode_enabled = true
+
+[node name="MicPanel" type="Control" parent="." unique_id=949018238]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MicIcon" type="ColorRect" parent="MicPanel" unique_id=94258605]
+layout_mode = 1
+offset_left = 600.0
+offset_top = 340.0
+offset_right = 680.0
+offset_bottom = 420.0
+color = Color(0.2, 0.8, 0.4, 1)
+
+[node name="MicLabel" type="Label" parent="MicPanel" unique_id=159701933]
+layout_mode = 1
+offset_left = 540.0
+offset_top = 430.0
+offset_right = 740.0
+offset_bottom = 465.0
+text = "请说话..."
+horizontal_alignment = 1
 
 [node name="LangPanel" type="Control" parent="." unique_id=74705143]
 visible = false

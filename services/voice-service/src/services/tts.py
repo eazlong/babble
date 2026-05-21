@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from elevenlabs.client import ElevenLabs
 
 from src.services.fish_client import FishSpeechClient
-from src.services.ref_manager import VoiceReferenceManager
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +26,6 @@ class TTSService:
         # Fish Speech client
         self.fish_client = FishSpeechClient()
         self.fish_available = False
-
-        # Reference manager
-        self.ref_manager = VoiceReferenceManager()
 
         # ElevenLabs fallback
         if self.api_key:
@@ -54,8 +50,7 @@ class TTSService:
         # Try Fish Speech first
         if self.fish_available:
             try:
-                ref_audio = self.ref_manager.get_reference(voice_id)
-                audio_bytes = await self.fish_client.synthesize(text, ref_audio)
+                audio_bytes = await self.fish_client.synthesize(text, voice_id)
                 return base64.b64encode(audio_bytes).decode("utf-8"), "wav"
             except Exception as e:
                 logger.error(f"Fish Speech error: {e}, falling back")

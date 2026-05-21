@@ -6,7 +6,7 @@ const cooldownSeconds = {
 export class InterventionPolicy {
   constructor(private readonly redis: {
     get(key: string): Promise<string | null>
-    set(key: string, value: string, mode?: string, ttlKey?: string, ttl?: number): Promise<unknown>
+    set(key: string, value: string, mode?: string, ttl?: number): Promise<unknown>
   }) {}
 
   async shouldIntervene({ trigger, userId }: { trigger: 'wake' | 'error' | 'silence'; userId: string }) {

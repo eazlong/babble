@@ -1,15 +1,15 @@
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN corepack enable && pnpm install --frozen-lockfile --prod
+COPY package.json package-lock.json* ./
+RUN npm install
 COPY . .
-RUN pnpm build
+RUN npx tsc
 
-FROM node:20-alpine
+FROM node:22-alpine
 WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 EXPOSE 8302
-HEALTHCHECK --interval=30s --timeout=5s CMD wget -qO- http://localhost:8302/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s CMD wget -qO- http://127.0.0.1:8302/health || exit 1
 CMD ["node", "dist/index.js"]

@@ -7,7 +7,7 @@ import { CoachPublisher } from './services/coach-publisher.js'
 const app = Fastify({ logger: true })
 
 const redisUrl = process.env.REDIS_URL ?? 'redis://localhost:6380'
-const coachPublisher = new CoachPublisher(new Redis(redisUrl))
+const coachPublisher = new CoachPublisher(new Redis(redisUrl) as any)
 
 app.register(cors, { origin: true })
 

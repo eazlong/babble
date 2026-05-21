@@ -24,6 +24,8 @@ export async function registerDialogueRoutes(app: FastifyInstance, coachPublishe
       formality: 'informal' as const,
       vocabulary_level: 'basic' as const,
       personality: 'helpful',
+      role: 'merchant',
+      cefr_level: 'A1',
     }
 
     const result = await npcEngine.processDialogue(

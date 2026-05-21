@@ -21,3 +21,14 @@ async def synthesize_speech(req: TTSRequest):
         "duration_ms": len(req.text) * 50,
         "format": format_type
     }
+
+
+@router.post("/tts/synthesize")
+async def synthesize_speech_godot(req: TTSRequest):
+    """Godot client compatible endpoint."""
+    audio_data, format_type = await tts_service.synthesize_audio(req.text, req.voice_id)
+    return {
+        "audio_data": audio_data,
+        "duration_ms": len(req.text) * 50,
+        "format": format_type
+    }

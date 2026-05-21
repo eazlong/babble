@@ -5,6 +5,7 @@ var dialogue_history: Array[Dictionary] = []
 var dialogue_state: String = "idle"
 var coach_session_id: String = ""
 var silence_timer: Timer
+var coach_overlay: CoachOverlay
 
 signal dialogue_started(npc_id: String)
 signal dialogue_ended()
@@ -77,11 +78,12 @@ func _on_voice_ended(audio_data: PackedByteArray) -> void:
 	_reset_silence_watch()
 
 func _on_coach_intervention(payload: Dictionary) -> void:
-	CoachOverlay.show_hint_for_duration(
-		payload.get("text", ""),
-		payload.get("emotion", "neutral"),
-		payload.get("ttl_ms", 8000)
-	)
+	if coach_overlay:
+		coach_overlay.show_hint_for_duration(
+			payload.get("text", ""),
+			payload.get("emotion", "neutral"),
+			payload.get("ttl_ms", 8000)
+		)
 	if payload.get("should_tts", false):
 		var phrase = payload.get("repeat_phrase", payload.get("text", ""))
 		HybridAPI.synthesize_tts(phrase, "spirit", GameManager.current_lang)

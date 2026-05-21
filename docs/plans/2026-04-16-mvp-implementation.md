@@ -410,7 +410,7 @@ services:
 
   voice-service:
     build: ./services/voice-service
-    ports: ["8001:8001"]
+    ports: ["8301:8301"]
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY}

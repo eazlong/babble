@@ -20,12 +20,12 @@ async def test_tts_endpoint_silent_fallback():
     assert response.status_code == 200
     data = response.json()
     assert "audio_data" in data
-    assert data["format"] == "wav"  # Silent fallback always produces WAV
+    assert data["format"] == "wav"
 
 
 @pytest.mark.asyncio
-async def test_tts_with_base64_reference():
-    """Test TTS with inline base64 reference audio."""
+async def test_tts_with_custom_voice():
+    """Test TTS endpoint handles custom voice_id in silent fallback."""
     tts_service.fish_available = False
     tts_service.elevenlabs = None
 
@@ -35,7 +35,7 @@ async def test_tts_with_base64_reference():
             "/api/v1/voice/tts",
             json={
                 "text": "Test",
-                "voice_id": "base64://AAAA",  # Fake reference
+                "voice_id": "scholar",
             },
         )
 

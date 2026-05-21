@@ -19,11 +19,11 @@ const redis = new Redis(redisUrl)
 const sessionManager = new CoachSessionManager()
 const errorDetector = new ErrorDetector()
 const classifier = new TriggerClassifier(errorDetector)
-const policy = new InterventionPolicy(redis)
+const policy = new InterventionPolicy(redis as any)
 const generator = new CoachHintGenerator()
 
 const consumer = new CoachInputConsumer(
-  redis,
+  redis as any,
   classifier,
   policy,
   generator,

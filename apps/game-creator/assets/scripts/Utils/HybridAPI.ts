@@ -10,6 +10,7 @@ const SERVICES = {
   content: 'http://localhost:8308',
   dialogue: 'http://localhost:8309',
   quest: 'http://localhost:8310',
+  voice: 'http://localhost:8301'
 }
 
 interface QuestData {

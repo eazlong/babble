@@ -7,6 +7,9 @@ class_name CoachOverlay
 
 @export var fly_duration: float = 4.0
 
+func _ready() -> void:
+	DialogueManager.coach_overlay = self
+
 signal fly_in_completed()
 signal hint_shown()
 

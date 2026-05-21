@@ -1,15 +1,18 @@
-"""Fish Speech HTTP client for local TTS."""
+"""F5-TTS HTTP client for local TTS."""
 
 import os
 import httpx
-import base64
 import logging
 
 logger = logging.getLogger(__name__)
 
 
 class FishSpeechClient:
-    """Client for Fish Speech TTS HTTP server."""
+    """Client for F5-TTS / Fish Speech TTS HTTP server.
+
+    Supports both F5-TTS (/v1/tts with voice_id) and
+    Fish Speech (/v1/tts with reference_audio) API formats.
+    """
 
     def __init__(self, base_url: str | None = None):
         self.base_url = base_url or os.environ.get(
@@ -17,58 +20,56 @@ class FishSpeechClient:
         )
         self.client = httpx.AsyncClient(timeout=30.0)
         self.healthy = False
+        self.is_f5 = False  # Detected after health check
         logger.info(f"FishSpeechClient initialized with base_url: {self.base_url}")
 
     async def health_check(self) -> bool:
-        """Check if Fish Speech server is available."""
+        """Check if TTS server is available and detect type."""
         try:
             resp = await self.client.get(f"{self.base_url}/health")
-            self.healthy = resp.status_code == 200
-            if self.healthy:
-                logger.info("Fish Speech health check passed")
+            if resp.status_code == 200:
+                body = resp.json()
+                # F5-TTS server returns {"model": "f5-tts-mlx"}
+                self.is_f5 = body.get("model", "").startswith("f5")
+                self.healthy = True
+                server_type = "F5-TTS" if self.is_f5 else "Fish Speech"
+                logger.info(f"Health check passed ({server_type})")
             else:
-                logger.warning(f"Fish Speech health check failed: {resp.status_code}")
+                self.healthy = False
+                logger.warning(f"Health check failed: {resp.status_code}")
         except Exception as e:
             self.healthy = False
-            logger.warning(f"Fish Speech health check error: {e}")
+            logger.warning(f"Health check error: {e}")
         return self.healthy
 
     async def synthesize(
-        self, text: str, ref_audio: bytes | None = None, output_format: str = "wav"
+        self, text: str, voice_id: str = "spirit"
     ) -> bytes:
-        """Synthesize text to audio using Fish Speech API.
+        """Synthesize text to audio.
 
         Args:
             text: Text to synthesize
-            ref_audio: Optional reference audio for voice cloning
-            output_format: Output format (wav or mp3)
+            voice_id: Voice identifier (resolved server-side via voices.json)
 
         Returns:
             Audio bytes
         """
-        payload = {
-            "text": text,
-            "output_format": output_format,
-            "latency": "balanced",
-        }
-
-        if ref_audio:
-            payload["reference_audio"] = base64.b64encode(ref_audio).decode()
+        payload = {"text": text, "voice_id": voice_id}
 
         try:
             resp = await self.client.post(
                 f"{self.base_url}/v1/tts",
                 json=payload,
-                timeout=30.0,
+                timeout=60.0,
             )
             resp.raise_for_status()
-            logger.info(f"Fish Speech synthesized: {len(resp.content)} bytes")
+            logger.info(f"Synthesized: {len(resp.content)} bytes")
             return resp.content
         except httpx.HTTPStatusError as e:
-            logger.error(f"Fish Speech API error: {e.response.status_code}")
+            logger.error(f"API error: {e.response.status_code} - {e.response.text}")
             raise
         except Exception as e:
-            logger.error(f"Fish Speech synthesis error: {e}")
+            logger.error(f"Synthesis error: {e}")
             raise
 
     async def close(self):

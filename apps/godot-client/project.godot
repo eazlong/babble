@@ -27,6 +27,7 @@ VoicePipeline="*res://assets/scripts/autoload/VoicePipeline.gd"
 DialogueManager="*res://assets/scripts/autoload/DialogueManager.gd"
 AudioManager="*res://assets/scripts/autoload/AudioManager.gd"
 DialogueBox="*res://assets/scripts/autoload/DialogueBox.gd"
+CoachClient="*res://assets/scripts/autoload/CoachClient.gd"
 
 [display]
 

@@ -65,7 +65,7 @@ export class VoicePipeline {
         text: string
         confidence: number
         language: string
-      }>('/voice/asr', formData)
+      }>('/api/v1/voice/asr', formData, 'voice')
 
       if (error ?? !asrResult) {
         this.errorCb?.(new Error(error?.message ?? 'ASR failed'))
@@ -75,22 +75,22 @@ export class VoicePipeline {
       const { data: dialogueResult, error: dialogueError } = await http.post<{
         npc_text: string
         lxp_earned: number
-      }>('/dialogue', {
+      }>('/api/v1/dialogue', {
         npc_id: this.currentNpcId,
         player_input: asrResult.text,
         session_id: this.currentSessionId,
         language: this.currentLanguage
-      })
+      }, 'dialogue')
 
       if (dialogueError ?? !dialogueResult) {
         this.errorCb?.(new Error(dialogueError?.message ?? 'Dialogue failed'))
         return
       }
 
-      const { data: ttsResult } = await http.post<{ audio_url: string }>('/voice/tts', {
+      const { data: ttsResult } = await http.post<{ audio_url: string }>('/api/v1/voice/tts', {
         text: dialogueResult.npc_text,
         voice_id: 'merchant'
-      })
+      }, 'voice')
 
       if (ttsResult?.audio_url) {
         await this.audioManager.playAudio(ttsResult.audio_url)

@@ -1,0 +1,30 @@
+{
+  "voices": {
+    "spirit": {
+      "file": "audio.wav",
+      "ref_text": "您通话的客户正在使用呼叫保持服务",
+      "the": "Some call me nature, otherise call me mother nature"
+    },
+    "scholar": {
+      "file": "scholar.wav",
+      "ref_text": "Welcome to the academy."
+    },
+    "merchant": {
+      "file": "merchant.wav",
+      "ref_text": "Come browse my wares."
+    },
+    "storyteller": {
+      "file": "storyteller.wav",
+      "ref_text": "Once upon a time..."
+    },
+    "receptionist": {
+      "file": "receptionist.wav",
+      "ref_text": "Welcome to the hotel."
+    },
+    "street_child": {
+      "file": "street_child.wav",
+      "ref_text": "Hey mister, got a coin?"
+    }
+  },
+  "audio_dir": "../../shared/assets/voices"
+}
