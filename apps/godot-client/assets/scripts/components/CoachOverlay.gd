@@ -261,35 +261,57 @@ func _on_bubble_ttl_timeout() -> void:
 		_current_state = STATE_IDLE
 		_play_idle()
 
-# ── Legacy API stubs (full impl in Task 6) ──
+# ── Legacy API Compatibility ──
 
 func fly_in_from(start_pos: Vector2, end_pos: Vector2, duration: float = fly_duration, callback: Callable = Callable()) -> void:
-	coach_sprite.position = end_pos
+	_kill_all_tweens()
+
+	coach_sprite.position = start_pos
 	coach_sprite.visible = true
-	_base_position = end_pos
+	coach_sprite.modulate.a = 1.0
+	coach_sprite.scale = Vector2(1.0, 1.0)
+	_is_present = true
+
+	_play_sprite_animation("fly")
+
+	_state_tween = create_tween()
+	_state_tween.set_ease(Tween.EASE_IN_OUT)
+	_state_tween.set_trans(Tween.TRANS_QUAD)
+	_state_tween.tween_property(coach_sprite, "position", end_pos, duration)
+
 	if callback.is_valid():
-		callback.call()
+		_state_tween.tween_callback(callback)
 	else:
-		fly_in_completed.emit()
+		_state_tween.tween_callback(func():
+			fly_in_completed.emit()
+			_base_position = end_pos
+			_current_state = STATE_IDLE
+			_play_idle()
+		)
 
 func show_hint(text: String, emotion: String = "neutral") -> void:
-	dialogue_text.text = text
-	dialogue_bubble.visible = true
-	dialogue_bubble.modulate.a = 1.0
+	var state = STATE_HINT
+	if emotion in PRIORITY:
+		state = emotion
+	play_state(state, text)
 	hint_shown.emit()
 
 func show_hint_for_duration(text: String, emotion: String, ttl_ms: int) -> void:
-	show_hint(text, emotion)
-	await get_tree().create_timer(float(ttl_ms) / 1000.0).timeout
-	hide_hint()
+	var state = STATE_HINT
+	if emotion in PRIORITY:
+		state = emotion
+	play_state(state, text, ttl_ms)
 
 func set_emotion(emotion: String) -> void:
-	if _has_animation(emotion):
+	if emotion in PRIORITY:
+		play_state(emotion)
+	elif _has_animation(emotion):
 		coach_sprite.play(emotion)
 
 func hide_hint() -> void:
-	dialogue_bubble.visible = false
-	dialogue_bubble.modulate.a = 0.0
+	_hide_bubble()
+	if _current_state == STATE_HINT or _current_state == STATE_SPEAKING:
+		play_state(STATE_IDLE)
 
 # ── Main Public API ──
 
