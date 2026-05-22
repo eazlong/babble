@@ -291,11 +291,54 @@ func hide_hint() -> void:
 	dialogue_bubble.visible = false
 	dialogue_bubble.modulate.a = 0.0
 
-func play_state(_state: String, _text: String = "", _ttl_ms: int = 0) -> void:
-	pass
+# ── Main Public API ──
+
+func play_state(state: String, text: String = "", ttl_ms: int = 0) -> void:
+	if not state in PRIORITY:
+		printerr("[CoachOverlay] Unknown state: ", state)
+		return
+
+	if not _is_present and state not in [STATE_ENTER, STATE_EXIT]:
+		return
+
+	var new_priority: int = PRIORITY[state]
+	var current_priority: int = PRIORITY[_current_state]
+	if new_priority < current_priority:
+		return
+
+	if state == STATE_HAPPY:
+		_kill_all_tweens()
+		_play_happy(text)
+		return
+
+	_current_state = state
+	_kill_all_tweens()
+	_stop_bubble_ttl()
+
+	match state:
+		STATE_IDLE:
+			_play_idle()
+		STATE_ENTER:
+			_play_enter()
+		STATE_EXIT:
+			_play_exit()
+		STATE_SPEAKING:
+			_play_speaking()
+		STATE_HINT:
+			_play_hint_state()
+		STATE_THINKING:
+			_play_thinking()
+
+	if text != "":
+		_show_bubble(text)
+		if ttl_ms > 0:
+			_bubble_ttl_timer.start(float(ttl_ms) / 1000.0)
+	elif not state in STATES_WITH_BUBBLE:
+		_hide_bubble()
 
 func show_presence() -> void:
-	pass
+	_is_present = true
+	play_state(STATE_ENTER)
 
 func hide_presence() -> void:
-	pass
+	play_state(STATE_EXIT)
