@@ -86,22 +86,79 @@ func _play_sprite_animation(anim_name: String) -> void:
 	elif _has_animation(STATE_IDLE):
 		coach_sprite.play(STATE_IDLE)
 
-# ── Stubs (to be implemented in later tasks) ──
+# ── Idle Loop ──
 
 func _start_idle_loop() -> void:
-	pass
+	_kill_idle_tweens()
+
+	var pos = _base_position
+
+	_idle_tween = create_tween()
+	_idle_tween.set_loops()
+	_idle_tween.tween_property(coach_sprite, "position:y", pos.y - 6, 2.0) \
+		.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+	_idle_tween.tween_property(coach_sprite, "position:y", pos.y + 6, 2.0) \
+		.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+
+	_breathe_tween = create_tween()
+	_breathe_tween.set_loops()
+	_breathe_tween.tween_property(coach_sprite, "scale", Vector2(1.04, 1.04), 2.0) \
+		.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+	_breathe_tween.tween_property(coach_sprite, "scale", Vector2(1.0, 1.0), 2.0) \
+		.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
 
 func _kill_idle_tweens() -> void:
-	pass
+	if _idle_tween and _idle_tween.is_valid():
+		_idle_tween.kill()
+	if _breathe_tween and _breathe_tween.is_valid():
+		_breathe_tween.kill()
+
+# ── State: idle ──
 
 func _play_idle() -> void:
-	pass
+	coach_sprite.visible = true
+	_play_sprite_animation(STATE_IDLE)
+	_hide_bubble()
+	_start_idle_loop()
+
+# ── State: enter ──
 
 func _play_enter() -> void:
-	pass
+	coach_sprite.visible = true
+	coach_sprite.modulate.a = 0
+	coach_sprite.scale = Vector2(0.8, 0.8)
+
+	_state_tween = create_tween()
+	_state_tween.set_parallel(true)
+	_state_tween.tween_property(coach_sprite, "modulate:a", 1.0, 0.5) \
+		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	_state_tween.tween_property(coach_sprite, "scale", Vector2(1.0, 1.0), 0.5) \
+		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	_state_tween.set_parallel(false)
+	_state_tween.tween_callback(func():
+		_current_state = STATE_IDLE
+		_play_idle()
+	)
+
+	_play_sprite_animation(STATE_ENTER)
+
+# ── State: exit ──
 
 func _play_exit() -> void:
-	pass
+	_state_tween = create_tween()
+	_state_tween.set_parallel(true)
+	_state_tween.tween_property(coach_sprite, "modulate:a", 0.0, 0.4) \
+		.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+	_state_tween.tween_property(coach_sprite, "scale", Vector2(0.7, 0.7), 0.4) \
+		.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+	_state_tween.set_parallel(false)
+	_state_tween.tween_callback(func():
+		coach_sprite.visible = false
+		_is_present = false
+		_hide_bubble()
+	)
+
+	_play_sprite_animation(STATE_EXIT)
 
 func _play_speaking() -> void:
 	pass
