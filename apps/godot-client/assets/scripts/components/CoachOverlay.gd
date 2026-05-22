@@ -226,16 +226,40 @@ func _play_happy(_text_override: String = "") -> void:
 	_play_sprite_animation(STATE_HAPPY)
 
 func _show_bubble(_text: String) -> void:
-	pass
+	if _bubble_tween and _bubble_tween.is_valid():
+		_bubble_tween.kill()
+
+	dialogue_text.text = _text
+	dialogue_bubble.visible = true
+	dialogue_bubble.modulate.a = 0
+	dialogue_bubble.scale = Vector2(0.9, 0.9)
+
+	_bubble_tween = create_tween()
+	_bubble_tween.set_parallel(true)
+	_bubble_tween.tween_property(dialogue_bubble, "modulate:a", 1.0, 0.3) \
+		.set_ease(Tween.EASE_OUT)
+	_bubble_tween.tween_property(dialogue_bubble, "scale", Vector2(1.0, 1.0), 0.3) \
+		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 
 func _hide_bubble() -> void:
-	pass
+	if _bubble_tween and _bubble_tween.is_valid():
+		_bubble_tween.kill()
+
+	_bubble_tween = create_tween()
+	_bubble_tween.tween_property(dialogue_bubble, "modulate:a", 0.0, 0.25) \
+		.set_ease(Tween.EASE_IN)
+	_bubble_tween.tween_callback(func():
+		dialogue_bubble.visible = false
+	)
 
 func _stop_bubble_ttl() -> void:
-	pass
+	_bubble_ttl_timer.stop()
 
 func _on_bubble_ttl_timeout() -> void:
-	pass
+	_hide_bubble()
+	if _current_state in [STATE_SPEAKING, STATE_HINT]:
+		_current_state = STATE_IDLE
+		_play_idle()
 
 # ── Legacy API stubs (full impl in Task 6) ──
 
