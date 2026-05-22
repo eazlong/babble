@@ -161,16 +161,69 @@ func _play_exit() -> void:
 	_play_sprite_animation(STATE_EXIT)
 
 func _play_speaking() -> void:
-	pass
+	_kill_idle_tweens()
+
+	_idle_tween = create_tween()
+	_idle_tween.set_loops()
+	_idle_tween.tween_property(coach_sprite, "position:y", _base_position.y - 4, 0.8) \
+		.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+	_idle_tween.tween_property(coach_sprite, "position:y", _base_position.y + 4, 0.8) \
+		.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+
+	_play_sprite_animation(STATE_SPEAKING)
+
 
 func _play_hint_state() -> void:
-	pass
+	_kill_idle_tweens()
+
+	_idle_tween = create_tween()
+	_idle_tween.set_loops()
+	_idle_tween.tween_property(coach_sprite, "position:y", _base_position.y - 3, 2.5) \
+		.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+	_idle_tween.tween_property(coach_sprite, "position:y", _base_position.y + 3, 2.5) \
+		.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+
+	_play_sprite_animation(STATE_HINT)
+
 
 func _play_thinking() -> void:
-	pass
+	_kill_idle_tweens()
+
+	_idle_tween = create_tween()
+	_idle_tween.set_loops()
+	_idle_tween.tween_property(coach_sprite, "position:y", _base_position.y - 3, 3.5) \
+		.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+	_idle_tween.tween_property(coach_sprite, "position:y", _base_position.y + 3, 3.5) \
+		.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+
+	_state_tween = create_tween()
+	_state_tween.tween_property(coach_sprite, "modulate", Color(1.2, 1.2, 1.2, 1.0), 0.5) \
+		.set_ease(Tween.EASE_IN_OUT)
+
+	_play_sprite_animation(STATE_THINKING)
+
 
 func _play_happy(_text_override: String = "") -> void:
-	pass
+	_state_tween = create_tween()
+	_state_tween.tween_property(coach_sprite, "position:y", _base_position.y - 15, 0.3) \
+		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	_state_tween.parallel()
+	_state_tween.tween_property(coach_sprite, "scale", Vector2(1.15, 1.15), 0.3) \
+		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	_state_tween.tween_property(coach_sprite, "scale", Vector2(1.0, 1.0), 0.4) \
+		.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_ELASTIC)
+	_state_tween.parallel()
+	_state_tween.tween_property(coach_sprite, "position:y", _base_position.y, 0.4) \
+		.set_ease(Tween.EASE_IN_OUT)
+	_state_tween.tween_callback(func():
+		if _text_override != "":
+			_show_bubble(_text_override)
+			_bubble_ttl_timer.start(2.0)
+		_current_state = STATE_IDLE
+		_play_idle()
+	)
+
+	_play_sprite_animation(STATE_HAPPY)
 
 func _show_bubble(_text: String) -> void:
 	pass
