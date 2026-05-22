@@ -117,6 +117,7 @@ func _kill_idle_tweens() -> void:
 
 func _play_idle() -> void:
 	coach_sprite.visible = true
+	coach_sprite.modulate = Color.WHITE
 	_play_sprite_animation(STATE_IDLE)
 	_hide_bubble()
 	_start_idle_loop()
@@ -162,6 +163,7 @@ func _play_exit() -> void:
 
 func _play_speaking() -> void:
 	_kill_idle_tweens()
+	coach_sprite.modulate = Color.WHITE
 
 	_idle_tween = create_tween()
 	_idle_tween.set_loops()
@@ -175,6 +177,7 @@ func _play_speaking() -> void:
 
 func _play_hint_state() -> void:
 	_kill_idle_tweens()
+	coach_sprite.modulate = Color.WHITE
 
 	_idle_tween = create_tween()
 	_idle_tween.set_loops()
@@ -220,7 +223,9 @@ func _play_happy(_text_override: String = "") -> void:
 			_show_bubble(_text_override)
 			_bubble_ttl_timer.start(2.0)
 		_current_state = STATE_IDLE
-		_play_idle()
+		coach_sprite.modulate = Color.WHITE
+		_play_sprite_animation(STATE_IDLE)
+		_start_idle_loop()
 	)
 
 	_play_sprite_animation(STATE_HAPPY)
@@ -269,6 +274,7 @@ func fly_in_from(start_pos: Vector2, end_pos: Vector2, duration: float = fly_dur
 	coach_sprite.position = start_pos
 	coach_sprite.visible = true
 	coach_sprite.modulate.a = 1.0
+	coach_sprite.modulate = Color.WHITE
 	coach_sprite.scale = Vector2(1.0, 1.0)
 	_is_present = true
 
@@ -311,7 +317,8 @@ func set_emotion(emotion: String) -> void:
 func hide_hint() -> void:
 	_hide_bubble()
 	if _current_state == STATE_HINT or _current_state == STATE_SPEAKING:
-		play_state(STATE_IDLE)
+		_current_state = STATE_IDLE
+		_play_idle()
 
 # ── Main Public API ──
 
@@ -330,6 +337,7 @@ func play_state(state: String, text: String = "", ttl_ms: int = 0) -> void:
 
 	if state == STATE_HAPPY:
 		_kill_all_tweens()
+		_current_state = STATE_HAPPY
 		_play_happy(text)
 		return
 
