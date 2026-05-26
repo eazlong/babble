@@ -7,6 +7,7 @@ var tts_player: AudioStreamPlayer
 var bgm_volume: float = 0.8
 var sfx_volume: float = 1.0
 var tts_volume: float = 1.0
+var _tts_expected: bool = false
 
 signal tts_finished()
 
@@ -38,10 +39,16 @@ func play_sfx(stream: AudioStream) -> void:
 	sfx_player.play()
 
 func play_tts(stream: AudioStream) -> void:
+	_tts_expected = false
+	tts_player.stop()
+	_tts_expected = true
 	tts_player.stream = stream
 	tts_player.play()
 
 func _on_tts_finished() -> void:
+	if not _tts_expected:
+		return
+	_tts_expected = false
 	tts_finished.emit()
 
 func play_audio_from_base64(base64_data: String, format: String = "wav") -> void:
@@ -56,9 +63,13 @@ func play_audio_from_base64(base64_data: String, format: String = "wav") -> void
 		stream = _create_wav_stream(bytes)
 	elif format == "ogg":
 		stream = AudioStreamOggVorbis.load_from_buffer(bytes)
+	elif format.to_lower() == "mp3":
+		stream = AudioStreamMP3.load_from_buffer(bytes)
 
 	if stream:
 		play_tts(stream)
+	else:
+		push_error("Unsupported audio format: " + format)
 
 
 func _create_wav_stream(wav_bytes: PackedByteArray) -> AudioStreamWAV:

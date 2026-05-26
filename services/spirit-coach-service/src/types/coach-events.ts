@@ -14,7 +14,7 @@ const dialogueTurnSchema = z.object({
   player_text: z.string().min(1),
   npc_response: z.string().min(1),
   language: z.string().min(1),
-  timestamp: z.number().int(),
+  timestamp: z.number(),
 })
 
 const silenceTimeoutSchema = z.object({
@@ -23,7 +23,7 @@ const silenceTimeoutSchema = z.object({
   user_id: z.string().min(1),
   npc_id: z.string().min(1),
   silence_ms: z.number().int().min(15000),
-  timestamp: z.number().int(),
+  timestamp: z.number(),
 })
 
 const wakeRequestSchema = z.object({
@@ -32,7 +32,7 @@ const wakeRequestSchema = z.object({
   user_id: z.string().min(1),
   npc_id: z.string().min(1),
   player_text: z.string().min(1),
-  timestamp: z.number().int(),
+  timestamp: z.number(),
 })
 
 export const coachInputSchema = z.union([
@@ -52,7 +52,7 @@ export const coachInterventionSchema = z.object({
   emotion: z.string().min(1),
   should_tts: z.boolean(),
   ttl_ms: z.number().int().positive(),
-  timestamp: z.number().int(),
+  timestamp: z.number(),
 })
 
 export type CoachInput = z.infer<typeof coachInputSchema>

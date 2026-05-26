@@ -1,6 +1,6 @@
-[gd_resource type="Theme" format=3 uid="uid://theme_chinese"]
+[gd_resource type="Theme" format=3 uid="uid://btqq3pyr6tlj5"]
 
-[ext_resource type="FontFile" path="res://assets/resources/fonts/STHeiti.ttc" id="font_stheiti"]
+[ext_resource type="FontFile" uid="uid://chic2q15mn8ju" path="res://assets/resources/fonts/STHeiti.ttc" id="font_stheiti"]
 
 [resource]
 default_font = ExtResource("font_stheiti")

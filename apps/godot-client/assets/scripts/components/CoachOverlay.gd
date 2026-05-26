@@ -330,9 +330,13 @@ func play_state(state: String, text: String = "", ttl_ms: int = 0) -> void:
 	if not _is_present and state not in [STATE_ENTER, STATE_EXIT]:
 		return
 
+	# Allow same-state refresh for bubble states (e.g., consecutive hints)
+	# so new text and TTL are always applied without being blocked by priority
+	var same_state_refresh := state == _current_state and state in STATES_WITH_BUBBLE
+
 	var new_priority: int = PRIORITY[state]
 	var current_priority: int = PRIORITY[_current_state]
-	if new_priority < current_priority:
+	if not same_state_refresh and new_priority < current_priority:
 		return
 
 	if state == STATE_HAPPY:

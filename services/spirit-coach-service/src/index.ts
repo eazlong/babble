@@ -57,9 +57,18 @@ const start = async () => {
 
 if (process.env.NODE_ENV !== 'test') {
   start()
+  async function consumeLoop() {
+    while (true) {
+      await consumer.consumeOnce()
+    }
+  }
+  consumeLoop().catch((error) => app.log.error(error))
   setInterval(() => {
-    void consumer.consumeOnce().catch((error) => app.log.error(error))
-  }, 200)
+    const cleaned = sessionManager.cleanupStaleSessions()
+    if (cleaned > 0) {
+      app.log.info({ cleaned }, 'Cleaned up stale coach sessions')
+    }
+  }, 60_000)
 }
 
 export default app

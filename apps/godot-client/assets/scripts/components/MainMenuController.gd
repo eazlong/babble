@@ -78,12 +78,6 @@ func show_mic_panel() -> void:
 
 	_start_mic_pulse()
 
-	var prompt_text = "请对麦克风说中文或英文来选择语言吧！"
-	coach_overlay.show_hint(prompt_text, "idle")
-	HybridAPI.synthesize_tts(prompt_text, "spirit", GameManager.current_lang)
-
-	await AudioManager.tts_finished
-
 	VoicePipeline.start_listening()
 	silence_timer = 0.0
 	record_duration = 0.0
@@ -109,18 +103,20 @@ func _stop_mic_pulse() -> void:
 		mic_tween = null
 
 func _on_voice_ended(audio_data: PackedByteArray) -> void:
-	print("[MainMenuController] _on_voice_ended triggered!")
+	print("[MainMenuController] _on_voice_ended triggered! audio_size=", audio_data.size())
 	if not mic_active:
 		return
 
 	_deactivate_mic()
 
 	coach_overlay.show_hint("正在识别中...", "idle")
-	HybridAPI.recognize_speech(audio_data, "auto")
+	HybridAPI.recognize_speech(audio_data, "en")
 
 func _on_asr_received(result: Dictionary) -> void:
+	print("[MainMenu] ASR result: ", result)
 	var text: String = result.get("text", "")
 	if text.is_empty():
+		print("[MainMenu] ASR text empty, showing language panel")
 		show_language_panel()
 		return
 

@@ -24,6 +24,3 @@ func _physics_process(delta: float) -> void:
 		sprite.play("idle")
 
 	move_and_slide()
-
-func get_position() -> Vector2:
-	return global_position

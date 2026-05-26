@@ -14,6 +14,12 @@ class FishSpeechClient:
     Fish Speech (/v1/tts with reference_audio) API formats.
     """
 
+    # Map game NPC IDs to registered F5-TTS voices
+    VOICE_MAP = {
+        "spark": "spirit",
+        "oakley": "spirit",
+    }
+
     def __init__(self, base_url: str | None = None):
         self.base_url = base_url or os.environ.get(
             "FISH_SPEECH_URL", "http://localhost:8002"
@@ -22,6 +28,10 @@ class FishSpeechClient:
         self.healthy = False
         self.is_f5 = False  # Detected after health check
         logger.info(f"FishSpeechClient initialized with base_url: {self.base_url}")
+
+    def _resolve_voice(self, voice_id: str) -> str:
+        """Resolve game voice_id to a registered F5-TTS voice."""
+        return self.VOICE_MAP.get(voice_id, voice_id)
 
     async def health_check(self) -> bool:
         """Check if TTS server is available and detect type."""
@@ -54,7 +64,8 @@ class FishSpeechClient:
         Returns:
             Audio bytes
         """
-        payload = {"text": text, "voice_id": voice_id}
+        resolved_voice = self._resolve_voice(voice_id)
+        payload = {"text": text, "voice_id": resolved_voice}
 
         try:
             resp = await self.client.post(

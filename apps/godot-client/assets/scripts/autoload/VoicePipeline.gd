@@ -1,6 +1,7 @@
 extends Node
 
 const MAX_BUFFER_SIZE: int = 2646000  # ~30 seconds at 44100Hz stereo 16-bit
+const MIN_VOICE_AUDIO: int = 40960  # ~500ms minimum real speech (~44100 * 2ch * 2byte * 0.5s)
 
 var is_recording: bool = false
 var is_listening: bool = false
@@ -10,9 +11,12 @@ var audio_capture: AudioEffectCapture
 var mic_player: AudioStreamPlayer
 var record_bus_idx: int = -1
 
-var silence_threshold: float = 0.005
-var silence_duration: float = 1.5
+var silence_threshold: float = 0.015
+var silence_duration: float = 2.5
+var min_speech_duration: float = 0.5  # seconds, ignore anything shorter
 var last_voice_time: float = 0.0
+var _voice_cooldown: float = 3.0  # seconds between voice detections
+var _last_voice_ended_time: float = -999.0
 
 # Debug
 var _poll_count: int = 0
@@ -35,6 +39,10 @@ func _ready() -> void:
 
 	audio_capture = AudioEffectCapture.new()
 	AudioServer.add_bus_effect(record_bus_idx, audio_capture)
+
+	# Mute Record bus output to prevent mic-to-speaker feedback loop.
+	# AudioEffectCapture still receives data before the mute point.
+	AudioServer.set_bus_mute(record_bus_idx, true)
 	print("[VoicePipeline] _ready complete, Record bus idx=", record_bus_idx)
 
 func start_listening() -> void:
@@ -52,10 +60,17 @@ func start_listening() -> void:
 	print("[VoicePipeline] start_listening: threshold=", silence_threshold)
 
 func stop_listening() -> void:
-	print("[VoicePipeline] stop_listening: polls=", _poll_count, " frames=", _frame_count, " max_vol=", _max_vol)
+	print("[VoicePipeline] stop_listening: polls=", _poll_count, " frames=", _frame_count, " max_vol=", _max_vol, " buf=", audio_buffer.size())
 	is_listening = false
-	is_recording = false
-	audio_buffer.clear()
+	if is_recording and audio_buffer.size() > 0:
+		is_recording = false
+		var final_audio = audio_buffer.duplicate()
+		audio_buffer.clear()
+		print("[VoicePipeline] voice_ended on stop! audio_bytes=", final_audio.size())
+		voice_ended.emit(final_audio)
+	else:
+		is_recording = false
+		audio_buffer.clear()
 	audio_capture.clear_buffer()
 	listening_stopped.emit()
 
@@ -131,14 +146,19 @@ func _process(delta: float) -> void:
 
 			if volume > silence_threshold:
 				if not is_recording:
-					is_recording = true
-					print("[VoicePipeline] voice_started! volume=", volume)
-					voice_started.emit()
+					var current_time = Time.get_ticks_msec() / 1000.0
+					if current_time - _last_voice_ended_time < _voice_cooldown:
+						pass  # In cooldown period, ignore this trigger
+					else:
+						is_recording = true
+						print("[VoicePipeline] voice_started! volume=", volume)
+						voice_started.emit()
 
-				last_voice_time = Time.get_ticks_msec() / 1000.0
-				var new_bytes = frames.to_byte_array()
-				if audio_buffer.size() + new_bytes.size() <= MAX_BUFFER_SIZE:
-					audio_buffer.append_array(new_bytes)
+				if is_recording:
+					last_voice_time = Time.get_ticks_msec() / 1000.0
+					var new_bytes = frames.to_byte_array()
+					if audio_buffer.size() + new_bytes.size() <= MAX_BUFFER_SIZE:
+						audio_buffer.append_array(new_bytes)
 
 			elif is_recording:
 				var current_time = Time.get_ticks_msec() / 1000.0
@@ -146,8 +166,15 @@ func _process(delta: float) -> void:
 					is_recording = false
 					var final_audio = audio_buffer.duplicate()
 					audio_buffer.clear()
-					print("[VoicePipeline] voice_ended! audio_bytes=", final_audio.size())
-					voice_ended.emit(final_audio)
+					_last_voice_ended_time = current_time
+
+					# Suppress noise bursts that are too short to be real speech
+					if final_audio.size() < MIN_VOICE_AUDIO:
+						print("[VoicePipeline] voice_ended ignored (too short: ", final_audio.size(), " bytes)")
+					else:
+						var duration_sec = float(final_audio.size()) / 352800.0  # 44100 * 8 bytes per frame
+						print("[VoicePipeline] voice_ended! audio_bytes=", final_audio.size(), " duration=%.2fs" % duration_sec)
+						voice_ended.emit(final_audio)
 
 	var now = Time.get_ticks_msec() / 1000.0
 	if now - _last_debug_time >= 1.0:

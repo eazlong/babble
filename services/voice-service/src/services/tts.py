@@ -21,7 +21,7 @@ class TTSService:
 
     def __init__(self):
         self.api_key = os.environ.get("ELEVENLABS_API_KEY", "")
-        self.default_voice_id = "jBpfuIX1Pn7vGtT5LBcL"
+        self.default_voice_id = "VR6AewLTigWG4xSOukaG"  # Arnold (ElevenLabs built-in)
 
         # Fish Speech client
         self.fish_client = FishSpeechClient()

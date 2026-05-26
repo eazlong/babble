@@ -37,6 +37,8 @@ func start_npc_dialogue(npc_id: String, greeting: String) -> void:
 	await HybridAPI.tts_received
 
 	await AudioManager.tts_finished
+	# Brief pause to let TTS audio echo dissipate before listening
+	await get_tree().create_timer(1.0).timeout
 	VoicePipeline.start_listening()
 	DialogueBox.show_voice_listening()
 

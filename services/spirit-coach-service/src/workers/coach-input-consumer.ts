@@ -15,7 +15,7 @@ export class CoachInputConsumer {
   ) {}
 
   async consumeOnce() {
-    const result = await this.redis.xread('COUNT', 1, 'BLOCK', 1, 'STREAMS', 'coach.input', '0') as [string, [string, string[]][]][] | null
+    const result = await this.redis.xread('COUNT', 10, 'BLOCK', 1000, 'STREAMS', 'coach.input', '0') as [string, [string, string[]][]][] | null
     if (!result) {
       return
     }
@@ -69,7 +69,7 @@ export class CoachInputConsumer {
           .filter(([, value]) => value !== undefined)
           .flatMap(([key, value]) => [key, String(value)])
 
-        await this.redis.xadd('coach.intervention', '*', ...pairs)
+        await this.redis.xadd('coach.intervention', 'MAXLEN', '~', '10000', '*', ...pairs)
         await this.policy.markIntervened({ trigger: classified.trigger, userId: input.user_id })
         await this.sessionManager.push(input.session_id, payload)
         await this.redis.xdel('coach.input', messageId)

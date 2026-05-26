@@ -18,13 +18,13 @@ func _ready() -> void:
 	sprite.play("idle")
 
 func _on_body_entered(body: Node2D) -> void:
-	if body.has_method("get_position") and dialogue_state == "idle":
+	if body.is_in_group("player") and dialogue_state == "idle":
 		player_in_range = true
 		sprite.play("greeting")
 		trigger_dialogue()
 
 func _on_body_exited(body: Node2D) -> void:
-	if body.has_method("get_position"):
+	if body.is_in_group("player"):
 		player_in_range = false
 
 func trigger_dialogue() -> void:

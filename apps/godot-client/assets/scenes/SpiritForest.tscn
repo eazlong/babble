@@ -1,0 +1,340 @@
+[gd_scene format=3 uid="uid://c86xre2b75bjx"]
+
+[ext_resource type="Script" uid="uid://he8al45fkcd2" path="res://assets/scripts/components/TreasureChest.gd" id="chest_ctrl"]
+[ext_resource type="Script" uid="uid://c8frsxljiqqlp" path="res://assets/scripts/components/CoachOverlay.gd" id="coach_overlay"]
+[ext_resource type="Script" uid="uid://d12o4o7t4mchg" path="res://assets/scripts/components/MagicFlower.gd" id="flower_ctrl"]
+[ext_resource type="Script" uid="uid://cn7dj4kaex1qv" path="res://assets/scripts/components/PlayerController.gd" id="player_ctrl"]
+[ext_resource type="SpriteFrames" path="res://assets/resources/player_sprite_frames.tres" id="player_frames"]
+[ext_resource type="Script" uid="uid://c8s4k3vh4cyf3" path="res://assets/scripts/scenes/SpiritForestController.gd" id="scene_ctrl"]
+[ext_resource type="Texture2D" uid="uid://dmttaep8kl4kj" path="res://assets/resources/sprites/spark/57_480x270.png" id="spark_0"]
+[ext_resource type="Texture2D" uid="uid://b5qwsd7w8m3a4" path="res://assets/resources/sprites/spark/58_480x270.png" id="spark_1"]
+[ext_resource type="Texture2D" uid="uid://ct5ifu6ybt33d" path="res://assets/resources/sprites/spark/59_480x270.png" id="spark_2"]
+[ext_resource type="Texture2D" uid="uid://dv01mfdohyrdi" path="res://assets/resources/sprites/spark/60_480x270.png" id="spark_3"]
+[ext_resource type="Texture2D" uid="uid://b3icndn0k8g42" path="res://assets/resources/sprites/spark/61_480x270.png" id="spark_4"]
+[ext_resource type="Texture2D" uid="uid://cvum2t5x801th" path="res://assets/resources/sprites/spark/62_480x270.png" id="spark_5"]
+[ext_resource type="Texture2D" uid="uid://pxbjt0mdfhyh" path="res://assets/resources/sprites/spark/63_480x270.png" id="spark_6"]
+[ext_resource type="Texture2D" uid="uid://cr0kg0qkyiy5o" path="res://assets/resources/sprites/spark/64_480x270.png" id="spark_7"]
+[ext_resource type="Texture2D" uid="uid://cscran6sftqi7" path="res://assets/resources/sprites/spark/spark_idle.png" id="spark_idle"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_t6dbj"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("spark_0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("spark_1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("spark_2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("spark_3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("spark_4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("spark_5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("spark_6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("spark_7")
+}],
+"loop": true,
+"name": &"fly",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("spark_idle")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_83"]
+radius = 60.0
+
+[node name="SpiritForest" type="Node2D" unique_id=1551762553]
+script = ExtResource("scene_ctrl")
+
+[node name="CoachOverlay" type="Control" parent="." unique_id=1225714271]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("coach_overlay")
+
+[node name="CoachSprite" type="AnimatedSprite2D" parent="CoachOverlay" unique_id=458963493]
+visible = false
+position = Vector2(1508, 691)
+sprite_frames = SubResource("SpriteFrames_t6dbj")
+animation = &"idle"
+
+[node name="DialogueBubble" type="Panel" parent="CoachOverlay" unique_id=230388273]
+visible = false
+layout_mode = 1
+offset_left = 350.0
+offset_top = 100.0
+offset_right = 650.0
+offset_bottom = 250.0
+
+[node name="DialogueText" type="RichTextLabel" parent="CoachOverlay/DialogueBubble" unique_id=436440268]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1328887785]
+position = Vector2(400, 300)
+
+[node name="Background" type="ColorRect" parent="." unique_id=2104561634]
+offset_right = 1920.0
+offset_bottom = 1080.0
+color = Color(0.15, 0.3, 0.15, 1)
+
+[node name="Ground" type="ColorRect" parent="." unique_id=810378167]
+offset_top = 700.0
+offset_right = 1920.0
+offset_bottom = 1080.0
+color = Color(0.25, 0.45, 0.2, 1)
+
+[node name="Path" type="ColorRect" parent="." unique_id=1667650643]
+offset_left = 300.0
+offset_top = 750.0
+offset_right = 1620.0
+offset_bottom = 820.0
+color = Color(0.55, 0.4, 0.25, 1)
+
+[node name="Player" type="CharacterBody2D" parent="." unique_id=1611382656]
+position = Vector2(100, 750)
+script = ExtResource("player_ctrl")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="Player" unique_id=665839769]
+position = Vector2(0, -30)
+scale = Vector2(1.5, 1.5)
+sprite_frames = ExtResource("player_frames")
+animation = &"idle"
+
+[node name="Label" type="Label" parent="Player" unique_id=608021351]
+offset_left = -30.0
+offset_top = 35.0
+offset_right = 30.0
+offset_bottom = 55.0
+text = "Player"
+horizontal_alignment = 1
+
+[node name="SparkNPC" type="StaticBody2D" parent="." unique_id=1986662794]
+position = Vector2(400, 720)
+
+[node name="Sprite" type="ColorRect" parent="SparkNPC" unique_id=1531543785]
+offset_left = -20.0
+offset_top = -40.0
+offset_right = 20.0
+offset_bottom = 20.0
+color = Color(1, 0.92, 0.2, 1)
+
+[node name="Label" type="Label" parent="SparkNPC" unique_id=1262604264]
+offset_left = -35.0
+offset_top = 25.0
+offset_right = 35.0
+offset_bottom = 45.0
+text = "Spark"
+horizontal_alignment = 1
+
+[node name="OakleyNPC" type="StaticBody2D" parent="." unique_id=85327767]
+position = Vector2(800, 680)
+
+[node name="Sprite" type="ColorRect" parent="OakleyNPC" unique_id=1689000325]
+offset_left = -25.0
+offset_top = -35.0
+offset_right = 25.0
+offset_bottom = 25.0
+color = Color(0.55, 0.35, 0.15, 1)
+
+[node name="Label" type="Label" parent="OakleyNPC" unique_id=493354018]
+offset_left = -40.0
+offset_top = 30.0
+offset_right = 40.0
+offset_bottom = 50.0
+text = "Oakley"
+horizontal_alignment = 1
+
+[node name="MagicFlowers" type="Node2D" parent="." unique_id=1034429218]
+
+[node name="RedFlower" type="StaticBody2D" parent="MagicFlowers" unique_id=1658838486]
+position = Vector2(1100, 700)
+script = ExtResource("flower_ctrl")
+
+[node name="Sprite" type="ColorRect" parent="MagicFlowers/RedFlower" unique_id=1408159775]
+offset_left = -15.0
+offset_top = -30.0
+offset_right = 15.0
+color = Color(0.9, 0.2, 0.2, 1)
+
+[node name="Label" type="Label" parent="MagicFlowers/RedFlower" unique_id=1910687076]
+offset_left = -20.0
+offset_top = 5.0
+offset_right = 20.0
+offset_bottom = 25.0
+text = "Red"
+horizontal_alignment = 1
+
+[node name="BlueFlower" type="StaticBody2D" parent="MagicFlowers" unique_id=1336307699]
+position = Vector2(1250, 650)
+script = ExtResource("flower_ctrl")
+flower_color = "blue"
+
+[node name="Sprite" type="ColorRect" parent="MagicFlowers/BlueFlower" unique_id=363568750]
+offset_left = -15.0
+offset_top = -30.0
+offset_right = 15.0
+color = Color(0.2, 0.4, 0.9, 1)
+
+[node name="Label" type="Label" parent="MagicFlowers/BlueFlower" unique_id=941439265]
+offset_left = -20.0
+offset_top = 5.0
+offset_right = 20.0
+offset_bottom = 25.0
+text = "Blue"
+horizontal_alignment = 1
+
+[node name="YellowFlower" type="StaticBody2D" parent="MagicFlowers" unique_id=73991760]
+position = Vector2(1400, 700)
+script = ExtResource("flower_ctrl")
+flower_color = "yellow"
+
+[node name="Sprite" type="ColorRect" parent="MagicFlowers/YellowFlower" unique_id=880613791]
+offset_left = -15.0
+offset_top = -30.0
+offset_right = 15.0
+color = Color(0.95, 0.85, 0.1, 1)
+
+[node name="Label" type="Label" parent="MagicFlowers/YellowFlower" unique_id=902961182]
+offset_left = -25.0
+offset_top = 5.0
+offset_right = 25.0
+offset_bottom = 25.0
+text = "Yellow"
+horizontal_alignment = 1
+
+[node name="TreasureChest" type="StaticBody2D" parent="." unique_id=1412284743]
+position = Vector2(1550, 720)
+script = ExtResource("chest_ctrl")
+
+[node name="Sprite" type="ColorRect" parent="TreasureChest" unique_id=165438190]
+offset_left = -30.0
+offset_top = -20.0
+offset_right = 30.0
+offset_bottom = 20.0
+color = Color(0.6, 0.45, 0.2, 1)
+
+[node name="Label" type="Label" parent="TreasureChest" unique_id=236262404]
+offset_left = -35.0
+offset_top = 25.0
+offset_right = 35.0
+offset_bottom = 45.0
+text = "Treasure"
+horizontal_alignment = 1
+
+[node name="InteractionArea" type="Area2D" parent="TreasureChest" unique_id=504430148]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TreasureChest/InteractionArea" unique_id=509851637]
+shape = SubResource("CircleShape2D_83")
+
+[node name="BadgeUI" type="Control" parent="." unique_id=1197520718]
+visible = false
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -50.0
+offset_right = 150.0
+offset_bottom = 50.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BadgeIcon" type="ColorRect" parent="BadgeUI" unique_id=101516260]
+layout_mode = 1
+offset_left = -40.0
+offset_top = -40.0
+offset_right = 40.0
+offset_bottom = 40.0
+color = Color(1, 0.843, 0, 1)
+
+[node name="BadgeLabel" type="Label" parent="BadgeUI" unique_id=749314340]
+layout_mode = 1
+offset_left = -100.0
+offset_top = 50.0
+offset_right = 100.0
+offset_bottom = 70.0
+text = "Forest Badge!"
+horizontal_alignment = 1
+
+[node name="MicPanel" type="Control" parent="." unique_id=244085601]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MicIcon" type="ColorRect" parent="MicPanel" unique_id=1596473897]
+layout_mode = 1
+offset_left = 620.0
+offset_top = 340.0
+offset_right = 700.0
+offset_bottom = 420.0
+color = Color(0.2, 0.8, 0.4, 1)
+
+[node name="MicLabel" type="Label" parent="MicPanel" unique_id=22427298]
+layout_mode = 1
+offset_left = 580.0
+offset_top = 430.0
+offset_right = 740.0
+offset_bottom = 465.0
+text = "请说话..."
+horizontal_alignment = 1
+
+[node name="NavigationUI" type="Control" parent="." unique_id=1693311575]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LibraryButton" type="Button" parent="NavigationUI" unique_id=403577995]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -25.0
+offset_right = 100.0
+offset_bottom = 25.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Go to Library"
+
+[connection signal="pressed" from="NavigationUI/LibraryButton" to="." method="_on_library_button_pressed"]
