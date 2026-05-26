@@ -4,7 +4,7 @@
 面向儿童的语言学习 RPG 游戏。Godot 4.6 客户端 + Node.js/Fastify 微服务 + Python 语音/AI 服务 + Supabase 数据存储。
 
 ## 当前状态
-Spirit Coach Agent MVP 已完成，正在开发 CoachOverlay 7 状态表示层（idle/enter/exit/speaking/hint/thinking/happy）。
+CoachOverlay 7 状态表示层已完成。SpiritForest 场景 + MagicFlower/TreasureChest 组件已添加骨架。下一步：任务系统 (quest-service) + SpiritForest 任务逻辑集成。
 
 ## 技术栈
 - **客户端**: Godot 4.6 (GDScript) + CocosCreator 3.8+ (TypeScript) 双客户端
