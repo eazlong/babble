@@ -1,61 +1,72 @@
-# Dependencies
+# ==================== Dependencies ====================
 node_modules/
 .pnpm-store/
 
-# Worktrees
-.worktrees/
-
-# Build outputs
+# ==================== Build Outputs ====================
 dist/
 *.tsbuildinfo
-
-# Build outputs
-dist/
 .next/
 out/
 
-# Environment
+# ==================== Environment ====================
 .env
 .env.local
 .env.*.local
 
-# IDE
+# ==================== IDE ====================
 .vscode/
 .idea/
-.idea/
-.vscode/
 *.swp
 *.swo
 
-# OS
+# ==================== OS ====================
 .DS_Store
 Thumbs.db
 
-# Logs
+# ==================== Logs ====================
 *.log
 logs/
+npm-debug.log*
+pnpm-debug.log*
 
-# Coverage
+# ==================== Coverage ====================
 coverage/
 .nyc_output/
 
-# Python
+# ==================== Python ====================
 __pycache__/
 *.pyc
 .pytest_cache/
 venv/
 .venv/
 
-# Docker
+# ==================== Docker ====================
 docker-compose.override.yml
 
-# Turbo
-.turbo/
-npm-debug.log*
-pnpm-debug.log*
-
-# Turbo
+# ==================== Turbo ====================
 .turbo/
 
-# Coverage
-coverage/
+# ==================== Worktrees ====================
+.worktrees/
+
+# ==================== Godot ====================
+# Godot import metadata (regenerated on import)
+.import/
+# Godot exported templates (large binaries)
+*.apk
+*.aab
+*.ipa
+*.exe
+# Godot crash dumps
+*.dmp
+
+# ==================== Claude / Hermes Local ====================
+.claude/
+.hermes/
+
+# ==================== Test Outputs ====================
+tests/e2e-report/
+tests/test-results/
+tests/tts_sample.wav
+tests/*.wav
+playwright-report/
