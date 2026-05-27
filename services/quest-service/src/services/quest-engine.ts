@@ -553,52 +553,7 @@ export class QuestEngine {
   }
 
   async generateDailyQuests(userId: string): Promise<Quest[]> {
-    const fallbacks: Quest[] = [
-      {
-        quest_id: 'daily_greet',
-        title: '用目标语言向3个人打招呼',
-        title_en: 'Greet 3 People in Target Language',
-        description: '练习问候用语',
-        description_en: 'Practice greeting phrases',
-        quest_type: 'daily',
-        scene_id: 'any',
-        difficulty_level: 1,
-        cefr_requirement: 'A1',
-        lxp_reward_base: 20,
-        target_language_focus: ['greeting'],
-        is_active: true,
-      },
-      {
-        quest_id: 'daily_shop',
-        title: '在集市购买一件物品并用目标语言询价',
-        title_en: 'Buy an Item at the Market and Ask Price in Target Language',
-        description: '练习购物对话',
-        description_en: 'Practice shopping dialogue',
-        quest_type: 'daily',
-        scene_id: 'any',
-        difficulty_level: 1,
-        cefr_requirement: 'A1',
-        lxp_reward_base: 20,
-        target_language_focus: ['shopping', 'numbers'],
-        is_active: true,
-      },
-      {
-        quest_id: 'daily_directions',
-        title: '询问并理解一个地点的方向',
-        title_en: 'Ask and Understand Directions to a Location',
-        description: '练习方向表达',
-        description_en: 'Practice giving and receiving directions',
-        quest_type: 'daily',
-        scene_id: 'any',
-        difficulty_level: 1,
-        cefr_requirement: 'A1',
-        lxp_reward_base: 20,
-        target_language_focus: ['directions', 'locations'],
-        is_active: true,
-      },
-    ]
-
-    return fallbacks
+    return this.getDailyQuests(userId)
   }
 
   /**
@@ -646,7 +601,8 @@ export class QuestEngine {
    */
   async completeDailyQuest(
     userId: string,
-    questId: string
+    questId: string,
+    scores: { accuracy: number; fluency: number; vocabulary: number }
   ): Promise<{ success: boolean; message: string }> {
     const quest = DAILY_QUEST_POOL.find((q) => q.quest_id === questId)
     if (!quest) {
@@ -661,12 +617,14 @@ export class QuestEngine {
       }
     }
 
+    const stars = calculateStars(scores)
     state.daily_quest_progress.set(questId, {
       quest_id: questId,
       completed: true,
-      stars_earned: 1,
+      stars_earned: stars,
     })
     state.completed_quest_ids.add(questId)
+    state.total_stars += stars
 
     return { success: true, message: 'Daily quest completed' }
   }

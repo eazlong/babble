@@ -5,14 +5,14 @@
 
 ## 当前状态
 已完成的场景与系统：
-- CoachOverlay 7 状态表示层 ✅
-- SpiritForest 场景 ✅（含 quest-service 事件驱动同步）
-- SpellLibrary 场景 ✅（含 quest-service 事件驱动同步）
-- RainbowGarden 场景 ✅（含 quest-service 事件驱动同步）
-- 场景导航系统 ✅（MainMenu 动态场景选择 → SpiritForest → SpellLibrary → RainbowGarden → MainMenu）
-- quest-service 事件驱动同步 ✅（report/status 接口 + 3 场景集成）
+- 3 个场景全部完成 ✅ (SpiritForest, SpellLibrary, RainbowGarden)
+- 场景导航系统 ✅ (MainMenu 动态选择 → 3 场景互跳)
+- quest-service 事件驱动同步 ✅
+- assessment-service 真实评估集成 ✅ (规则打分：关键词匹配、文本长度、词汇多样性)
+- reward-service 联动 ✅ (reward-client with fallback)
+- 日常任务完整实现 ✅ (8 个日常任务池、动态生成、每日重置、GET/POST 接口)
 
-下一步：reward-service 与 quest 联动、assessment-service 真实评估集成、日常任务完整实现、测试覆盖补充。
+下一步：测试覆盖补充、GameManager 持久化到 Supabase、家长控制台、WebSocket 实时通信。
 
 ## 技术栈
 - **客户端**: Godot 4.6 (GDScript) + CocosCreator 3.8+ (TypeScript) 双客户端
