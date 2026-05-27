@@ -7,6 +7,7 @@ export interface QuestCompletionResult {
   stars_earned: number
   badge_unlocked: string | null
   rewards: Array<{ item_id: string; name: string }>
+  all_scene_quests_complete: boolean
 }
 
 export interface Quest {
@@ -27,6 +28,8 @@ export interface Quest {
 
 interface QuestState {
   completed_sub_quests: Set<string>
+  completed_quest_ids: Set<string>
+  scene_badges: Set<string>
   total_stars: number
   badges: Set<string>
 }
@@ -245,10 +248,15 @@ const SCENE_BADGES: Record<string, { badge_id: string; name: string; name_en: st
 
 const userStates = new Map<string, QuestState>()
 
+// Store last completion result per user+quest for idempotent re-reports
+const questResults = new Map<string, QuestCompletionResult>()
+
 function getUserState(userId: string): QuestState {
   if (!userStates.has(userId)) {
     userStates.set(userId, {
       completed_sub_quests: new Set(),
+      completed_quest_ids: new Set(),
+      scene_badges: new Set(),
       total_stars: 0,
       badges: new Set(),
     })
@@ -280,6 +288,7 @@ function checkSceneBadgeCompletion(
   if (state.badges.has(badge.badge_id)) return null // already unlocked
 
   state.badges.add(badge.badge_id)
+  state.scene_badges.add(badge.badge_id)
   return badge.badge_id
 }
 
@@ -310,6 +319,7 @@ export class QuestEngine {
         stars_earned: 0,
         badge_unlocked: null,
         rewards: [],
+        all_scene_quests_complete: false,
       }
     }
 
@@ -332,6 +342,12 @@ export class QuestEngine {
     // Check if completing this sub-quest unlocks a scene badge
     const badge = checkSceneBadgeCompletion(userId, quest.scene_id, state)
 
+    // Check if all sub-quests in the scene are now complete
+    const subQuestsInScene = CHAPTER_1_QUESTS.filter(
+      (q) => q.scene_id === quest.scene_id && q.quest_type === 'sub'
+    )
+    const allSceneComplete = subQuestsInScene.every((q) => state.completed_sub_quests.has(q.quest_id))
+
     const rewards = await this.calculateRewards(questId)
 
     return {
@@ -343,6 +359,7 @@ export class QuestEngine {
       stars_earned: stars,
       badge_unlocked: badge,
       rewards,
+      all_scene_quests_complete: allSceneComplete,
     }
   }
 
@@ -407,6 +424,139 @@ export class QuestEngine {
    */
   async getUserBadges(userId: string): Promise<string[]> {
     return Array.from(getUserState(userId).badges)
+  }
+
+  /**
+   * Report quest completion with idempotent semantics — returns previous result
+   * if the quest was already completed, preventing double-counting.
+   */
+  async reportQuestCompletion(
+    userId: string,
+    questId: string,
+    sceneId: string,
+    scores: { accuracy: number; fluency: number; vocabulary: number },
+    playerInput?: string
+  ): Promise<QuestCompletionResult & { all_scene_quests_complete: boolean }> {
+    const resultKey = `${userId}:${questId}`
+    const cached = questResults.get(resultKey)
+    if (cached) {
+      const subQuestsInScene = CHAPTER_1_QUESTS.filter(
+        (q) => q.scene_id === sceneId && q.quest_type === 'sub'
+      )
+      const state = getUserState(userId)
+      const allComplete = subQuestsInScene.every((q) => state.completed_sub_quests.has(q.quest_id))
+      return { ...cached, all_scene_quests_complete: allComplete }
+    }
+
+    const quest = CHAPTER_1_QUESTS.find((q) => q.quest_id === questId)
+    if (!quest) {
+      return {
+        success: false,
+        lxp_earned: 0,
+        accuracy_score: scores.accuracy,
+        fluency_score: scores.fluency,
+        vocabulary_score: scores.vocabulary,
+        stars_earned: 0,
+        badge_unlocked: null,
+        rewards: [],
+        all_scene_quests_complete: false,
+      }
+    }
+
+    const state = getUserState(userId)
+
+    // Prevent double-counting at the engine level too
+    if (state.completed_quest_ids.has(questId)) {
+      const existing = questResults.get(`${userId}:${questId}`)
+      if (existing) {
+        const subQuestsInScene = CHAPTER_1_QUESTS.filter(
+          (q) => q.scene_id === sceneId && q.quest_type === 'sub'
+        )
+        const allComplete = subQuestsInScene.every((q) => state.completed_sub_quests.has(q.quest_id))
+        return { ...existing, all_scene_quests_complete: allComplete }
+      }
+    }
+
+    // Calculate LXP = accuracy*0.4 + fluency*0.3 + vocabulary*0.3
+    const lxp = Math.round(
+      scores.accuracy * 0.4 + scores.fluency * 0.3 + scores.vocabulary * 0.3
+    )
+
+    // Calculate stars (avg >=90 -> 3, >=70 -> 2, >=40 -> 1)
+    const stars = calculateStars(scores)
+    state.total_stars += stars
+
+    // Mark quest as completed
+    state.completed_quest_ids.add(questId)
+
+    // Track sub-quest completion
+    if (quest.quest_type === 'sub') {
+      state.completed_sub_quests.add(questId)
+    }
+
+    // Check if this unlocks a scene badge
+    const badge = checkSceneBadgeCompletion(userId, quest.scene_id, state)
+
+    // Check if all quests in the scene are complete
+    const subQuestsInScene = CHAPTER_1_QUESTS.filter(
+      (q) => q.scene_id === sceneId && q.quest_type === 'sub'
+    )
+    const allSceneComplete = subQuestsInScene.every((q) => state.completed_sub_quests.has(q.quest_id))
+
+    const rewards = await this.calculateRewards(questId)
+
+    const result: QuestCompletionResult & { all_scene_quests_complete: boolean } = {
+      success: true,
+      lxp_earned: lxp,
+      accuracy_score: scores.accuracy,
+      fluency_score: scores.fluency,
+      vocabulary_score: scores.vocabulary,
+      stars_earned: stars,
+      badge_unlocked: badge,
+      rewards,
+      all_scene_quests_complete: allSceneComplete,
+    }
+
+    questResults.set(resultKey, result)
+    return result
+  }
+
+  /**
+   * Get quest status for a specific scene — completed, pending, badge, stars.
+   */
+  async getQuestStatus(
+    userId: string,
+    sceneId: string
+  ): Promise<{
+    scene_id: string
+    completed_quest_ids: string[]
+    pending_quest_ids: string[]
+    badge_unlocked: boolean
+    total_stars: number
+  }> {
+    const state = getUserState(userId)
+    const questsInScene = CHAPTER_1_QUESTS.filter(
+      (q) => q.scene_id === sceneId && q.is_active
+    )
+
+    const completedIds = questsInScene
+      .filter((q) => state.completed_quest_ids.has(q.quest_id))
+      .map((q) => q.quest_id)
+
+    const pendingIds = questsInScene
+      .filter((q) => !state.completed_quest_ids.has(q.quest_id))
+      .map((q) => q.quest_id)
+
+    const badge = SCENE_BADGES[sceneId]
+    const badgeUnlocked = badge ? state.badges.has(badge.badge_id) : false
+
+    return {
+      scene_id: sceneId,
+      completed_quest_ids: completedIds,
+      pending_quest_ids: pendingIds,
+      badge_unlocked: badgeUnlocked,
+      total_stars: state.total_stars,
+    }
   }
 
   private async calculateRewards(questId: string): Promise<Array<{ item_id: string; name: string }>> {

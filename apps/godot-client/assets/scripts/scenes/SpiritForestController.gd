@@ -57,6 +57,8 @@ func _ready() -> void:
 		navigation_ui.visible = false
 
 	HybridAPI.asr_received.connect(_on_asr_received)
+	HybridAPI.quest_status_received.connect(_on_quest_status)
+	HybridAPI.quest_report_received.connect(_on_quest_report)
 	VoicePipeline.voice_ended.connect(_on_voice_ended)
 	VoicePipeline.voice_started.connect(_on_voice_started)
 
@@ -69,6 +71,8 @@ func _ready() -> void:
 
 	if oakley_npc:
 		oakley_npc.visible = false
+
+	HybridAPI.fetch_quest_status("spirit_forest")
 
 	await get_tree().create_timer(1.0).timeout
 	_start_spark_introduction()
@@ -147,6 +151,11 @@ func _on_player_response(text: String) -> void:
 		GameManager.set_player_info(text, 8)
 		print("[SpiritForest] Player name set to: ", text)
 		name_collection_state = TaskState.COMPLETED
+		HybridAPI.report_quest_complete(
+			"greet_oakley", "spirit_forest",
+			{"accuracy": 80, "fluency": 80, "vocabulary": 80},
+			text
+		)
 		_stop_voice_listening()
 		_start_color_tutorial()
 		return
@@ -173,6 +182,53 @@ func _on_voice_ended(audio_data: PackedByteArray) -> void:
 	if coach_overlay:
 		coach_overlay.show_hint("正在识别中...", "idle")
 	HybridAPI.recognize_speech(audio_data, "auto")
+
+func _on_quest_status(result: Dictionary) -> void:
+	print("[SpiritForest] Quest status: ", result)
+	var completed_quests: Array = result.get("completed_quest_ids", [])
+	var has_badge: bool = result.get("badge_unlocked", false)
+
+	if has_badge:
+		_show_badge_unlocked("")
+		return
+
+	if completed_quests.has("greet_oakley"):
+		name_collection_state = TaskState.COMPLETED
+
+	if completed_quests.has("activate_flowers"):
+		color_task_state = TaskState.COMPLETED
+		if magic_flowers:
+			for flower in magic_flowers.get_children():
+				if flower.has_method("set_state"):
+					flower.set_state("active")
+
+	if completed_quests.has("open_chest"):
+		number_task_state = TaskState.COMPLETED
+		if treasure_chest:
+			treasure_chest.set_locked(false)
+
+	if name_collection_state == TaskState.COMPLETED and \
+			color_task_state == TaskState.COMPLETED and \
+			number_task_state == TaskState.COMPLETED:
+		_show_badge_unlocked("")
+		return
+
+	if name_collection_state != TaskState.COMPLETED:
+		name_collection_state = TaskState.IN_PROGRESS
+	elif color_task_state != TaskState.COMPLETED:
+		color_task_state = TaskState.IN_PROGRESS
+	elif number_task_state != TaskState.COMPLETED:
+		number_task_state = TaskState.IN_PROGRESS
+
+func _on_quest_report(result: Dictionary) -> void:
+	print("[SpiritForest] Quest report result: ", result)
+	if result.get("success", false):
+		var badge_unlocked = result.get("badge_unlocked", null)
+		if badge_unlocked != null and badge_unlocked != "":
+			_show_badge_unlocked(str(badge_unlocked))
+		var lxp_earned: int = result.get("lxp_earned", 0)
+		if lxp_earned > 0:
+			GameManager.lxp_score += lxp_earned
 
 func _on_asr_received(result: Dictionary) -> void:
 	print("[SpiritForest] ASR result: ", result)
@@ -275,6 +331,10 @@ func _activate_color_flower(color: String) -> void:
 	if activated_colors.size() == REQUIRED_COLORS.size():
 		color_task_state = TaskState.COMPLETED
 		task_completed.emit("color_task")
+		HybridAPI.report_quest_complete(
+			"activate_flowers", "spirit_forest",
+			{"accuracy": 90, "fluency": 70, "vocabulary": 95}
+		)
 		_start_oakley_encounter()
 
 func _start_oakley_encounter() -> void:
@@ -360,6 +420,11 @@ func _complete_number_task() -> void:
 	number_task_state = TaskState.COMPLETED
 	task_completed.emit("number_task")
 
+	HybridAPI.report_quest_complete(
+		"open_chest", "spirit_forest",
+		{"accuracy": 85, "fluency": 80, "vocabulary": 75}
+	)
+
 	if treasure_chest:
 		treasure_chest.set_locked(false)
 
@@ -371,6 +436,25 @@ func _complete_number_task() -> void:
 func _play_celebration() -> void:
 	var celebration = _get_localized_string("celebration")
 	DialogueManager.start_npc_dialogue("oakley", celebration)
+
+func _show_badge_unlocked(badge_id: String) -> void:
+	badge_collected = true
+	GameManager.unlocked_areas.append("SpellLibrary")
+	GameManager.save_progress()
+
+	if badge_ui:
+		badge_ui.visible = true
+		badge_ui.modulate.a = 0
+		var tween = create_tween()
+		tween.tween_property(badge_ui, "modulate:a", 1.0, 1.0)
+		tween.tween_property(badge_ui, "scale", Vector2(1.2, 1.2), 0.3)
+		tween.tween_property(badge_ui, "scale", Vector2(1.0, 1.0), 0.2)
+
+	badge_earned.emit()
+
+	await get_tree().create_timer(3.0).timeout
+	if navigation_ui:
+		navigation_ui.visible = true
 
 func _award_forest_badge() -> void:
 	badge_collected = true

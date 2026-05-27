@@ -1,6 +1,7 @@
 extends Node
 
 const API_BASE_URL = "http://localhost:8301"
+const QUEST_SERVICE_URL = "http://localhost:8306"
 
 var http_request: HTTPRequest
 var error_label: Label
@@ -10,6 +11,8 @@ signal services_ready()
 signal tts_received(result: Dictionary)
 signal asr_received(result: Dictionary)
 signal dialogue_received(result: Dictionary)
+signal quest_status_received(result: Dictionary)
+signal quest_report_received(result: Dictionary)
 signal api_error(error: String)
 
 var coach_http_request: HTTPRequest
@@ -130,6 +133,14 @@ func _on_request_completed(result: int, response_code: int, headers: PackedStrin
 		if json.has("npc_text") and not json.has("response"):
 			json["response"] = json["npc_text"]
 		dialogue_received.emit(json)
+	elif json.has("completed_quest_ids") or json.has("lxp_earned"):
+		# Quest service response — route by key fields
+		if json.has("completed_quest_ids"):
+			# GET /api/v1/quests/status response
+			quest_status_received.emit(json)
+		elif json.has("lxp_earned"):
+			# POST /api/v1/quests/report response
+			quest_report_received.emit(json)
 	else:
 		services_ready.emit()
 
@@ -156,6 +167,37 @@ func publish_coach_wake_request(session_id: String, npc_id: String, player_text:
 	})
 	var headers = ["Content-Type: application/json"]
 	coach_http_request.request("http://localhost:8305/api/v1/coach/events", headers, HTTPClient.METHOD_POST, body)
+
+func fetch_quest_status(scene_id: String, user_id: String = "anonymous") -> void:
+	var query = "?user_id=%s&scene_id=%s" % [user_id.uri_encode(), scene_id.uri_encode()]
+	http_request.request(
+		QUEST_SERVICE_URL + "/api/v1/quests/status" + query,
+		[], HTTPClient.METHOD_GET
+	)
+
+func report_quest_complete(
+	quest_id: String,
+	scene_id: String,
+	scores: Dictionary,
+	player_input: String = "",
+	user_id: String = "anonymous"
+) -> void:
+	var body = JSON.stringify({
+		"user_id": user_id,
+		"quest_id": quest_id,
+		"scene_id": scene_id,
+		"scores": {
+			"accuracy": scores.get("accuracy", 0),
+			"fluency": scores.get("fluency", 0),
+			"vocabulary": scores.get("vocabulary", 0)
+		},
+		"player_input": player_input
+	})
+	var headers = ["Content-Type: application/json"]
+	http_request.request(
+		QUEST_SERVICE_URL + "/api/v1/quests/report",
+		headers, HTTPClient.METHOD_POST, body
+	)
 
 func _create_error_ui() -> void:
 	if error_label:
