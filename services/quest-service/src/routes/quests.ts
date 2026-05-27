@@ -66,4 +66,22 @@ export async function registerQuestRoutes(app: FastifyInstance) {
     const status = await questEngine.getQuestStatus(user_id || 'anonymous', scene_id)
     return reply.send(status)
   })
+
+  app.get('/api/v1/quests/daily', async (request, reply) => {
+    const { user_id } = request.query as { user_id?: string }
+    const quests = await questEngine.getDailyQuests(user_id || 'anonymous')
+    return reply.send(quests)
+  })
+
+  app.post('/api/v1/quests/daily/:questId/complete', async (request, reply) => {
+    const { questId } = request.params as { questId: string }
+    const body = completeQuestSchema.parse(request.body)
+    const { user_id } = request.query as { user_id?: string }
+    const result = await questEngine.completeDailyQuest(
+      user_id || 'anonymous',
+      questId,
+      { accuracy: body.accuracy, fluency: body.fluency, vocabulary: body.vocabulary }
+    )
+    return reply.send(result)
+  })
 }

@@ -1,3 +1,5 @@
+import { getRewardDrop } from "./reward-client.js"
+
 export interface QuestCompletionResult {
   success: boolean
   lxp_earned: number
@@ -26,12 +28,20 @@ export interface Quest {
   parent_quest_id?: string
 }
 
+interface DailyQuestProgress {
+  quest_id: string
+  completed: boolean
+  stars_earned: number
+}
+
 interface QuestState {
   completed_sub_quests: Set<string>
   completed_quest_ids: Set<string>
   scene_badges: Set<string>
   total_stars: number
   badges: Set<string>
+  daily_quest_date: string
+  daily_quest_progress: Map<string, DailyQuestProgress>
 }
 
 // ============================================================
@@ -223,6 +233,183 @@ const CHAPTER_1_QUESTS: Quest[] = [
   },
 ]
 
+// ============================================================
+// Daily Quest Pool — rotating selection for daily quests
+// ============================================================
+
+const DAILY_QUEST_POOL: Quest[] = [
+  {
+    quest_id: 'daily_greet',
+    title: '向3位NPC打招呼',
+    title_en: 'Greet 3 NPCs',
+    description: '练习问候用语',
+    description_en: 'Practice greeting phrases with different characters',
+    quest_type: 'daily',
+    scene_id: 'spirit_forest',
+    difficulty_level: 1,
+    cefr_requirement: 'A1',
+    lxp_reward_base: 20,
+    target_language_focus: ['greeting'],
+    is_active: true,
+  },
+  {
+    quest_id: 'daily_colors',
+    title: '收集3种颜色',
+    title_en: 'Collect 3 Colors',
+    description: '用英语说出3种不同的颜色',
+    description_en: 'Name 3 different colors in English',
+    quest_type: 'daily',
+    scene_id: 'spirit_forest',
+    difficulty_level: 1,
+    cefr_requirement: 'A1',
+    lxp_reward_base: 20,
+    target_language_focus: ['colors'],
+    is_active: true,
+  },
+  {
+    quest_id: 'daily_numbers',
+    title: '数到10',
+    title_en: 'Count to 10',
+    description: '用英语从1数到10',
+    description_en: 'Count from 1 to 10 in English',
+    quest_type: 'daily',
+    scene_id: 'spirit_forest',
+    difficulty_level: 1,
+    cefr_requirement: 'A1',
+    lxp_reward_base: 20,
+    target_language_focus: ['numbers', 'counting'],
+    is_active: true,
+  },
+  {
+    quest_id: 'daily_books',
+    title: '整理5本魔法书',
+    title_en: 'Organize 5 Magic Books',
+    description: '按颜色或大小整理魔法书',
+    description_en: 'Sort magic books by color or size',
+    quest_type: 'daily',
+    scene_id: 'spell_library',
+    difficulty_level: 1,
+    cefr_requirement: 'A1',
+    lxp_reward_base: 20,
+    target_language_focus: ['colors', 'sizes'],
+    is_active: true,
+  },
+  {
+    quest_id: 'daily_commands',
+    title: '完成3个课堂指令',
+    title_en: 'Complete 3 Classroom Commands',
+    description: '听从老师的课堂指令',
+    description_en: 'Follow teacher commands in the classroom',
+    quest_type: 'daily',
+    scene_id: 'spell_library',
+    difficulty_level: 1,
+    cefr_requirement: 'A1',
+    lxp_reward_base: 20,
+    target_language_focus: ['instructions', 'actions'],
+    is_active: true,
+  },
+  {
+    quest_id: 'daily_dialogue',
+    title: '和NPC进行一次对话',
+    title_en: 'Have a Dialogue with an NPC',
+    description: '与任意NPC进行至少3轮对话',
+    description_en: 'Have at least 3 rounds of dialogue with any NPC',
+    quest_type: 'daily',
+    scene_id: 'spell_library',
+    difficulty_level: 1,
+    cefr_requirement: 'A1',
+    lxp_reward_base: 25,
+    target_language_focus: ['dialogue', 'questions'],
+    is_active: true,
+  },
+  {
+    quest_id: 'daily_flowers',
+    title: '种下2朵魔法花',
+    title_en: 'Plant 2 Magic Flowers',
+    description: '在彩虹花园种下花朵',
+    description_en: 'Plant flowers in the rainbow garden',
+    quest_type: 'daily',
+    scene_id: 'rainbow_garden',
+    difficulty_level: 1,
+    cefr_requirement: 'A1',
+    lxp_reward_base: 20,
+    target_language_focus: ['nature', 'colors'],
+    is_active: true,
+  },
+  {
+    quest_id: 'daily_animals',
+    title: '找到1只迷路的小动物',
+    title_en: 'Find 1 Lost Animal',
+    description: '在花园中找到迷路的小动物',
+    description_en: 'Find a lost little animal in the garden',
+    quest_type: 'daily',
+    scene_id: 'rainbow_garden',
+    difficulty_level: 1,
+    cefr_requirement: 'A1',
+    lxp_reward_base: 20,
+    target_language_focus: ['animals'],
+    is_active: true,
+  },
+  {
+    quest_id: 'daily_weather',
+    title: '修复天气水晶',
+    title_en: 'Fix the Weather Crystal',
+    description: '用英语说出2种天气',
+    description_en: 'Name 2 types of weather in English',
+    quest_type: 'daily',
+    scene_id: 'rainbow_garden',
+    difficulty_level: 1,
+    cefr_requirement: 'A1',
+    lxp_reward_base: 20,
+    target_language_focus: ['weather', 'seasons'],
+    is_active: true,
+  },
+  {
+    quest_id: 'daily_shop',
+    title: '在集市购买一件物品',
+    title_en: 'Buy an Item at the Market',
+    description: '用目标语言询价并购买',
+    description_en: 'Ask price and buy an item in target language',
+    quest_type: 'daily',
+    scene_id: 'any',
+    difficulty_level: 1,
+    cefr_requirement: 'A1',
+    lxp_reward_base: 20,
+    target_language_focus: ['shopping', 'numbers'],
+    is_active: true,
+  },
+  {
+    quest_id: 'daily_directions',
+    title: '询问一个地点的方向',
+    title_en: 'Ask for Directions to a Location',
+    description: '用英语询问并理解方向',
+    description_en: 'Ask and understand directions in English',
+    quest_type: 'daily',
+    scene_id: 'any',
+    difficulty_level: 1,
+    cefr_requirement: 'A1',
+    lxp_reward_base: 20,
+    target_language_focus: ['directions', 'locations'],
+    is_active: true,
+  },
+  {
+    quest_id: 'daily_introduce',
+    title: '自我介绍你的名字和年龄',
+    title_en: 'Introduce Your Name and Age',
+    description: '用英语介绍自己的名字和年龄',
+    description_en: 'Introduce yourself with name and age in English',
+    quest_type: 'daily',
+    scene_id: 'spirit_forest',
+    difficulty_level: 1,
+    cefr_requirement: 'A1',
+    lxp_reward_base: 25,
+    target_language_focus: ['introductions', 'numbers'],
+    is_active: true,
+  },
+]
+
+const DAILY_QUESTS_PER_DAY = 3
+
 // Badge definitions: one per scene, unlocked when all sub-quests complete
 const SCENE_BADGES: Record<string, { badge_id: string; name: string; name_en: string }> = {
   spirit_forest: {
@@ -259,6 +446,8 @@ function getUserState(userId: string): QuestState {
       scene_badges: new Set(),
       total_stars: 0,
       badges: new Set(),
+      daily_quest_date: '',
+      daily_quest_progress: new Map(),
     })
   }
   return userStates.get(userId)!
@@ -348,7 +537,7 @@ export class QuestEngine {
     )
     const allSceneComplete = subQuestsInScene.every((q) => state.completed_sub_quests.has(q.quest_id))
 
-    const rewards = await this.calculateRewards(questId)
+    const rewards = await this.calculateRewards(questId, quest.quest_type, quest.cefr_requirement)
 
     return {
       success: true,
@@ -424,6 +613,62 @@ export class QuestEngine {
    */
   async getUserBadges(userId: string): Promise<string[]> {
     return Array.from(getUserState(userId).badges)
+  }
+
+  /**
+   * Get today's rotating daily quests for a user.
+   */
+  getDailyQuests(userId: string): Quest[] {
+    const today = new Date().toISOString().slice(0, 10)
+    const state = getUserState(userId)
+
+    // Reset if date changed
+    if (state.daily_quest_date !== today) {
+      state.daily_quest_date = today
+      state.daily_quest_progress.clear()
+    }
+
+    // Deterministic shuffle seeded by date
+    const seed = today.split('-').join('')
+    const pool = [...DAILY_QUEST_POOL]
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = (Math.floor(parseInt(seed.slice(0, 8)) * (i + 1) * 9301 + 49297) % 233280) % (i + 1)
+      const swap = pool[i]
+      pool[i] = pool[j]!
+      pool[j] = swap
+    }
+
+    return pool.slice(0, DAILY_QUESTS_PER_DAY)
+  }
+
+  /**
+   * Complete a daily quest for a user.
+   */
+  async completeDailyQuest(
+    userId: string,
+    questId: string
+  ): Promise<{ success: boolean; message: string }> {
+    const quest = DAILY_QUEST_POOL.find((q) => q.quest_id === questId)
+    if (!quest) {
+      return { success: false, message: 'Quest not found' }
+    }
+
+    const state = getUserState(userId)
+    if (state.daily_quest_progress.has(questId)) {
+      const existing = state.daily_quest_progress.get(questId)!
+      if (existing.completed) {
+        return { success: false, message: 'Already completed' }
+      }
+    }
+
+    state.daily_quest_progress.set(questId, {
+      quest_id: questId,
+      completed: true,
+      stars_earned: 1,
+    })
+    state.completed_quest_ids.add(questId)
+
+    return { success: true, message: 'Daily quest completed' }
   }
 
   /**
@@ -503,7 +748,7 @@ export class QuestEngine {
     )
     const allSceneComplete = subQuestsInScene.every((q) => state.completed_sub_quests.has(q.quest_id))
 
-    const rewards = await this.calculateRewards(questId)
+    const rewards = await this.calculateRewards(questId, quest.quest_type, quest.cefr_requirement)
 
     const result: QuestCompletionResult & { all_scene_quests_complete: boolean } = {
       success: true,
@@ -559,12 +804,7 @@ export class QuestEngine {
     }
   }
 
-  private async calculateRewards(questId: string): Promise<Array<{ item_id: string; name: string }>> {
-    // MVP: Always return a reward
-    const roll = Math.random() * 100
-    if (roll < 80) {
-      return [{ item_id: 'item_common_1', name: '铜币' }]
-    }
-    return []
+  private async calculateRewards(questId: string, questType: string = "sub", cefr: string = "A1"): Promise<Array<{ item_id: string; name: string }>> {
+    return getRewardDrop(questType as any, cefr)
   }
 }

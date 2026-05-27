@@ -54,6 +54,7 @@ var voice_listening: bool = false
 var mic_tween: Tween
 var silence_timer: float = 0.0
 var record_duration: float = 0.0
+var last_player_input: String = ""
 const SILENCE_TIMEOUT: float = 15.0
 const MAX_RECORD_DURATION: float = 10.0
 
@@ -165,6 +166,7 @@ func _on_dialogue_ended() -> void:
 	print("[RainbowGarden] Dialogue ended")
 
 func _on_player_response(text: String) -> void:
+	last_player_input = text
 	if fix_weather_state == TaskState.IN_PROGRESS:
 		_process_weather_input(text)
 		return
@@ -343,9 +345,11 @@ func _fix_weather_crystal(weather: String) -> void:
 	if fixed_weather.size() >= 3:
 		fix_weather_state = TaskState.COMPLETED
 		task_completed.emit("fix_weather_crystal")
+		var weather_scores = await HybridAPI.assess_player_input(
+			last_player_input, "fix_weather_crystal", "rainbow_garden"
+		)
 		HybridAPI.report_quest_complete(
-			"fix_weather_crystal", "rainbow_garden",
-			{"accuracy": 90, "fluency": 80, "vocabulary": 95}
+			"fix_weather_crystal", "rainbow_garden", weather_scores, last_player_input
 		)
 		_start_find_animals_task()
 
@@ -385,9 +389,11 @@ func _find_animal(animal_name: String) -> void:
 	if found_animals.size() >= TARGET_ANIMALS.size():
 		find_animals_state = TaskState.COMPLETED
 		task_completed.emit("find_lost_animals")
+		var animal_scores = await HybridAPI.assess_player_input(
+			last_player_input, "find_lost_animals", "rainbow_garden"
+		)
 		HybridAPI.report_quest_complete(
-			"find_lost_animals", "rainbow_garden",
-			{"accuracy": 85, "fluency": 85, "vocabulary": 90}
+			"find_lost_animals", "rainbow_garden", animal_scores, last_player_input
 		)
 		_start_plant_flowers_task()
 
@@ -431,9 +437,11 @@ func _plant_flower(verb: String, color: String) -> void:
 	if planted_flowers.size() >= REQUIRED_PLANT_COMBOS.size():
 		plant_flowers_state = TaskState.COMPLETED
 		task_completed.emit("plant_flowers")
+		var flower_scores = await HybridAPI.assess_player_input(
+			last_player_input, "plant_flowers", "rainbow_garden"
+		)
 		HybridAPI.report_quest_complete(
-			"plant_flowers", "rainbow_garden",
-			{"accuracy": 90, "fluency": 75, "vocabulary": 90}
+			"plant_flowers", "rainbow_garden", flower_scores, last_player_input
 		)
 		_play_celebration()
 

@@ -2,6 +2,7 @@ extends Node
 
 const API_BASE_URL = "http://localhost:8301"
 const QUEST_SERVICE_URL = "http://localhost:8306"
+const ASSESSMENT_SERVICE_URL = "http://localhost:8307"
 
 var http_request: HTTPRequest
 var error_label: Label
@@ -13,6 +14,7 @@ signal asr_received(result: Dictionary)
 signal dialogue_received(result: Dictionary)
 signal quest_status_received(result: Dictionary)
 signal quest_report_received(result: Dictionary)
+signal assessment_score_received(result: Dictionary)
 signal api_error(error: String)
 
 var coach_http_request: HTTPRequest
@@ -141,6 +143,9 @@ func _on_request_completed(result: int, response_code: int, headers: PackedStrin
 		elif json.has("lxp_earned"):
 			# POST /api/v1/quests/report response
 			quest_report_received.emit(json)
+	elif json.has("scores") and json.scores.has("accuracy"):
+		# Assessment service response
+		assessment_score_received.emit(json)
 	else:
 		services_ready.emit()
 
@@ -198,6 +203,39 @@ func report_quest_complete(
 		QUEST_SERVICE_URL + "/api/v1/quests/report",
 		headers, HTTPClient.METHOD_POST, body
 	)
+
+func assess_player_input(
+	player_input: String,
+	quest_id: String = "",
+	scene_id: String = "",
+	context: Dictionary = {},
+	user_id: String = "anonymous"
+) -> Dictionary:
+	"""Call assessment-service to score player voice input.
+
+	Returns {accuracy, fluency, vocabulary} or fallback defaults on error.
+	"""
+	var body = JSON.stringify({
+		"user_id": user_id,
+		"quest_id": quest_id,
+		"scene_id": scene_id,
+		"player_input": player_input,
+		"context": context
+	})
+	var headers = ["Content-Type: application/json"]
+	var error = http_request.request(
+		ASSESSMENT_SERVICE_URL + "/api/v1/assessment/score",
+		headers, HTTPClient.METHOD_POST, body
+	)
+	if error != OK:
+		api_error.emit("Assessment request failed: " + str(error))
+		return {"accuracy": 80, "fluency": 80, "vocabulary": 80}
+
+	var result = await assessment_score_received
+	if result.has("error") or not result.has("scores"):
+		return {"accuracy": 80, "fluency": 80, "vocabulary": 80}
+
+	return result.scores
 
 func _create_error_ui() -> void:
 	if error_label:

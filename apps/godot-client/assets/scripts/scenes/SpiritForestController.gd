@@ -42,6 +42,7 @@ var voice_listening: bool = false
 var mic_tween: Tween
 var silence_timer: float = 0.0
 var record_duration: float = 0.0
+var last_player_input: String = ""
 const SILENCE_TIMEOUT: float = 15.0
 const MAX_RECORD_DURATION: float = 10.0
 
@@ -147,14 +148,16 @@ func _on_dialogue_ended() -> void:
 		_start_color_tutorial()
 
 func _on_player_response(text: String) -> void:
+	last_player_input = text
 	if name_collection_state == TaskState.IN_PROGRESS:
 		GameManager.set_player_info(text, 8)
 		print("[SpiritForest] Player name set to: ", text)
 		name_collection_state = TaskState.COMPLETED
+		var scores = await HybridAPI.assess_player_input(
+			text, "greet_oakley", "spirit_forest"
+		)
 		HybridAPI.report_quest_complete(
-			"greet_oakley", "spirit_forest",
-			{"accuracy": 80, "fluency": 80, "vocabulary": 80},
-			text
+			"greet_oakley", "spirit_forest", scores, text
 		)
 		_stop_voice_listening()
 		_start_color_tutorial()
@@ -331,9 +334,11 @@ func _activate_color_flower(color: String) -> void:
 	if activated_colors.size() == REQUIRED_COLORS.size():
 		color_task_state = TaskState.COMPLETED
 		task_completed.emit("color_task")
+		var scores = await HybridAPI.assess_player_input(
+			last_player_input, "activate_flowers", "spirit_forest"
+		)
 		HybridAPI.report_quest_complete(
-			"activate_flowers", "spirit_forest",
-			{"accuracy": 90, "fluency": 70, "vocabulary": 95}
+			"activate_flowers", "spirit_forest", scores, last_player_input
 		)
 		_start_oakley_encounter()
 
@@ -420,9 +425,11 @@ func _complete_number_task() -> void:
 	number_task_state = TaskState.COMPLETED
 	task_completed.emit("number_task")
 
+	var scores = await HybridAPI.assess_player_input(
+		last_player_input, "open_chest", "spirit_forest"
+	)
 	HybridAPI.report_quest_complete(
-		"open_chest", "spirit_forest",
-		{"accuracy": 85, "fluency": 80, "vocabulary": 75}
+		"open_chest", "spirit_forest", scores, last_player_input
 	)
 
 	if treasure_chest:

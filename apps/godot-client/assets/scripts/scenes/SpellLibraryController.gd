@@ -45,6 +45,7 @@ var voice_listening: bool = false
 var mic_tween: Tween
 var silence_timer: float = 0.0
 var record_duration: float = 0.0
+var last_player_input: String = ""
 const SILENCE_TIMEOUT: float = 15.0
 const MAX_RECORD_DURATION: float = 10.0
 
@@ -137,6 +138,7 @@ func _on_dialogue_ended() -> void:
 	print("[SpellLibrary] Dialogue ended")
 
 func _on_player_response(text: String) -> void:
+	last_player_input = text
 	if organize_books_state == TaskState.IN_PROGRESS:
 		_process_book_input(text)
 		return
@@ -307,9 +309,11 @@ func _organize_book(category: String) -> void:
 	if organized_books.size() == REQUIRED_CATEGORIES.size():
 		organize_books_state = TaskState.COMPLETED
 		task_completed.emit("organize_books")
+		var scores = await HybridAPI.assess_player_input(
+			last_player_input, "organize_books", "spell_library"
+		)
 		HybridAPI.report_quest_complete(
-			"organize_books", "spell_library",
-			{"accuracy": 90, "fluency": 70, "vocabulary": 85}
+			"organize_books", "spell_library", scores, last_player_input
 		)
 		_start_follow_commands_task()
 
@@ -367,9 +371,11 @@ func _process_command_input(text: String) -> void:
 func _complete_follow_commands() -> void:
 	follow_commands_state = TaskState.COMPLETED
 	task_completed.emit("follow_commands")
+	var follow_scores = await HybridAPI.assess_player_input(
+		last_player_input, "follow_commands", "spell_library"
+	)
 	HybridAPI.report_quest_complete(
-		"follow_commands", "spell_library",
-		{"accuracy": 85, "fluency": 80, "vocabulary": 90}
+		"follow_commands", "spell_library", follow_scores, last_player_input
 	)
 	_start_practice_dialogue_task()
 
@@ -412,9 +418,11 @@ func _process_dialogue_response(text: String) -> void:
 func _complete_practice_dialogue() -> void:
 	practice_dialogue_state = TaskState.COMPLETED
 	task_completed.emit("practice_dialogue")
+	var dialogue_scores = await HybridAPI.assess_player_input(
+		last_player_input, "practice_dialogue", "spell_library"
+	)
 	HybridAPI.report_quest_complete(
-		"practice_dialogue", "spell_library",
-		{"accuracy": 80, "fluency": 85, "vocabulary": 80}
+		"practice_dialogue", "spell_library", dialogue_scores, last_player_input
 	)
 	_play_celebration()
 
