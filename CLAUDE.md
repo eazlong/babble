@@ -4,7 +4,15 @@
 面向儿童的语言学习 RPG 游戏。Godot 4.6 客户端 + Node.js/Fastify 微服务 + Python 语音/AI 服务 + Supabase 数据存储。
 
 ## 当前状态
-CoachOverlay 7 状态表示层已完成。SpiritForest 场景 + MagicFlower/TreasureChest 组件已添加骨架。下一步：任务系统 (quest-service) + SpiritForest 任务逻辑集成。
+已完成的场景与系统：
+- CoachOverlay 7 状态表示层 ✅
+- SpiritForest 场景 ✅（含 quest-service 事件驱动同步）
+- SpellLibrary 场景 ✅（含 quest-service 事件驱动同步）
+- RainbowGarden 场景 ✅（含 quest-service 事件驱动同步）
+- 场景导航系统 ✅（MainMenu 动态场景选择 → SpiritForest → SpellLibrary → RainbowGarden → MainMenu）
+- quest-service 事件驱动同步 ✅（report/status 接口 + 3 场景集成）
+
+下一步：reward-service 与 quest 联动、assessment-service 真实评估集成、日常任务完整实现、测试覆盖补充。
 
 ## 技术栈
 - **客户端**: Godot 4.6 (GDScript) + CocosCreator 3.8+ (TypeScript) 双客户端
