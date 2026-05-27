@@ -1,0 +1,245 @@
+[gd_scene format=3 uid="uid://d7k3m9x2qw5rn"]
+
+[ext_resource type="Script" uid="uid://c8frsxljiqqlp" path="res://assets/scripts/components/CoachOverlay.gd" id="coach_overlay"]
+[ext_resource type="Script" uid="uid://d9x2k7m5qp8rn" path="res://assets/scripts/scenes/SpellLibraryController.gd" id="scene_ctrl"]
+
+[node name="SpellLibrary" type="Node2D" unique_id=2847561093]
+script = ExtResource("scene_ctrl")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1428937651]
+position = Vector2(400, 300)
+
+[node name="Background" type="ColorRect" parent="." unique_id=2193748502]
+offset_right = 1920.0
+offset_bottom = 1080.0
+color = Color(0.12, 0.1, 0.2, 1)
+
+[node name="Floor" type="ColorRect" parent="." unique_id=915283746]
+offset_top = 700.0
+offset_right = 1920.0
+offset_bottom = 1080.0
+color = Color(0.35, 0.25, 0.15, 1)
+
+[node name="Aisle" type="ColorRect" parent="." unique_id=1756294830]
+offset_left = 300.0
+offset_top = 750.0
+offset_right = 1620.0
+offset_bottom = 820.0
+color = Color(0.45, 0.35, 0.2, 1)
+
+[node name="CoachOverlay" type="Control" parent="." unique_id=1325847906]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("coach_overlay")
+
+[node name="CoachSprite" type="AnimatedSprite2D" parent="CoachOverlay" unique_id=558924731]
+visible = false
+position = Vector2(1508, 691)
+
+[node name="DialogueBubble" type="Panel" parent="CoachOverlay" unique_id=330294871]
+visible = false
+layout_mode = 1
+offset_left = 350.0
+offset_top = 100.0
+offset_right = 650.0
+offset_bottom = 250.0
+
+[node name="DialogueText" type="RichTextLabel" parent="CoachOverlay/DialogueBubble" unique_id=536471289]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+
+[node name="PresenceLabel" type="Label" parent="CoachOverlay" unique_id=728394105]
+visible = false
+layout_mode = 1
+offset_left = 1400.0
+offset_top = 20.0
+offset_right = 1600.0
+offset_bottom = 50.0
+text = ""
+horizontal_alignment = 1
+
+[node name="MicPanel" type="Control" parent="." unique_id=244085601]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MicIcon" type="ColorRect" parent="MicPanel" unique_id=1596473897]
+layout_mode = 1
+offset_left = 620.0
+offset_top = 340.0
+offset_right = 700.0
+offset_bottom = 420.0
+color = Color(0.2, 0.8, 0.4, 1)
+
+[node name="MicLabel" type="Label" parent="MicPanel" unique_id=22427298]
+layout_mode = 1
+offset_left = 580.0
+offset_top = 430.0
+offset_right = 740.0
+offset_bottom = 465.0
+text = "请说话..."
+horizontal_alignment = 1
+
+[node name="LunaNPC" type="StaticBody2D" parent="." unique_id=1876293451]
+position = Vector2(500, 720)
+
+[node name="Sprite" type="ColorRect" parent="LunaNPC" unique_id=1631849502]
+offset_left = -20.0
+offset_top = -40.0
+offset_right = 20.0
+offset_bottom = 20.0
+color = Color(0.6, 0.3, 0.7, 1)
+
+[node name="Label" type="Label" parent="LunaNPC" unique_id=1162758394]
+offset_left = -35.0
+offset_top = 25.0
+offset_right = 35.0
+offset_bottom = 45.0
+text = "Luna"
+horizontal_alignment = 1
+
+[node name="TeacherNPC" type="StaticBody2D" parent="." unique_id=982374156]
+position = Vector2(900, 680)
+
+[node name="Sprite" type="ColorRect" parent="TeacherNPC" unique_id=1789402631]
+offset_left = -25.0
+offset_top = -35.0
+offset_right = 25.0
+offset_bottom = 25.0
+color = Color(0.4, 0.35, 0.5, 1)
+
+[node name="Label" type="Label" parent="TeacherNPC" unique_id=593827410]
+offset_left = -40.0
+offset_top = 30.0
+offset_right = 40.0
+offset_bottom = 50.0
+text = "Teacher"
+horizontal_alignment = 1
+
+[node name="Bookshelf" type="Node2D" parent="." unique_id=1134829756]
+
+[node name="Book1" type="StaticBody2D" parent="Bookshelf" unique_id=1758392046]
+position = Vector2(1100, 700)
+
+[node name="Sprite" type="ColorRect" parent="Bookshelf/Book1" unique_id=1508172893]
+offset_left = -15.0
+offset_top = -30.0
+offset_right = 15.0
+color = Color(0.9, 0.2, 0.2, 1)
+
+[node name="Label" type="Label" parent="Bookshelf/Book1" unique_id=2010694872]
+offset_left = -20.0
+offset_top = 5.0
+offset_right = 20.0
+offset_bottom = 25.0
+text = "Big Book"
+horizontal_alignment = 1
+
+[node name="Book2" type="StaticBody2D" parent="Bookshelf" unique_id=1436387291]
+position = Vector2(1250, 650)
+
+[node name="Sprite" type="ColorRect" parent="Bookshelf/Book2" unique_id=463571852]
+offset_left = -12.0
+offset_top = -22.0
+offset_right = 12.0
+color = Color(0.2, 0.4, 0.9, 1)
+
+[node name="Label" type="Label" parent="Bookshelf/Book2" unique_id=1041489372]
+offset_left = -20.0
+offset_top = 5.0
+offset_right = 20.0
+offset_bottom = 25.0
+text = "Small Book"
+horizontal_alignment = 1
+
+[node name="Book3" type="StaticBody2D" parent="Bookshelf" unique_id=87394260]
+position = Vector2(1400, 700)
+
+[node name="Sprite" type="ColorRect" parent="Bookshelf/Book3" unique_id=980623819]
+offset_left = -15.0
+offset_top = -30.0
+offset_right = 15.0
+color = Color(0.95, 0.85, 0.1, 1)
+
+[node name="Label" type="Label" parent="Bookshelf/Book3" unique_id=1002973294]
+offset_left = -25.0
+offset_top = 5.0
+offset_right = 25.0
+offset_bottom = 25.0
+text = "Red Book"
+horizontal_alignment = 1
+
+[node name="BadgeUI" type="Control" parent="." unique_id=1197520718]
+visible = false
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -50.0
+offset_right = 150.0
+offset_bottom = 50.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BadgeIcon" type="ColorRect" parent="BadgeUI" unique_id=101516260]
+layout_mode = 1
+offset_left = -40.0
+offset_top = -40.0
+offset_right = 40.0
+offset_bottom = 40.0
+color = Color(1, 0.843, 0, 1)
+
+[node name="BadgeLabel" type="Label" parent="BadgeUI" unique_id=749314340]
+layout_mode = 1
+offset_left = -100.0
+offset_top = 50.0
+offset_right = 100.0
+offset_bottom = 70.0
+text = "Library Badge!"
+horizontal_alignment = 1
+
+[node name="NavigationUI" type="Control" parent="." unique_id=1793412578]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GardenButton" type="Button" parent="NavigationUI" unique_id=503587992]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -25.0
+offset_right = 100.0
+offset_bottom = 25.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Go to Garden"
+
+[connection signal="pressed" from="NavigationUI/GardenButton" to="." method="_on_rainbow_garden_button_pressed"]
