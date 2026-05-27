@@ -166,3 +166,59 @@ text = "English"
 
 [connection signal="pressed" from="LangPanel/LangZhButton" to="." method="_on_lang_zh_button_pressed"]
 [connection signal="pressed" from="LangPanel/LangEnButton" to="." method="_on_lang_en_button_pressed"]
+
+[node name="SceneSelectPanel" type="Control" parent="." unique_id=888000001]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+modulate = Color(1, 1, 1, 0)
+
+[node name="TitleLabel" type="Label" parent="SceneSelectPanel" unique_id=888000002]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
+offset_left = -150.0
+offset_top = 120.0
+offset_right = 150.0
+offset_bottom = 160.0
+grow_horizontal = 2
+text = "选择你的冒险！"
+horizontal_alignment = 1
+
+[node name="SpiritForestButton" type="Button" parent="SceneSelectPanel" unique_id=888000003]
+layout_mode = 1
+offset_left = 140.0
+offset_top = 220.0
+offset_right = 440.0
+offset_bottom = 280.0
+text = "精灵森林"
+disabled = true
+
+[node name="SpellLibraryButton" type="Button" parent="SceneSelectPanel" unique_id=888000004]
+layout_mode = 1
+offset_left = 140.0
+offset_top = 310.0
+offset_right = 440.0
+offset_bottom = 370.0
+text = "咒语图书馆"
+disabled = true
+
+[node name="RainbowGardenButton" type="Button" parent="SceneSelectPanel" unique_id=888000005]
+layout_mode = 1
+offset_left = 140.0
+offset_top = 400.0
+offset_right = 440.0
+offset_bottom = 460.0
+text = "彩虹花园"
+disabled = true
+
+[connection signal="pressed" from="SceneSelectPanel/SpiritForestButton" to="." method="_on_spirit_forest_pressed"]
+[connection signal="pressed" from="SceneSelectPanel/SpellLibraryButton" to="." method="_on_spell_library_pressed"]
+[connection signal="pressed" from="SceneSelectPanel/RainbowGardenButton" to="." method="_on_rainbow_garden_pressed"]

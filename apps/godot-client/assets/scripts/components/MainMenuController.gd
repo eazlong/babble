@@ -7,6 +7,10 @@ extends Node2D
 @onready var mic_panel: Control = $MicPanel
 @onready var mic_icon: ColorRect = $MicPanel/MicIcon
 @onready var mic_label: Label = $MicPanel/MicLabel
+@onready var scene_select_panel: Control = $SceneSelectPanel
+@onready var spirit_forest_button: Button = $SceneSelectPanel/SpiritForestButton
+@onready var spell_library_button: Button = $SceneSelectPanel/SpellLibraryButton
+@onready var rainbow_garden_button: Button = $SceneSelectPanel/RainbowGardenButton
 
 var selected_lang: String = "zh"
 var mic_tween: Tween
@@ -22,6 +26,9 @@ func _ready() -> void:
 	lang_panel.modulate.a = 0
 	mic_panel.visible = false
 	mic_panel.modulate.a = 0
+	if scene_select_panel:
+		scene_select_panel.visible = false
+		scene_select_panel.modulate.a = 0
 
 	HybridAPI.ping_services()
 	HybridAPI.asr_received.connect(_on_asr_received)
@@ -175,4 +182,29 @@ func _on_lang_en_button_pressed() -> void:
 
 func enter_game_scene() -> void:
 	await get_tree().create_timer(0.5).timeout
+	_show_scene_select()
+
+func _show_scene_select() -> void:
+	if not scene_select_panel:
+		get_tree().change_scene_to_file("res://assets/scenes/SpiritForest.tscn")
+		return
+
+	spirit_forest_button.disabled = not _is_area_unlocked("SpiritForest")
+	spell_library_button.disabled = not _is_area_unlocked("SpellLibrary")
+	rainbow_garden_button.disabled = not _is_area_unlocked("RainbowGarden")
+
+	scene_select_panel.visible = true
+	var tween = create_tween()
+	tween.tween_property(scene_select_panel, "modulate:a", 1.0, 0.3)
+
+func _is_area_unlocked(area: String) -> bool:
+	return area in GameManager.unlocked_areas
+
+func _on_spirit_forest_pressed() -> void:
 	get_tree().change_scene_to_file("res://assets/scenes/SpiritForest.tscn")
+
+func _on_spell_library_pressed() -> void:
+	get_tree().change_scene_to_file("res://assets/scenes/SpellLibrary.tscn")
+
+func _on_rainbow_garden_pressed() -> void:
+	get_tree().change_scene_to_file("res://assets/scenes/RainbowGarden.tscn")
