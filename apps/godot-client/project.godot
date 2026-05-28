@@ -32,6 +32,7 @@ DialogueManager="*res://assets/scripts/autoload/DialogueManager.gd"
 AudioManager="*res://assets/scripts/autoload/AudioManager.gd"
 DialogueBox="*res://assets/scripts/autoload/DialogueBox.gd"
 CoachClient="*res://assets/scripts/autoload/CoachClient.gd"
+QuestWebSocket="*res://assets/scripts/autoload/QuestWebSocket.gd"
 
 [display]
 

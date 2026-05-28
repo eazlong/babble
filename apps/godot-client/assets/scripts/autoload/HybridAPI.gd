@@ -32,6 +32,9 @@ func _ready() -> void:
 	_create_error_ui()
 	api_error.connect(_on_api_error)
 
+	# Auto-connect quest WebSocket when services are ready
+	services_ready.connect(_on_services_ready)
+
 func ping_services() -> void:
 	_ping_in_progress = true
 	var error = http_request.request(API_BASE_URL + "/ping", [], HTTPClient.METHOD_GET)
@@ -290,3 +293,11 @@ func _show_error(message: String) -> void:
 func _hide_error() -> void:
 	if error_label:
 		error_label.visible = false
+
+func _on_services_ready() -> void:
+	# Connect quest WebSocket for real-time updates
+	if has_node("/root/QuestWebSocket"):
+		var quest_ws = get_node("/root/QuestWebSocket")
+		var user_id = GameManager.player_name if GameManager.player_name != "" else "anonymous"
+		quest_ws.connect_for_user(user_id)
+		print("[HybridAPI] Quest WebSocket connecting for user: ", user_id)

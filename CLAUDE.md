@@ -12,7 +12,7 @@
 - reward-service 联动 ✅ (reward-client with fallback)
 - 日常任务完整实现 ✅ (8 个日常任务池、动态生成、每日重置、GET/POST 接口)
 
-下一步：测试覆盖补充、家长控制台、WebSocket 实时通信。
+下一步：测试覆盖补充、家长控制台。
 
 ## 技术栈
 - **客户端**: Godot 4.6 (GDScript) + CocosCreator 3.8+ (TypeScript) 双客户端
