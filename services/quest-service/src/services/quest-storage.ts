@@ -454,8 +454,15 @@ export class MemoryQuestStorage implements QuestStorage {
     return { success: true, alreadyCompleted: false }
   }
 
-  async cleanupOldDailyQuests(_userId: string, _beforeDate: string): Promise<void> {
-    // No-op for memory storage
+  async cleanupOldDailyQuests(_userId: string, beforeDate: string): Promise<void> {
+    for (const [key] of this.dailyQuests) {
+      // key format: "userId:date"
+      const parts = key.split(':')
+      const date = parts[1]
+      if (date && date < beforeDate) {
+        this.dailyQuests.delete(key)
+      }
+    }
   }
 
   /** For testing: clear all state */
