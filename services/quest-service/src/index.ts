@@ -1,10 +1,23 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { registerQuestRoutes } from './routes/quests.js'
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    supabase: SupabaseClient
+  }
+}
 
 const app = Fastify({ logger: true })
 
 app.register(cors, { origin: true })
+
+// Initialize Supabase client (same as auth-service)
+const supabaseUrl = process.env.SUPABASE_URL || 'https://localhost:54321'
+const supabaseKey = process.env.SUPABASE_KEY || 'dev-key'
+app.decorate('supabase', createClient(supabaseUrl, supabaseKey))
+
 app.register(registerQuestRoutes)
 
 app.get('/health', async () => ({

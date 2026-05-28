@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js"
+import { MemoryQuestStorage, type QuestStorage, type UserQuestState } from "./quest-storage.js"
 import { getRewardDrop } from "./reward-client.js"
 
 export interface QuestCompletionResult {
@@ -32,16 +34,6 @@ interface DailyQuestProgress {
   quest_id: string
   completed: boolean
   stars_earned: number
-}
-
-interface QuestState {
-  completed_sub_quests: Set<string>
-  completed_quest_ids: Set<string>
-  scene_badges: Set<string>
-  total_stars: number
-  badges: Set<string>
-  daily_quest_date: string
-  daily_quest_progress: Map<string, DailyQuestProgress>
 }
 
 // ============================================================
@@ -430,28 +422,8 @@ const SCENE_BADGES: Record<string, { badge_id: string; name: string; name_en: st
 }
 
 // ============================================================
-// Quest Engine
+// Helper functions
 // ============================================================
-
-const userStates = new Map<string, QuestState>()
-
-// Store last completion result per user+quest for idempotent re-reports
-const questResults = new Map<string, QuestCompletionResult>()
-
-function getUserState(userId: string): QuestState {
-  if (!userStates.has(userId)) {
-    userStates.set(userId, {
-      completed_sub_quests: new Set(),
-      completed_quest_ids: new Set(),
-      scene_badges: new Set(),
-      total_stars: 0,
-      badges: new Set(),
-      daily_quest_date: '',
-      daily_quest_progress: new Map(),
-    })
-  }
-  return userStates.get(userId)!
-}
 
 function calculateStars(scores: { accuracy: number; fluency: number; vocabulary: number }): number {
   const avg = (scores.accuracy + scores.fluency + scores.vocabulary) / 3
@@ -461,14 +433,17 @@ function calculateStars(scores: { accuracy: number; fluency: number; vocabulary:
   return 0
 }
 
-function checkSceneBadgeCompletion(
-  userId: string,
-  sceneId: string,
-  state: QuestState
-): string | null {
-  const subQuestsInScene = CHAPTER_1_QUESTS.filter(
+function getSubQuestsInScene(sceneId: string): Quest[] {
+  return CHAPTER_1_QUESTS.filter(
     (q) => q.scene_id === sceneId && q.quest_type === 'sub'
   )
+}
+
+function checkSceneBadgeCompletion(
+  sceneId: string,
+  state: UserQuestState
+): string | null {
+  const subQuestsInScene = getSubQuestsInScene(sceneId)
   const allComplete = subQuestsInScene.every((q) => state.completed_sub_quests.has(q.quest_id))
   if (!allComplete) return null
 
@@ -481,14 +456,58 @@ function checkSceneBadgeCompletion(
   return badge.badge_id
 }
 
+function makeEmptyResult(): QuestCompletionResult {
+  return {
+    success: false,
+    lxp_earned: 0,
+    accuracy_score: 0,
+    fluency_score: 0,
+    vocabulary_score: 0,
+    stars_earned: 0,
+    badge_unlocked: null,
+    rewards: [],
+    all_scene_quests_complete: false,
+  }
+}
+
+function makeResult(
+  success: boolean,
+  scores: { accuracy: number; fluency: number; vocabulary: number },
+  lxp: number,
+  stars: number,
+  badge: string | null,
+  rewards: Array<{ item_id: string; name: string }>,
+  allSceneComplete: boolean
+): QuestCompletionResult {
+  return {
+    success,
+    lxp_earned: lxp,
+    accuracy_score: scores.accuracy,
+    fluency_score: scores.fluency,
+    vocabulary_score: scores.vocabulary,
+    stars_earned: stars,
+    badge_unlocked: badge,
+    rewards,
+    all_scene_quests_complete: allSceneComplete,
+  }
+}
+
+// ============================================================
+// Quest Engine
+// ============================================================
+
 export class QuestEngine {
+  private storage: QuestStorage
+
+  constructor(storage?: QuestStorage) {
+    this.storage = storage || new MemoryQuestStorage()
+  }
+
   async getUserQuests(userId: string, sceneId?: string): Promise<Quest[]> {
     let quests = CHAPTER_1_QUESTS.filter((q) => q.is_active)
-
     if (sceneId) {
       quests = quests.filter((q) => q.scene_id === sceneId)
     }
-
     return quests
   }
 
@@ -498,23 +517,24 @@ export class QuestEngine {
     scores: { accuracy: number; fluency: number; vocabulary: number }
   ): Promise<QuestCompletionResult> {
     const quest = CHAPTER_1_QUESTS.find((q) => q.quest_id === questId)
-    if (!quest) {
-      return {
-        success: false,
-        lxp_earned: 0,
-        accuracy_score: scores.accuracy,
-        fluency_score: scores.fluency,
-        vocabulary_score: scores.vocabulary,
-        stars_earned: 0,
-        badge_unlocked: null,
-        rewards: [],
-        all_scene_quests_complete: false,
-      }
+    if (!quest) return makeEmptyResult()
+
+    const state = await this.storage.loadUserState(userId)
+    // Rebuild completed_sub_quests from stored completed_quest_ids
+    for (const qid of state.completed_quest_ids) {
+      const q = CHAPTER_1_QUESTS.find((x) => x.quest_id === qid)
+      if (q?.quest_type === 'sub') state.completed_sub_quests.add(qid)
     }
 
-    const state = getUserState(userId)
+    // Idempotent: check if already completed (cached result from storage)
+    const cached = state.quest_results.get(questId)
+    if (cached) {
+      const subQuestsInScene = getSubQuestsInScene(quest.scene_id)
+      const allComplete = subQuestsInScene.every((q) => state.completed_sub_quests.has(q.quest_id))
+      return { ...cached, all_scene_quests_complete: allComplete }
+    }
 
-    // Calculate LXP based on scores
+    // Calculate LXP = accuracy*0.4 + fluency*0.3 + vocabulary*0.3
     const lxp = Math.round(
       scores.accuracy * 0.4 + scores.fluency * 0.3 + scores.vocabulary * 0.3
     )
@@ -528,62 +548,43 @@ export class QuestEngine {
       state.completed_sub_quests.add(questId)
     }
 
-    // Check if completing this sub-quest unlocks a scene badge
-    const badge = checkSceneBadgeCompletion(userId, quest.scene_id, state)
+    // Check badge unlock
+    const badge = checkSceneBadgeCompletion(quest.scene_id, state)
 
-    // Check if all sub-quests in the scene are now complete
-    const subQuestsInScene = CHAPTER_1_QUESTS.filter(
-      (q) => q.scene_id === quest.scene_id && q.quest_type === 'sub'
-    )
+    // Check scene completion
+    const subQuestsInScene = getSubQuestsInScene(quest.scene_id)
     const allSceneComplete = subQuestsInScene.every((q) => state.completed_sub_quests.has(q.quest_id))
 
     const rewards = await this.calculateRewards(questId, quest.quest_type, quest.cefr_requirement)
 
-    return {
-      success: true,
-      lxp_earned: lxp,
-      accuracy_score: scores.accuracy,
-      fluency_score: scores.fluency,
-      vocabulary_score: scores.vocabulary,
-      stars_earned: stars,
-      badge_unlocked: badge,
-      rewards,
-      all_scene_quests_complete: allSceneComplete,
-    }
+    // Persist to storage
+    await this.storage.completeQuest(
+      userId, questId, quest.scene_id, scores,
+      lxp, stars, badge, rewards
+    )
+
+    state.completed_quest_ids.add(questId)
+    await this.storage.updateUserStats(userId, state.total_stars, Array.from(state.badges))
+
+    return makeResult(true, scores, lxp, stars, badge, rewards, allSceneComplete)
   }
 
   async generateDailyQuests(userId: string): Promise<Quest[]> {
     return this.getDailyQuests(userId)
   }
 
-  /**
-   * Get the total stars earned by a user across all quest completions.
-   */
   async getUserStars(userId: string): Promise<number> {
-    return getUserState(userId).total_stars
+    const state = await this.storage.loadUserState(userId)
+    return state.total_stars
   }
 
-  /**
-   * Get all badges unlocked by a user.
-   */
   async getUserBadges(userId: string): Promise<string[]> {
-    return Array.from(getUserState(userId).badges)
+    const state = await this.storage.loadUserState(userId)
+    return Array.from(state.badges)
   }
 
-  /**
-   * Get today's rotating daily quests for a user.
-   */
   getDailyQuests(userId: string): Quest[] {
     const today = new Date().toISOString().slice(0, 10)
-    const state = getUserState(userId)
-
-    // Reset if date changed
-    if (state.daily_quest_date !== today) {
-      state.daily_quest_date = today
-      state.daily_quest_progress.clear()
-    }
-
-    // Deterministic shuffle seeded by date
     const seed = today.split('-').join('')
     const pool = [...DAILY_QUEST_POOL]
     for (let i = pool.length - 1; i > 0; i--) {
@@ -592,47 +593,47 @@ export class QuestEngine {
       pool[i] = pool[j]!
       pool[j] = swap
     }
-
     return pool.slice(0, DAILY_QUESTS_PER_DAY)
   }
 
-  /**
-   * Complete a daily quest for a user.
-   */
   async completeDailyQuest(
     userId: string,
     questId: string,
     scores: { accuracy: number; fluency: number; vocabulary: number }
   ): Promise<{ success: boolean; message: string }> {
     const quest = DAILY_QUEST_POOL.find((q) => q.quest_id === questId)
-    if (!quest) {
-      return { success: false, message: 'Quest not found' }
-    }
+    if (!quest) return { success: false, message: 'Quest not found' }
 
-    const state = getUserState(userId)
-    if (state.daily_quest_progress.has(questId)) {
-      const existing = state.daily_quest_progress.get(questId)!
-      if (existing.completed) {
-        return { success: false, message: 'Already completed' }
-      }
+    const state = await this.storage.loadUserState(userId)
+    const today = state.daily_quest_date || new Date().toISOString().slice(0, 10)
+
+    const existing = state.daily_quest_progress.get(questId)
+    if (existing?.completed) {
+      return { success: false, message: 'Already completed' }
     }
 
     const stars = calculateStars(scores)
+    state.total_stars += stars
+
+    // Persist
+    const result = await this.storage.completeDailyQuest(userId, today, questId, stars)
+    if (result.alreadyCompleted) {
+      return { success: false, message: 'Already completed' }
+    }
+
+    await this.storage.updateUserStats(userId, state.total_stars, Array.from(state.badges))
+
+    // Also mark in local state
     state.daily_quest_progress.set(questId, {
       quest_id: questId,
       completed: true,
       stars_earned: stars,
     })
     state.completed_quest_ids.add(questId)
-    state.total_stars += stars
 
     return { success: true, message: 'Daily quest completed' }
   }
 
-  /**
-   * Report quest completion with idempotent semantics — returns previous result
-   * if the quest was already completed, preventing double-counting.
-   */
   async reportQuestCompletion(
     userId: string,
     questId: string,
@@ -640,93 +641,61 @@ export class QuestEngine {
     scores: { accuracy: number; fluency: number; vocabulary: number },
     playerInput?: string
   ): Promise<QuestCompletionResult & { all_scene_quests_complete: boolean }> {
-    const resultKey = `${userId}:${questId}`
-    const cached = questResults.get(resultKey)
+    const quest = CHAPTER_1_QUESTS.find((q) => q.quest_id === questId)
+    if (!quest) return { ...makeEmptyResult(), all_scene_quests_complete: false }
+
+    const state = await this.storage.loadUserState(userId)
+
+    // Rebuild completed_sub_quests from stored completed_quest_ids
+    for (const qid of state.completed_quest_ids) {
+      const q = CHAPTER_1_QUESTS.find((x) => x.quest_id === qid)
+      if (q?.quest_type === 'sub') state.completed_sub_quests.add(qid)
+    }
+
+    // Idempotent: check cached result
+    const cached = state.quest_results.get(questId)
     if (cached) {
-      const subQuestsInScene = CHAPTER_1_QUESTS.filter(
-        (q) => q.scene_id === sceneId && q.quest_type === 'sub'
-      )
-      const state = getUserState(userId)
+      const subQuestsInScene = getSubQuestsInScene(sceneId)
       const allComplete = subQuestsInScene.every((q) => state.completed_sub_quests.has(q.quest_id))
       return { ...cached, all_scene_quests_complete: allComplete }
     }
 
-    const quest = CHAPTER_1_QUESTS.find((q) => q.quest_id === questId)
-    if (!quest) {
-      return {
-        success: false,
-        lxp_earned: 0,
-        accuracy_score: scores.accuracy,
-        fluency_score: scores.fluency,
-        vocabulary_score: scores.vocabulary,
-        stars_earned: 0,
-        badge_unlocked: null,
-        rewards: [],
-        all_scene_quests_complete: false,
-      }
-    }
-
-    const state = getUserState(userId)
-
-    // Prevent double-counting at the engine level too
-    if (state.completed_quest_ids.has(questId)) {
-      const existing = questResults.get(`${userId}:${questId}`)
-      if (existing) {
-        const subQuestsInScene = CHAPTER_1_QUESTS.filter(
-          (q) => q.scene_id === sceneId && q.quest_type === 'sub'
-        )
-        const allComplete = subQuestsInScene.every((q) => state.completed_sub_quests.has(q.quest_id))
-        return { ...existing, all_scene_quests_complete: allComplete }
-      }
-    }
-
-    // Calculate LXP = accuracy*0.4 + fluency*0.3 + vocabulary*0.3
+    // Calculate LXP
     const lxp = Math.round(
       scores.accuracy * 0.4 + scores.fluency * 0.3 + scores.vocabulary * 0.3
     )
 
-    // Calculate stars (avg >=90 -> 3, >=70 -> 2, >=40 -> 1)
+    // Calculate stars
     const stars = calculateStars(scores)
     state.total_stars += stars
 
-    // Mark quest as completed
+    // Mark completed
     state.completed_quest_ids.add(questId)
 
-    // Track sub-quest completion
+    // Track sub-quest
     if (quest.quest_type === 'sub') {
       state.completed_sub_quests.add(questId)
     }
 
-    // Check if this unlocks a scene badge
-    const badge = checkSceneBadgeCompletion(userId, quest.scene_id, state)
+    // Badge check
+    const badge = checkSceneBadgeCompletion(quest.scene_id, state)
 
-    // Check if all quests in the scene are complete
-    const subQuestsInScene = CHAPTER_1_QUESTS.filter(
-      (q) => q.scene_id === sceneId && q.quest_type === 'sub'
-    )
+    // Scene completion check
+    const subQuestsInScene = getSubQuestsInScene(sceneId)
     const allSceneComplete = subQuestsInScene.every((q) => state.completed_sub_quests.has(q.quest_id))
 
     const rewards = await this.calculateRewards(questId, quest.quest_type, quest.cefr_requirement)
 
-    const result: QuestCompletionResult & { all_scene_quests_complete: boolean } = {
-      success: true,
-      lxp_earned: lxp,
-      accuracy_score: scores.accuracy,
-      fluency_score: scores.fluency,
-      vocabulary_score: scores.vocabulary,
-      stars_earned: stars,
-      badge_unlocked: badge,
-      rewards,
-      all_scene_quests_complete: allSceneComplete,
-    }
+    // Persist
+    await this.storage.completeQuest(
+      userId, questId, quest.scene_id, scores,
+      lxp, stars, badge, rewards
+    )
+    await this.storage.updateUserStats(userId, state.total_stars, Array.from(state.badges))
 
-    questResults.set(resultKey, result)
-    return result
+    return makeResult(true, scores, lxp, stars, badge, rewards, allSceneComplete)
   }
 
-  /**
-   * Get quest status for a specific scene — completed, pending, badge, stars.
-   */
   async getQuestStatus(
     userId: string,
     sceneId: string
@@ -737,7 +706,13 @@ export class QuestEngine {
     badge_unlocked: boolean
     total_stars: number
   }> {
-    const state = getUserState(userId)
+    const state = await this.storage.loadUserState(userId)
+    // Rebuild completed_sub_quests from stored completed_quest_ids
+    for (const qid of state.completed_quest_ids) {
+      const q = CHAPTER_1_QUESTS.find((x) => x.quest_id === qid)
+      if (q?.quest_type === 'sub') state.completed_sub_quests.add(qid)
+    }
+
     const questsInScene = CHAPTER_1_QUESTS.filter(
       (q) => q.scene_id === sceneId && q.is_active
     )
