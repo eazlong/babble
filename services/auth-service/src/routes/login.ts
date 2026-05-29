@@ -20,10 +20,23 @@ export async function registerLoginRoutes(app: FastifyInstance) {
       return reply.status(401).send({ error: { code: 'LOGIN_FAILED', message: error.message } })
     }
 
+    // If user is a child, look up their parent_id from child_accounts
+    let parentId = data.user!.id
+    const { data: parentData, error: parentError } = await app.supabase
+      .from('child_data.child_accounts')
+      .select('parent_id')
+      .eq('child_id', data.user.id)
+      .maybeSingle()
+
+    if (!parentError && parentData?.parent_id) {
+      parentId = parentData.parent_id
+    }
+
     return reply.send({
+      token: data.session!.access_token,
+      parent_id: parentId,
       user_id: data.user!.id,
       email: data.user!.email!,
-      access_token: data.session!.access_token,
       refresh_token: data.session!.refresh_token
     })
   })

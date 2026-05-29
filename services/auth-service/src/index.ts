@@ -3,6 +3,7 @@ import cors from '@fastify/cors'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { registerRoutes } from './routes/register.js'
 import { registerLoginRoutes } from './routes/login.js'
+import { registerParentDashboardRoutes } from './routes/parent-dashboard.js'
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -22,6 +23,7 @@ app.decorate('supabase', createClient(supabaseUrl, supabaseKey))
 // Register routes
 app.register(registerRoutes)
 app.register(registerLoginRoutes)
+app.register(registerParentDashboardRoutes)
 
 app.get('/health', async () => ({
   status: 'ok',

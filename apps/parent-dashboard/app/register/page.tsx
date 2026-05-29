@@ -25,18 +25,23 @@ export default function RegisterPage() {
       return
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters')
       return
     }
 
     setLoading(true)
 
     try {
+      const body: Record<string, string> = { email, password }
+      if (childName.trim()) {
+        body.child_name = childName.trim()
+      }
+
       const res = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, child_name: childName }),
+        body: JSON.stringify(body),
       })
 
       const data = await res.json()
@@ -122,12 +127,11 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="childName" className="block text-sm font-medium text-gray-700 mb-1">
-                Child&apos;s Name
+                Child&apos;s Name (optional)
               </label>
               <input
                 id="childName"
                 type="text"
-                required
                 value={childName}
                 onChange={e => setChildName(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
