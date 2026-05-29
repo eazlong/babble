@@ -12,7 +12,17 @@
 - reward-service 联动 ✅ (reward-client with fallback)
 - 日常任务完整实现 ✅ (8 个日常任务池、动态生成、每日重置、GET/POST 接口)
 
-下一步：测试覆盖补充、家长控制台。
+下一步：测试覆盖补充、家长控制台后端 API 对接。
+
+家长控制台 MVP 已完成 ✅：
+- 登录/注册页面（邮箱+密码认证）
+- AuthGuard 路由守卫
+- 响应式 Navbar（Dashboard/Reports/Content Control/Settings + 退出登录）
+- Dashboard 页面（ChildCard 统计卡片，Tailwind 样式）
+- Reports 页面（学习时长/词汇增长/CEFR 进度/任务完成）
+- Content Control 页面（3 场景开关 + 内容过滤级别）
+- Settings 页面（每日时长限制设置）
+- lib/api.ts 扩展（login/register/reports/content-settings）
 
 ## 技术栈
 - **客户端**: Godot 4.6 (GDScript) + CocosCreator 3.8+ (TypeScript) 双客户端
