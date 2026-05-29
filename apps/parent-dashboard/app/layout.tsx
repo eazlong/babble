@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import AuthGuard from '../components/AuthGuard'
+import './globals.css'
 
 export const metadata: Metadata = {
   title: 'LinguaQuest - Parent Dashboard',
@@ -12,8 +14,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN">
-      <body style={{ margin: 0, fontFamily: 'system-ui, sans-serif' }}>
-        {children}
+      <body className="min-h-screen bg-gray-50">
+        <AuthGuard>{children}</AuthGuard>
       </body>
     </html>
   )

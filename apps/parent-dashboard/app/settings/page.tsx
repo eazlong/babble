@@ -1,10 +1,13 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { updateTimeLimit } from '../../lib/api'
 import { getAuthToken } from '../../lib/auth'
+import Navbar from '../../components/Navbar'
 
 export default function SettingsPage() {
+  const router = useRouter()
   const [timeLimit, setTimeLimit] = useState(60)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -28,44 +31,42 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
-      <h1 className="text-2xl font-bold mb-6">Child Settings</h1>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">Child Settings</h1>
 
-      <div className="bg-white rounded-lg shadow p-6 max-w-md">
-        <label className="block mb-4">
-          <span className="text-sm font-medium text-gray-700">Daily Time Limit (minutes)</span>
-          <input
-            type="number"
-            min={5}
-            max={180}
-            value={timeLimit}
-            onChange={e => setTimeLimit(parseInt(e.target.value, 10))}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2"
-          />
-        </label>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-md">
+          <label className="block mb-4">
+            <span className="text-sm font-medium text-gray-700 block mb-1">Daily Time Limit (minutes)</span>
+            <input
+              type="number"
+              min={5}
+              max={180}
+              value={timeLimit}
+              onChange={e => setTimeLimit(parseInt(e.target.value, 10))}
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+          </label>
 
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          style={{
-            padding: '8px 24px',
-            background: '#4f46e5',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: saving ? 'not-allowed' : 'pointer',
-            opacity: saving ? 0.6 : 1
-          }}
-        >
-          {saving ? 'Saving...' : 'Save'}
-        </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-6 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {saving ? 'Saving...' : 'Save'}
+          </button>
 
-        {saved && <p className="mt-2 text-green-600">Settings saved!</p>}
+          {saved && <p className="mt-2 text-green-600 text-sm">Settings saved!</p>}
 
-        <a href="/dashboard" className="block mt-4 text-indigo-600">
-          ← Back to Dashboard
-        </a>
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="block mt-4 text-indigo-600 hover:text-indigo-700 font-medium text-sm"
+          >
+            ← Back to Dashboard
+          </button>
+        </div>
       </div>
-    </main>
+    </div>
   )
 }

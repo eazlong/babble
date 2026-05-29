@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { getParentDashboard, getChildProgress, updateTimeLimit, deleteChildData } from '../../lib/api'
 import { getAuthToken, getParentId } from '../../lib/auth'
+import Navbar from '../../components/Navbar'
 
 interface ChildData {
   child_id: string
@@ -15,6 +17,7 @@ interface ChildData {
 }
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [children, setChildren] = useState<ChildData[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -37,45 +40,60 @@ export default function DashboardPage() {
     loadDashboard()
   }, [])
 
-  if (loading) return <div>Loading...</div>
+  if (loading) return (
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <div className="flex items-center justify-center h-96">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    </div>
+  )
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
-      <h1 className="text-2xl font-bold mb-6">Parent Dashboard</h1>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">Parent Dashboard</h1>
 
-      {children.map(child => (
-        <ChildCard key={child.child_id} child={child} />
-      ))}
+        {children.map(child => (
+          <ChildCard key={child.child_id} child={child} />
+        ))}
 
-      {children.length === 0 && (
-        <p className="text-gray-500">No children linked to this account.</p>
-      )}
-    </main>
+        {children.length === 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+            <p className="text-gray-500">No children linked to this account.</p>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
 function ChildCard({ child }: { child: ChildData }) {
   return (
-    <div className="bg-white rounded-lg shadow p-6 mb-4">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">{child.display_name}</h2>
+        <h2 className="text-xl font-semibold text-gray-800">{child.display_name}</h2>
         <span className="text-sm text-gray-500">
           Time today: {child.total_time_today}/{child.daily_time_limit_minutes} min
         </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-4 mb-4">
         <StatCard label="Vocabulary" value={child.vocabulary_count || 0} />
         <StatCard label="CEFR Level" value={child.cefr_level || 'A1'} />
         <StatCard label="Quests Done" value={child.quests_completed || 0} />
       </div>
 
-      <div className="mt-4 flex gap-2">
-        <a href={`/settings?child=${child.child_id}`} style={{ padding: '8px 16px', background: '#e5e7eb', borderRadius: '6px', textDecoration: 'none', color: '#374151' }}>
+      <div className="flex gap-2">
+        <a
+          href={`/settings?child=${child.child_id}`}
+          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+        >
           Settings
         </a>
         <button
-          style={{ padding: '8px 16px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
           onClick={() => handleDeleteData(child.child_id)}
         >
           Delete All Data
@@ -87,9 +105,9 @@ function ChildCard({ child }: { child: ChildData }) {
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div style={{ background: '#f3f4f6', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
-      <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{value}</div>
-      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{label}</div>
+    <div className="bg-gray-50 rounded-lg p-4 text-center">
+      <div className="text-2xl font-bold text-gray-800">{value}</div>
+      <div className="text-sm text-gray-500">{label}</div>
     </div>
   )
 }
