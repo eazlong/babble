@@ -9,7 +9,7 @@ var sfx_volume: float = 1.0
 var tts_volume: float = 1.0
 var _tts_expected: bool = false
 
-signal tts_finished()
+signal tts_finished(duration: float)
 
 func _ready() -> void:
 	bgm_player = AudioStreamPlayer.new()
@@ -46,10 +46,13 @@ func play_tts(stream: AudioStream) -> void:
 	tts_player.play()
 
 func _on_tts_finished() -> void:
+	var duration: float = 0.0
+	if tts_player.stream:
+		duration = tts_player.stream.get_length()
 	if not _tts_expected:
 		return
 	_tts_expected = false
-	tts_finished.emit()
+	tts_finished.emit(duration)
 
 func play_audio_from_base64(base64_data: String, format: String = "wav") -> void:
 	var bytes = Marshalls.base64_to_raw(base64_data)
