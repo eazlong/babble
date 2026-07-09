@@ -15,9 +15,9 @@ describe('CoachHintGenerator', () => {
       expect(hint.ttl_ms).toBe(8000)
     })
 
-    it('contains Chinese helper text 我来帮你', () => {
+    it('contains Chinese helper text 小飞猫来啦', () => {
       const hint = generator.generate({ trigger: 'wake', errors: [] })
-      expect(hint.text).toContain('我来帮你')
+      expect(hint.text).toContain('小飞猫')
     })
   })
 
@@ -60,7 +60,7 @@ describe('CoachHintGenerator', () => {
       expect(hint.ttl_ms).toBe(8000)
     })
 
-    it('contains Chinese encouragement text 差一点点', () => {
+    it('contains Chinese encouragement text with 喵~ prefix', () => {
       const hint = generator.generate({
         trigger: 'error',
         errors: [
@@ -75,7 +75,7 @@ describe('CoachHintGenerator', () => {
       })
 
       expect(hint.text).toContain('可以说')
-      expect(hint.text).toContain('差一点点')
+      expect(hint.text).toContain('喵~')
     })
 
     it('uses first error when multiple errors exist', () => {
