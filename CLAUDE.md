@@ -44,11 +44,35 @@ services/                # 后端微服务 (11 个)
   assessment-service/    # 评估
 apps/
   godot-client/          # Godot 4.6 客户端 (主要)
+    .claude/             # Godot 专属 agents + skills
+      agents/            # 游戏开发 specialists
+        game-designer.md
+        gameplay-programmer.md
+        economy-designer.md
+        systems-designer.md
+        narrative-director.md
+        writer.md
+        godot-specialist.md
+        godot-gdscript-specialist.md
+      skills/            # 设计审查 + 原型验证
+        balance-check/
+        design-review/
+        prototype/
+        quick-design/
+        godot-fix/
+        godot-debug/
+    design/gdd/          # 游戏设计文档
+      game-concept.md
+      core-loop.md
+      quest-system.md
+      star-economy.md
+      spirit-coach.md
+      lxp-system.md
   game-creator/          # CocosCreator 客户端
   game-client/           # Web 客户端
   parent-dashboard/      # 家长控制台 (Next.js)
 tests/                   # E2E 测试 (Playwright) + 性能测试
-docs/                    # 架构文档、计划、规格说明
+docs/                    # 架构文档、API 规格说明
 scripts/                 # 开发辅助脚本
 ```
 
@@ -107,3 +131,41 @@ pnpm --filter tests exec playwright test  # E2E 测试 (Playwright)
 - `start-dev-session.sh` 脚本仍可用 (`./scripts/start-dev-session.sh [A|B|C|all]`)
 - F5-TTS 仅在 Mac ARM64 (MLX) 上本地运行，docker compose 中已注释
 - 优先修改 Godot 客户端 (`apps/godot-client/`)，CocosCreator 逐步迁移中
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues（不处理外部 PR）。详见 `docs/agents/issue-tracker.md`。
+
+### Triage labels
+
+使用默认标签名。详见 `docs/agents/triage-labels.md`。
+
+### Domain docs
+
+multi-context（按服务划分）。详见 `docs/agents/domain.md`。
+
+### Godot client specialists
+
+`apps/godot-client/.claude/` 包含游戏开发专属 agents 和 skills：
+
+**Agents（游戏设计 + 实现）**：
+- `game-designer` — 核心循环、系统设计、平衡框架、玩家体验（MDA/Flow/Bartle理论）
+- `gameplay-programmer` — 翻译设计文档为代码、数据驱动、状态机实现
+- `economy-designer` — 资源流动建模、战利品表、进度曲线、奖励心理学
+- `systems-designer` — 公式设计、交互矩阵、反馈循环、数学建模（强制输出变量表）
+- `narrative-director` — 故事架构、世界观框架、角色设计、叙事和谐性
+- `writer` — 对话撰写、文本内容（委托自 narrative-director）
+- `godot-specialist` — Godot引擎权威（Node/Scene架构、信号系统、性能优化）
+- `godot-gdscript-specialist` — GDScript代码质量（静态类型、设计模式、协程优化）
+
+**Skills（设计验证）**：
+- `/balance-check` — 战斗/经济/进度/战利品平衡分析（异常值、退化策略、进度曲线）
+- `/design-review` — GDD完整性审查（8部分验证 + 专家对抗性审查）
+- `/prototype` — 概念原型验证（HTML/Engine/Paper路径 + PROCEED/PIVOT/KILL判定）
+- `/quick-design` — 小改动快速规格（Tuning/Tweak/Addition/New Small System）
+- `/godot-fix` — Godot 4.6 API兼容性调试（已知坑排查）
+- `/godot-debug` — Godot调试协议（版本确认→信号验证→最小场景测试）
+
+**GDD文档位置**：`apps/godot-client/design/gdd/`（6个核心设计文档）
