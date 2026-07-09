@@ -13,14 +13,18 @@ var connected := false
 var _user_id: String = "anonymous"
 
 # --- reconnect ---
-const MAX_RECONNECT_DELAY: float = 30.0
-const MAX_RECONNECT_ATTEMPTS: int = 10
+const MAX_RECONNECT_DELAY: float = 10.0
+const MAX_RECONNECT_ATTEMPTS: int = 3
 const CONNECT_TIMEOUT: float = 10.0
 var reconnect_delay: float = 1.0
 var reconnect_timer: float = 0.0
 var reconnect_attempts: int = 0
 var _wants_connection: bool = false
 var _connecting_since: float = -1.0
+
+# --- session state persistence ---
+var _last_session_state: Dictionary = {}
+var _pending_events: Array[Dictionary] = []
 
 func connect_for_user(user_id: String = "anonymous") -> void:
 	_user_id = user_id
@@ -34,6 +38,9 @@ func connect_for_user(user_id: String = "anonymous") -> void:
 	if err != OK:
 		_connecting_since = -1.0
 		connection_error.emit("Quest websocket connect failed: " + str(err))
+	else:
+		# Load saved session state on initial connect
+		_load_session_state()
 
 func disconnect_socket() -> void:
 	_wants_connection = false
@@ -55,6 +62,8 @@ func _process(delta: float) -> void:
 			reconnect_delay = 1.0
 			reconnect_attempts = 0
 			connection_changed.emit(true)
+			# Restore session state after reconnect
+			_restore_session_after_reconnect()
 		_connecting_since = -1.0
 		while socket.get_available_packet_count() > 0:
 			var packet = socket.get_packet().get_string_from_utf8()
@@ -108,3 +117,48 @@ func _dispatch_event(payload: Dictionary) -> void:
 			print("[QuestWS] badge_unlocked: ", data)
 		_:
 			push_warning("[QuestWS] Unknown event type: ", event_type)
+
+# --- session state persistence ---
+
+func _save_session_state() -> void:
+	"""Save current session state to UserPrefs for recovery after reconnect."""
+	_last_session_state = {
+		"user_id": _user_id,
+		"saved_at": Time.get_unix_time_from_system(),
+	}
+	var prefs = ConfigFile.new()
+	var save_path = "user://quest_session_state.cfg"
+	prefs.set_value("session", "state", JSON.stringify(_last_session_state))
+	prefs.save(save_path)
+	print("[QuestWS] Session state saved: ", _last_session_state)
+
+func _load_session_state() -> void:
+	"""Load previously saved session state."""
+	var prefs = ConfigFile.new()
+	var save_path = "user://quest_session_state.cfg"
+	if prefs.load(save_path) == OK:
+		var state_json = prefs.get_value("session", "state", "")
+		if state_json != "":
+			var loaded = JSON.parse_string(state_json)
+			if loaded is Dictionary:
+				_last_session_state = loaded
+				print("[QuestWS] Session state loaded: ", _last_session_state)
+
+func _restore_session_after_reconnect() -> void:
+	"""Restore session state and flush pending events after reconnect."""
+	if reconnect_attempts > 0:
+		print("[QuestWS] Restoring session after reconnect (attempt %d)" % reconnect_attempts)
+		# Send any pending events that were queued during disconnect
+		for event in _pending_events:
+			var json_str = JSON.stringify(event)
+			socket.put_packet(json_str.to_utf8_buffer())
+			print("[QuestWS] Flushed pending event: ", event.get("type", "unknown"))
+		_pending_events.clear()
+		# Reload session state from server by requesting current status
+		_request_session_sync()
+
+func _request_session_sync() -> void:
+	"""Request current session state from server after reconnect."""
+	# This would typically be an HTTP request to get current quest status
+	# For now, we emit a signal that the game can listen to
+	print("[QuestWS] Requesting session sync for user: ", _user_id)

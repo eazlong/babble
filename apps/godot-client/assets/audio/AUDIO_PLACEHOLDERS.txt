@@ -1,0 +1,13 @@
+音频占位说明（需后续补充真实音频文件）
+==================================================
+
+本目录需要的音频文件（按 design/art/spirit_forest_art_assets.md §7）:
+
+  bgm/forest_ambient.ogg              - 60-120s 循环森林环境 BGM
+  sfx/bird_chirp_01.ogg               - 清脆短鸣 2 声
+  sfx/bird_chirp_02.ogg               - 悠长鸣叫 1 声
+  sfx/bird_chirp_03.ogg               - 急促连续鸣叫 4 声
+  sfx/magic_sparkle.ogg               - 清脆铃铛 + 星光
+  sfx/badge_unlock.ogg                - 5-8s 解锁音效
+
+建议使用 OGG Vorbis 格式，BGM 128kbps，SFX 96kbps

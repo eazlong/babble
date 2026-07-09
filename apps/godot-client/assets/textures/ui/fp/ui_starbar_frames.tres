@@ -1,0 +1,18 @@
+[gd_resource type="SpriteFrames" load_steps=3 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/textures/ui/fp/ui_starbar_bg.png" id="1"]
+[ext_resource type="Texture2D" path="res://assets/textures/ui/fp/ui_starbar_fill.png" id="2"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2")
+}],
+"loop": true,
+"name": &"default",
+"speed": 2.0
+}]

@@ -11,6 +11,10 @@ var unlocked_areas: Array[String] = ["SpiritForest"]
 var completed_dialogues: Array[String] = []
 var vocabulary_learned: Array[String] = []
 
+# 词灵系统
+var unlocked_spirits: Array[String] = []
+var spirit_usage_counts: Dictionary[String, int] = {}
+
 # 语言经验值
 var lxp_score: int = 0
 
@@ -18,9 +22,34 @@ var lxp_score: int = 0
 signal language_changed(lang: String)
 signal player_info_updated(name: String, age: int)
 signal progress_saved()
+signal spirit_unlock_dismissed()
 
 func _ready() -> void:
+	# Connect to SaveSystem autoload singleton for async data restoration
+	var save_system = get_node("/root/SaveSystem")
+	save_system.load_completed.connect(_on_save_loaded)
 	load_progress()
+
+func _on_save_loaded(slot_id: int, data: Dictionary) -> void:
+	"""Restore spirit data after SaveSystem async load completes"""
+	var spirit_data = data.get("unlocked_spirits", [])
+	unlocked_spirits.clear()
+	for sid in spirit_data:
+		unlocked_spirits.append(sid)
+
+	var usage_data = data.get("spirit_usage_counts", {})
+	spirit_usage_counts.clear()
+	for sid in usage_data.keys():
+		spirit_usage_counts[sid] = usage_data[sid]
+
+	# Notify SpiritCollectionManager (if initialized)
+	if has_node("/root/SpiritCollectionManager"):
+		var spirit_mgr = get_node("/root/SpiritCollectionManager")
+		if spirit_mgr.has_method("restore_from_save"):
+			spirit_mgr.call("restore_from_save", {
+				"unlocked_spirits": unlocked_spirits,
+				"spirit_usage_counts": spirit_usage_counts
+			})
 
 func set_player_info(name: String, age: int) -> void:
 	player_name = name
@@ -41,16 +70,16 @@ func save_progress() -> void:
 		"unlocked_areas": unlocked_areas,
 		"lxp_score": lxp_score,
 		"completed_dialogues": completed_dialogues,
-		"vocabulary_learned": vocabulary_learned
+		"vocabulary_learned": vocabulary_learned,
+		"unlocked_spirits": unlocked_spirits,
+		"spirit_usage_counts": spirit_usage_counts
 	}
-
-	var file = FileAccess.open("user://save.json", FileAccess.WRITE)
-	if file:
-		file.store_string(JSON.stringify(save_data))
-		file.close()
-		progress_saved.emit()
+	var save_system = get_node("/root/SaveSystem")
+	save_system.save(1, save_data)
 
 func load_progress() -> bool:
+	# Note: SaveSystem.load() is async and emits load_completed signal
+	# For synchronous loading in _ready(), we'll keep a fallback for now
 	if FileAccess.file_exists("user://save.json"):
 		var file = FileAccess.open("user://save.json", FileAccess.READ)
 		if file:
@@ -85,4 +114,23 @@ func reset() -> void:
 	unlocked_areas = ["SpiritForest"]
 	completed_dialogues.clear()
 	vocabulary_learned.clear()
+	unlocked_spirits.clear()
+	spirit_usage_counts.clear()
 	save_progress()
+
+func show_spirit_unlock(spirit_id: String) -> void:
+	"""Display spirit unlock overlay."""
+	var overlay = SpiritUnlockOverlay.new()
+	get_tree().root.add_child(overlay)
+	overlay.display_spirit_unlock(spirit_id)
+	overlay.dismissed.connect(_on_spirit_overlay_dismissed)
+
+func _on_spirit_overlay_dismissed() -> void:
+	"""Spirit unlock animation finished - resume dialogue."""
+	spirit_unlock_dismissed.emit()
+
+	# Resume DialogueManager if waiting
+	if has_node("/root/DialogueManager"):
+		var dialogue_mgr = get_node("/root/DialogueManager")
+		if dialogue_mgr.has_method("resume_after_spirit_unlock"):
+			dialogue_mgr.call("resume_after_spirit_unlock")

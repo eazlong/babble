@@ -55,7 +55,11 @@ animations = [{
 [node name="MainMenu" type="Node2D" unique_id=1150430353]
 script = ExtResource("1_jrfyc")
 
-[node name="Background" type="TextureRect" parent="." unique_id=1419426979]
+[node name="WorldLayer" type="CanvasLayer" parent="."]
+layer = 0
+
+[node name="Background" type="TextureRect" parent="WorldLayer" unique_id=1419426979]
+z_index = 0
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -64,7 +68,13 @@ offset_bottom = 720.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="TitleLabel" type="Label" parent="." unique_id=609199787]
+[node name="FXLayer" type="CanvasLayer" parent="."]
+layer = 5
+
+[node name="HUDLayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="TitleLabel" type="Label" parent="HUDLayer" unique_id=609199787]
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -73,10 +83,17 @@ offset_top = 50.0
 offset_right = 200.0
 offset_bottom = 100.0
 grow_horizontal = 2
+theme_override_font_sizes/font_size = 32
 text = "LinguaQuest RPG"
 horizontal_alignment = 1
 
-[node name="CoachOverlay" type="Control" parent="." unique_id=2003197651]
+[node name="DialogueLayer" type="CanvasLayer" parent="."]
+layer = 20
+
+[node name="CoachLayer" type="CanvasLayer" parent="."]
+layer = 30
+
+[node name="CoachOverlay" type="Control" parent="CoachLayer" unique_id=2003197651]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -86,13 +103,13 @@ grow_vertical = 2
 script = ExtResource("2_coach")
 metadata/_edit_use_anchors_ = true
 
-[node name="CoachSprite" type="AnimatedSprite2D" parent="CoachOverlay" unique_id=1007497228]
+[node name="CoachSprite" type="AnimatedSprite2D" parent="CoachLayer/CoachOverlay" unique_id=1007497228]
 visible = false
 position = Vector2(1508, 691)
 sprite_frames = SubResource("SpriteFrames_t6dbj")
 animation = &"idle"
 
-[node name="DialogueBubble" type="Panel" parent="CoachOverlay" unique_id=80702915]
+[node name="DialogueBubble" type="Panel" parent="CoachLayer/CoachOverlay" unique_id=80702915]
 visible = false
 layout_mode = 1
 offset_left = 350.0
@@ -100,7 +117,7 @@ offset_top = 100.0
 offset_right = 650.0
 offset_bottom = 250.0
 
-[node name="DialogueText" type="RichTextLabel" parent="CoachOverlay/DialogueBubble" unique_id=1775918710]
+[node name="DialogueText" type="RichTextLabel" parent="CoachLayer/CoachOverlay/DialogueBubble" unique_id=1775918710]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -113,7 +130,10 @@ grow_horizontal = 2
 grow_vertical = 2
 bbcode_enabled = true
 
-[node name="MicPanel" type="Control" parent="." unique_id=949018238]
+[node name="OverlayLayer" type="CanvasLayer" parent="."]
+layer = 40
+
+[node name="MicPanel" type="Control" parent="OverlayLayer" unique_id=949018238]
 visible = false
 layout_mode = 3
 anchors_preset = 15
@@ -122,7 +142,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MicIcon" type="ColorRect" parent="MicPanel" unique_id=94258605]
+[node name="MicIcon" type="ColorRect" parent="OverlayLayer/MicPanel" unique_id=94258605]
 layout_mode = 1
 offset_left = 600.0
 offset_top = 340.0
@@ -130,16 +150,17 @@ offset_right = 680.0
 offset_bottom = 420.0
 color = Color(0.2, 0.8, 0.4, 1)
 
-[node name="MicLabel" type="Label" parent="MicPanel" unique_id=159701933]
+[node name="MicLabel" type="Label" parent="OverlayLayer/MicPanel" unique_id=159701933]
 layout_mode = 1
 offset_left = 540.0
 offset_top = 430.0
 offset_right = 740.0
 offset_bottom = 465.0
+theme_override_font_sizes/font_size = 16
 text = "请说话..."
 horizontal_alignment = 1
 
-[node name="LangPanel" type="Control" parent="." unique_id=74705143]
+[node name="LangPanel" type="Control" parent="OverlayLayer" unique_id=74705143]
 visible = false
 layout_mode = 3
 anchors_preset = 15
@@ -148,26 +169,25 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="LangZhButton" type="Button" parent="LangPanel" unique_id=2038318469]
+[node name="LangZhButton" type="Button" parent="OverlayLayer/LangPanel" unique_id=2038318469]
 layout_mode = 1
 offset_left = 100.0
 offset_top = 100.0
 offset_right = 200.0
 offset_bottom = 150.0
+theme_override_font_sizes/font_size = 18
 text = "中文"
 
-[node name="LangEnButton" type="Button" parent="LangPanel" unique_id=668459580]
+[node name="LangEnButton" type="Button" parent="OverlayLayer/LangPanel" unique_id=668459580]
 layout_mode = 1
 offset_left = 440.0
 offset_top = 100.0
 offset_right = 540.0
 offset_bottom = 150.0
+theme_override_font_sizes/font_size = 18
 text = "English"
 
-[connection signal="pressed" from="LangPanel/LangZhButton" to="." method="_on_lang_zh_button_pressed"]
-[connection signal="pressed" from="LangPanel/LangEnButton" to="." method="_on_lang_en_button_pressed"]
-
-[node name="SceneSelectPanel" type="Control" parent="." unique_id=888000001]
+[node name="SceneSelectPanel" type="Control" parent="OverlayLayer" unique_id=888000001]
 visible = false
 layout_mode = 3
 anchors_preset = 15
@@ -177,7 +197,7 @@ grow_horizontal = 2
 grow_vertical = 2
 modulate = Color(1, 1, 1, 0)
 
-[node name="TitleLabel" type="Label" parent="SceneSelectPanel" unique_id=888000002]
+[node name="SceneTitleLabel" type="Label" parent="OverlayLayer/SceneSelectPanel" unique_id=888000002]
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
@@ -189,36 +209,45 @@ offset_top = 120.0
 offset_right = 150.0
 offset_bottom = 160.0
 grow_horizontal = 2
+theme_override_font_sizes/font_size = 24
 text = "选择你的冒险！"
 horizontal_alignment = 1
 
-[node name="SpiritForestButton" type="Button" parent="SceneSelectPanel" unique_id=888000003]
+[node name="SpiritForestButton" type="Button" parent="OverlayLayer/SceneSelectPanel" unique_id=888000003]
 layout_mode = 1
 offset_left = 140.0
 offset_top = 220.0
 offset_right = 440.0
 offset_bottom = 280.0
+theme_override_font_sizes/font_size = 18
 text = "精灵森林"
 disabled = true
 
-[node name="SpellLibraryButton" type="Button" parent="SceneSelectPanel" unique_id=888000004]
+[node name="SpellLibraryButton" type="Button" parent="OverlayLayer/SceneSelectPanel" unique_id=888000004]
 layout_mode = 1
 offset_left = 140.0
 offset_top = 310.0
 offset_right = 440.0
 offset_bottom = 370.0
+theme_override_font_sizes/font_size = 18
 text = "咒语图书馆"
 disabled = true
 
-[node name="RainbowGardenButton" type="Button" parent="SceneSelectPanel" unique_id=888000005]
+[node name="RainbowGardenButton" type="Button" parent="OverlayLayer/SceneSelectPanel" unique_id=888000005]
 layout_mode = 1
 offset_left = 140.0
 offset_top = 400.0
 offset_right = 440.0
 offset_bottom = 460.0
+theme_override_font_sizes/font_size = 18
 text = "彩虹花园"
 disabled = true
 
-[connection signal="pressed" from="SceneSelectPanel/SpiritForestButton" to="." method="_on_spirit_forest_pressed"]
-[connection signal="pressed" from="SceneSelectPanel/SpellLibraryButton" to="." method="_on_spell_library_pressed"]
-[connection signal="pressed" from="SceneSelectPanel/RainbowGardenButton" to="." method="_on_rainbow_garden_pressed"]
+[node name="TransitionLayer" type="CanvasLayer" parent="."]
+layer = 50
+
+[connection signal="pressed" from="OverlayLayer/LangPanel/LangZhButton" to="." method="_on_lang_zh_button_pressed"]
+[connection signal="pressed" from="OverlayLayer/LangPanel/LangEnButton" to="." method="_on_lang_en_button_pressed"]
+[connection signal="pressed" from="OverlayLayer/SceneSelectPanel/SpiritForestButton" to="." method="_on_spirit_forest_pressed"]
+[connection signal="pressed" from="OverlayLayer/SceneSelectPanel/SpellLibraryButton" to="." method="_on_spell_library_pressed"]
+[connection signal="pressed" from="OverlayLayer/SceneSelectPanel/RainbowGardenButton" to="." method="_on_rainbow_garden_pressed"]

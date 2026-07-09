@@ -1,0 +1,54 @@
+{
+  "scene_id": "spell_library",
+  "scene_name": "拼写图书馆",
+  "chapter": 1,
+  "order": 2,
+  "scene_path": "res://assets/scenes/SpellLibrary.tscn",
+  "resources": {
+    "textures": [
+      "res://assets/textures/library_bg.png",
+      "res://assets/textures/bookshelf.png"
+    ],
+    "audio": [
+      "res://assets/audio/bgm/library_quiet.ogg",
+      "res://assets/audio/sfx/book_flip.ogg"
+    ],
+    "shaders": [
+      "magic_burst",
+      "spirit_glow"
+    ]
+  },
+  "transition_effect": {
+    "shader": "transition_wipe",
+    "duration": 0.3,
+    "params": {
+      "wipe_direction": "top_to_bottom",
+      "diffusion_radius": 0.3
+    }
+  },
+  "music_config": {
+    "bgm_path": "res://assets/audio/bgm/library_quiet.ogg",
+    "volume": 0.4,
+    "loop": true
+  },
+  "primary_npc": {
+    "npc_id": "librarian_spirit",
+    "position": "right",
+    "animation": "reading"
+  },
+  "entry_events": [
+    {
+      "type": "play_bgm",
+      "bgm_path": "res://assets/audio/bgm/library_quiet.ogg"
+    },
+    {
+      "type": "show_tutorial",
+      "tutorial_id": "spell_library_intro"
+    }
+  ],
+  "unlock_condition": {
+    "requires": "spirit_forest_completed",
+    "min_lxp": 20
+  },
+  "revisit_allowed": true
+}

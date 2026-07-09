@@ -2,9 +2,11 @@ extends Node
 
 const API_BASE_URL = "http://localhost:8301"
 const QUEST_SERVICE_URL = "http://localhost:8306"
-const ASSESSMENT_SERVICE_URL = "http://localhost:8307"
+const ASSESSMENT_SERVICE_URL = "http://localhost:8308"
+const REWARD_SERVICE_URL = "http://localhost:8307"
 
 var http_request: HTTPRequest
+var error_panel: PanelContainer
 var error_label: Label
 var error_timer: Timer
 
@@ -18,7 +20,15 @@ signal assessment_score_received(result: Dictionary)
 signal api_error(error: String)
 
 var coach_http_request: HTTPRequest
+var tts_http_request: HTTPRequest
+var parallel_asr_http_request: HTTPRequest
 var _ping_in_progress: bool = false
+var services_ready_done: bool = false
+
+# ——— 并行ASR状态追踪 ———
+var _parallel_asr_pending: bool = false
+var _parallel_asr_result: Dictionary = {}
+var _parallel_asr_timeout_ms: int = 1500
 
 func _ready() -> void:
 	http_request = HTTPRequest.new()
@@ -27,6 +37,16 @@ func _ready() -> void:
 
 	coach_http_request = HTTPRequest.new()
 	add_child(coach_http_request)
+
+	# TTS 独立请求，避免与 ASR/dialogue/quest 共享 HTTPRequest 导致 ERR_BUSY
+	tts_http_request = HTTPRequest.new()
+	add_child(tts_http_request)
+	tts_http_request.request_completed.connect(_on_tts_request_completed)
+
+	# 并行ASR独立请求
+	parallel_asr_http_request = HTTPRequest.new()
+	add_child(parallel_asr_http_request)
+	parallel_asr_http_request.request_completed.connect(_on_parallel_asr_request_completed)
 
 	# Create error notification UI
 	_create_error_ui()
@@ -49,9 +69,9 @@ func synthesize_tts(text: String, voice_id: String = "spirit", lang: String = "z
 		"lang": lang
 	})
 	var headers = ["Content-Type: application/json"]
-	var error = http_request.request(API_BASE_URL + "/tts/synthesize", headers, HTTPClient.METHOD_POST, body)
+	var error = tts_http_request.request(API_BASE_URL + "/tts/synthesize", headers, HTTPClient.METHOD_POST, body)
 	if error != OK:
-		api_error.emit("TTS request failed: " + str(error))
+		push_warning("[HybridAPI] TTS request deferred (HTTPRequest busy): ", error)
 
 func recognize_speech(audio_data: PackedByteArray, lang: String = "en") -> void:
 	print("[HybridAPI] recognize_speech: size=", audio_data.size(), " lang=", lang)
@@ -64,6 +84,107 @@ func recognize_speech(audio_data: PackedByteArray, lang: String = "en") -> void:
 	var error = http_request.request(API_BASE_URL + "/api/v1/voice/asr/json", headers, HTTPClient.METHOD_POST, body)
 	if error != OK:
 		api_error.emit("ASR request failed: " + str(error))
+
+## 并行ASR识别：同时调用英文+中文ASR，比较置信度选择结果
+## 返回 {text, confidence, detected_language, processing_time_ms}
+func recognize_speech_parallel(base64_audio: String, timeout_ms: int = 1500) -> Dictionary:
+	_parallel_asr_timeout_ms = timeout_ms
+	_parallel_asr_pending = true
+	_parallel_asr_result = {}
+
+	var body := JSON.stringify({
+		"audio_data": base64_audio,
+		"languages": ["en", "zh"],
+		"parallel": true,
+		"timeout_ms": timeout_ms
+	})
+	var headers := ["Content-Type: application/json"]
+	var error := parallel_asr_http_request.request(
+		API_BASE_URL + "/api/v1/dialogue/asr-parallel",
+		headers, HTTPClient.METHOD_POST, body
+	)
+	if error != OK:
+		_parallel_asr_pending = false
+		push_warning("[HybridAPI] Parallel ASR request failed: %s" % str(error))
+		return {
+			"text": "",
+			"confidence": 0.0,
+			"detected_language": "unclear",
+			"processing_time_ms": 0
+		}
+
+	# 等待回调或超时
+	var elapsed: float = 0.0
+	while _parallel_asr_pending and elapsed < (float(timeout_ms) / 1000.0 + 1.0):
+		await get_tree().create_timer(0.1).timeout
+		elapsed += 0.1
+
+	if _parallel_asr_pending:
+		# 超时
+		_parallel_asr_pending = false
+		return {
+			"text": "",
+			"confidence": 0.0,
+			"detected_language": "unclear",
+			"processing_time_ms": timeout_ms
+		}
+
+	return _parallel_asr_result
+
+## 分段TTS合成：根据语言分段调用不同TTS引擎
+func synthesize_tts_segmented(
+	text: String,
+	voice_id: String = "spirit",
+	segments: Array[Dictionary] = []
+) -> Dictionary:
+	var body := JSON.stringify({
+		"text": text,
+		"voice_id": voice_id,
+		"segments": segments,
+		"language_hint": "auto"
+	})
+	var headers := ["Content-Type: application/json"]
+	var error := tts_http_request.request(
+		API_BASE_URL + "/api/v1/dialogue/tts-segmented",
+		headers, HTTPClient.METHOD_POST, body
+	)
+	if error != OK:
+		push_warning("[HybridAPI] Segmented TTS request failed: %s" % str(error))
+		return {"error": "request_failed"}
+
+	# 等待TTS回调
+	var result: Dictionary = await tts_received
+	return result
+
+## 对话处理：发送玩家输入到dialogue-service，获取NPC回复
+func process_dialogue(
+	player_input: String,
+	detected_language: String,
+	asr_confidence: float,
+	npc_id: String,
+	session_id: String,
+	quest_context: String = ""
+) -> Dictionary:
+	var body := JSON.stringify({
+		"session_id": session_id,
+		"user_id": GameManager.player_name if GameManager.player_name != "" else "anonymous",
+		"player_input": player_input,
+		"detected_language": detected_language,
+		"asr_confidence": asr_confidence,
+		"npc_id": npc_id,
+		"quest_context": quest_context
+	})
+	var headers := ["Content-Type: application/json"]
+	var error := http_request.request(
+		API_BASE_URL + "/api/v1/dialogue/process",
+		headers, HTTPClient.METHOD_POST, body
+	)
+	if error != OK:
+		push_warning("[HybridAPI] Dialogue process request failed: %s" % str(error))
+		return {"error": "request_failed"}
+
+	var result: Dictionary = await dialogue_received
+	return result
 
 func send_dialogue(user_text: String, npc_id: String, context: Array = []) -> void:
 	var body = JSON.stringify({
@@ -107,7 +228,7 @@ func _on_request_completed(result: int, response_code: int, headers: PackedStrin
 	if _ping_in_progress:
 		_ping_in_progress = false
 		if result == HTTPRequest.RESULT_SUCCESS and response_code == 200:
-			services_ready.emit()
+			_mark_services_ready()
 		return
 
 	if result != HTTPRequest.RESULT_SUCCESS:
@@ -150,7 +271,86 @@ func _on_request_completed(result: int, response_code: int, headers: PackedStrin
 		# Assessment service response
 		assessment_score_received.emit(json)
 	else:
-		services_ready.emit()
+		_mark_services_ready()
+
+func _mark_services_ready() -> void:
+	if services_ready_done:
+		return
+	services_ready_done = true
+	services_ready.emit()
+
+func _on_tts_request_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
+	"""TTS 独立回调：只处理 TTS 响应"""
+	if result != HTTPRequest.RESULT_SUCCESS:
+		push_warning("[HybridAPI] TTS HTTP request failed: result=", result, " response_code=", response_code)
+		return
+
+	if response_code < 200 or response_code >= 300:
+		push_warning("[HybridAPI] TTS server returned: ", response_code)
+		return
+
+	var json_str = body.get_string_from_utf8()
+	var json = JSON.parse_string(json_str)
+	if json == null:
+		push_error("[HybridAPI] Failed to parse TTS JSON response")
+		return
+
+	if json.has("audio_data"):
+		var audio_data: String = json.get("audio_data", "")
+		var format_type: String = json.get("format", "wav")
+		AudioManager.play_audio_from_base64(audio_data, format_type)
+		tts_received.emit(json)
+	else:
+		push_warning("[HybridAPI] TTS response missing audio_data: ", json)
+
+func _on_parallel_asr_request_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
+	"""并行ASR独立回调"""
+	if not _parallel_asr_pending:
+		return
+
+	if result != HTTPRequest.RESULT_SUCCESS:
+		push_warning("[HybridAPI] Parallel ASR HTTP request failed: result=", result)
+		_parallel_asr_pending = false
+		_parallel_asr_result = {
+			"text": "",
+			"confidence": 0.0,
+			"detected_language": "unclear",
+			"processing_time_ms": 0
+		}
+		return
+
+	if response_code < 200 or response_code >= 300:
+		push_warning("[HybridAPI] Parallel ASR server returned: ", response_code)
+		_parallel_asr_pending = false
+		_parallel_asr_result = {
+			"text": "",
+			"confidence": 0.0,
+			"detected_language": "unclear",
+			"processing_time_ms": 0
+		}
+		return
+
+	var json_str := body.get_string_from_utf8()
+	var json = JSON.parse_string(json_str)
+	if json == null:
+		push_error("[HybridAPI] Failed to parse parallel ASR JSON response")
+		_parallel_asr_pending = false
+		_parallel_asr_result = {
+			"text": "",
+			"confidence": 0.0,
+			"detected_language": "unclear",
+			"processing_time_ms": 0
+		}
+		return
+
+	_parallel_asr_pending = false
+	_parallel_asr_result = {
+		"text": json.get("text", ""),
+		"confidence": json.get("confidence", 0.0),
+		"detected_language": json.get("detected_language", "unclear"),
+		"processing_time_ms": json.get("processing_time_ms", 0)
+	}
+	print("[HybridAPI] Parallel ASR result: ", _parallel_asr_result)
 
 func publish_coach_silence_timeout(session_id: String, npc_id: String, silence_ms: int) -> void:
 	var body = JSON.stringify({
@@ -177,6 +377,9 @@ func publish_coach_wake_request(session_id: String, npc_id: String, player_text:
 	coach_http_request.request("http://localhost:8305/api/v1/coach/events", headers, HTTPClient.METHOD_POST, body)
 
 func fetch_quest_status(scene_id: String, user_id: String = "anonymous") -> void:
+	# 等待 services_ready，避免启动时 quest-service 尚未就绪导致 CANT_CONNECT (result=2)
+	if not services_ready_done:
+		await services_ready
 	var query = "?user_id=%s&scene_id=%s" % [user_id.uri_encode(), scene_id.uri_encode()]
 	http_request.request(
 		QUEST_SERVICE_URL + "/api/v1/quests/status" + query,
@@ -247,12 +450,12 @@ func _create_error_ui() -> void:
 	var canvas = CanvasLayer.new()
 	add_child(canvas)
 
-	var panel = PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	panel.offset_top = 20
-	panel.offset_bottom = 70
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	canvas.add_child(panel)
+	error_panel = PanelContainer.new()
+	error_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	error_panel.offset_top = 20
+	error_panel.offset_bottom = 70
+	error_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	canvas.add_child(error_panel)
 
 	var style_box = StyleBoxFlat.new()
 	style_box.bg_color = Color(0.8, 0.2, 0.2, 0.9)
@@ -261,14 +464,14 @@ func _create_error_ui() -> void:
 	style_box.corner_radius_bottom_left = 8
 	style_box.corner_radius_bottom_right = 8
 	style_box.set_content_margin_all(10)
-	panel.add_theme_stylebox_override("panel", style_box)
+	error_panel.add_theme_stylebox_override("panel", style_box)
 
 	error_label = Label.new()
 	error_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	error_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	error_label.add_theme_color_override("font_color", Color.WHITE)
 	error_label.add_theme_font_size_override("font_size", 18)
-	panel.add_child(error_label)
+	error_panel.add_child(error_label)
 
 	error_timer = Timer.new()
 	error_timer.wait_time = 5.0
@@ -277,15 +480,17 @@ func _create_error_ui() -> void:
 	add_child(error_timer)
 
 	error_label.visible = false
+	error_panel.visible = false  # 面板默认隐藏，有错误时才显示
 
 func _on_api_error(message: String) -> void:
 	push_error("[HybridAPI] " + message)
 	_show_error("⚠️ 连接服务器失败：" + message)
 
 func _show_error(message: String) -> void:
-	if is_instance_valid(error_label) and is_instance_valid(error_timer):
+	if is_instance_valid(error_label) and is_instance_valid(error_timer) and is_instance_valid(error_panel):
 		error_label.text = message
 		error_label.visible = true
+		error_panel.visible = true
 		if not error_timer.is_stopped():
 			error_timer.stop()
 		error_timer.start()
@@ -293,6 +498,8 @@ func _show_error(message: String) -> void:
 func _hide_error() -> void:
 	if error_label:
 		error_label.visible = false
+	if error_panel:
+		error_panel.visible = false
 
 func _on_services_ready() -> void:
 	# Connect quest WebSocket for real-time updates

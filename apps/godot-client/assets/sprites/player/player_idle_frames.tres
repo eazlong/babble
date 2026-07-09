@@ -1,0 +1,26 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://dviqbem656pde"]
+
+[ext_resource type="Texture2D" uid="uid://w4bsx6ur0xob" path="res://assets/sprites/player/player_idle_01.png" id="1"]
+[ext_resource type="Texture2D" uid="uid://bc3pc3ijmodx0" path="res://assets/sprites/player/player_idle_02.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://c5t8tqlslhks8" path="res://assets/sprites/player/player_idle_03.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://4va4jgf27qet" path="res://assets/sprites/player/player_idle_04.png" id="4"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("1")
+}],
+"loop": true,
+"name": &"default",
+"speed": 4.0
+}]

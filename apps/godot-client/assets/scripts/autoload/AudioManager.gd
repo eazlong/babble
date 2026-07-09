@@ -52,6 +52,7 @@ func _on_tts_finished() -> void:
 	if not _tts_expected:
 		return
 	_tts_expected = false
+	print("tts finished <<<<<<")
 	tts_finished.emit(duration)
 
 func play_audio_from_base64(base64_data: String, format: String = "wav") -> void:

@@ -9,7 +9,7 @@ extends StaticBody2D
 @export var unlocked_texture: Texture2D
 
 @onready var sprite: ColorRect = $Sprite
-@onready var interaction_area: Area2D = $InteractionArea
+@onready var interaction_area: Area2D = get_node_or_null("InteractionArea")
 
 signal chest_unlocked()
 
@@ -41,3 +41,4 @@ func _play_unlock_effect() -> void:
 		var tween = create_tween()
 		tween.tween_property(sprite, "scale", Vector2(1.1, 1.1), 0.3)
 		tween.tween_property(sprite, "scale", Vector2(1.0, 1.0), 0.2)
+		UITweenManager.register_tween("vfx", tween)

@@ -1,0 +1,28 @@
+{
+  "preset_id": "treasure_chest_unlock",
+  "preset_name": "Treasure Chest Unlock",
+  "description": "宝箱解锁粒子效果 - 爆发式金色光晕",
+  "particle_config": {
+    "amount": 50,
+    "lifetime": 1.0,
+    "explosiveness": 0.9,
+    "randomness": 0.2,
+    "process_material": {
+      "emission_shape": "point",
+      "direction": [0, 0, 0],
+      "spread": 180.0,
+      "initial_velocity_min": 150.0,
+      "initial_velocity_max": 250.0,
+      "gravity": [0, 50, 0],
+      "damping_min": 10.0,
+      "damping_max": 20.0,
+      "scale_min": 0.8,
+      "scale_max": 1.5,
+      "color": [1.0, 0.8, 0.3, 0.9]
+    }
+  },
+  "texture_path": "res://assets/sprites/particles/gold_particle.png",
+  "duration": 1.5,
+  "auto_recycle": true,
+  "vfx_layer": 1
+}

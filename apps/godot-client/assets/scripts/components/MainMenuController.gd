@@ -1,19 +1,19 @@
 extends Node2D
 
-@onready var coach_overlay: CoachOverlay = $CoachOverlay
-@onready var lang_panel: Control = $LangPanel
-@onready var lang_zh_button: Button = $LangPanel/LangZhButton
-@onready var lang_en_button: Button = $LangPanel/LangEnButton
-@onready var mic_panel: Control = $MicPanel
-@onready var mic_icon: ColorRect = $MicPanel/MicIcon
-@onready var mic_label: Label = $MicPanel/MicLabel
-@onready var scene_select_panel: Control = $SceneSelectPanel
-@onready var spirit_forest_button: Button = $SceneSelectPanel/SpiritForestButton
-@onready var spell_library_button: Button = $SceneSelectPanel/SpellLibraryButton
-@onready var rainbow_garden_button: Button = $SceneSelectPanel/RainbowGardenButton
+@onready var coach_overlay: CoachOverlay = $CoachLayer/CoachOverlay
+@onready var lang_panel: Control = $OverlayLayer/LangPanel
+@onready var lang_zh_button: Button = $OverlayLayer/LangPanel/LangZhButton
+@onready var lang_en_button: Button = $OverlayLayer/LangPanel/LangEnButton
+@onready var mic_panel: Control = $OverlayLayer/MicPanel
+@onready var mic_icon: ColorRect = $OverlayLayer/MicPanel/MicIcon
+@onready var mic_label: Label = $OverlayLayer/MicPanel/MicLabel
+@onready var scene_select_panel: Control = $OverlayLayer/SceneSelectPanel
+@onready var spirit_forest_button: Button = $OverlayLayer/SceneSelectPanel/SpiritForestButton
+@onready var spell_library_button: Button = $OverlayLayer/SceneSelectPanel/SpellLibraryButton
+@onready var rainbow_garden_button: Button = $OverlayLayer/SceneSelectPanel/RainbowGardenButton
 
 var selected_lang: String = "zh"
-var mic_tween: Tween
+var mic_tween: Tween = null
 var mic_active: bool = false
 var silence_timer: float = 0.0
 var record_duration: float = 0.0
@@ -22,6 +22,17 @@ const MAX_RECORD_DURATION: float = 10.0
 
 func _ready() -> void:
 	print("[MainMenu] _ready() called")
+
+	# Initialize SceneManagementSystem with scene configs
+	var config_loader: SceneConfigLoader = SceneConfigLoader.new()
+	var success: bool = config_loader.load_scene_configs("res://assets/resources/scene_configs/")
+	if success:
+		var configs: Array = config_loader.get_all_scene_configs().values()
+		SceneManagementSystem.initialize(configs)
+		print("[MainMenu] SceneManagementSystem initialized with %d configs" % configs.size())
+	else:
+		push_warning("[MainMenu] Failed to load scene configs")
+
 	lang_panel.visible = false
 	lang_panel.modulate.a = 0
 	mic_panel.visible = false
@@ -59,9 +70,9 @@ func _process(delta: float) -> void:
 			show_language_panel()
 
 func _on_fly_in_completed() -> void:
-	var welcome_text = "你好！很高兴认识你，你叫什么名字呢？"
+	var welcome_text: String = "喵~ 你好！我是小飞猫，你的伴生精灵！你叫什么名字呢？"
 	if GameManager.current_lang == "en":
-		welcome_text = "Hello! Ready to learn magic English? Pick your language!"
+		welcome_text = "Meow~ Hello! I'm Xiao Fei Mao, your companion spirit! What's your name?"
 
 	coach_overlay.show_hint(welcome_text, "idle")
 	HybridAPI.synthesize_tts(welcome_text, "spirit", GameManager.current_lang)
@@ -80,7 +91,8 @@ func _has_record_bus() -> bool:
 func show_mic_panel() -> void:
 	mic_active = true
 	mic_panel.visible = true
-	var tween = create_tween()
+	var tween: Tween = create_tween()
+	var tween_id: int = UITweenManager.register_tween("ui_feedback", tween)
 	tween.tween_property(mic_panel, "modulate:a", 1.0, 0.3)
 
 	_start_mic_pulse()
@@ -94,12 +106,14 @@ func _deactivate_mic() -> void:
 	VoicePipeline.stop_listening()
 	_stop_mic_pulse()
 
-	var tween = create_tween()
+	var tween: Tween = create_tween()
+	var tween_id: int = UITweenManager.register_tween("ui_feedback", tween)
 	tween.tween_property(mic_panel, "modulate:a", 0.0, 0.3)
 	tween.tween_callback(func(): mic_panel.visible = false)
 
 func _start_mic_pulse() -> void:
 	mic_tween = create_tween()
+	var tween_id = UITweenManager.register_tween("ambient", mic_tween)
 	mic_tween.set_loops()
 	mic_tween.tween_property(mic_icon, "scale", Vector2(1.3, 1.3), 0.6)
 	mic_tween.tween_property(mic_icon, "scale", Vector2(1.0, 1.0), 0.6)
@@ -134,7 +148,7 @@ func _on_asr_received(result: Dictionary) -> void:
 	GameManager.set_language(detected_lang)
 	selected_lang = detected_lang
 
-	var confirm_text = "好的！中文模式！出发吧！"
+	var confirm_text: String = "好的！中文模式！出发吧！"
 	if detected_lang == "en":
 		confirm_text = "Great! English mode! Let's go!"
 
@@ -150,7 +164,8 @@ func show_language_panel() -> void:
 	lang_zh_button.position = Vector2(-300, 100)
 	lang_en_button.position = Vector2(300, 100)
 
-	var tween = create_tween()
+	var tween: Tween = create_tween()
+	var tween_id: int = UITweenManager.register_tween("ui_feedback", tween)
 	tween.set_parallel(true)
 	tween.tween_property(lang_zh_button, "position", Vector2(100, 100), 0.5)
 	tween.tween_property(lang_en_button, "position", Vector2(440, 100), 0.5)
@@ -162,7 +177,7 @@ func _on_lang_zh_button_pressed() -> void:
 	selected_lang = "zh"
 	GameManager.set_language("zh")
 
-	var confirm_text = "好的！中文模式！出发吧！"
+	var confirm_text: String = "好的！中文模式！出发吧！"
 	coach_overlay.show_hint(confirm_text, "idle")
 	HybridAPI.synthesize_tts(confirm_text, "spirit", "zh")
 
@@ -173,7 +188,7 @@ func _on_lang_en_button_pressed() -> void:
 	selected_lang = "en"
 	GameManager.set_language("en")
 
-	var confirm_text = "Great! English mode! Let's go!"
+	var confirm_text: String = "Great! English mode! Let's go!"
 	coach_overlay.show_hint(confirm_text, "idle")
 	HybridAPI.synthesize_tts(confirm_text, "spirit", "en")
 
@@ -181,30 +196,16 @@ func _on_lang_en_button_pressed() -> void:
 	enter_game_scene()
 
 func enter_game_scene() -> void:
-	await get_tree().create_timer(0.5).timeout
-	_show_scene_select()
-
-func _show_scene_select() -> void:
-	if not scene_select_panel:
-		get_tree().change_scene_to_file("res://assets/scenes/SpiritForest.tscn")
-		return
-
-	spirit_forest_button.disabled = not _is_area_unlocked("SpiritForest")
-	spell_library_button.disabled = not _is_area_unlocked("SpellLibrary")
-	rainbow_garden_button.disabled = not _is_area_unlocked("RainbowGarden")
-
-	scene_select_panel.visible = true
-	var tween = create_tween()
-	tween.tween_property(scene_select_panel, "modulate:a", 1.0, 0.3)
-
-func _is_area_unlocked(area: String) -> bool:
-	return area in GameManager.unlocked_areas
+	# 序章流程：直接进入 SpiritForest（已改造为序章场景）
+	get_tree().change_scene_to_file("res://assets/scenes/SpiritForest.tscn")
 
 func _on_spirit_forest_pressed() -> void:
 	get_tree().change_scene_to_file("res://assets/scenes/SpiritForest.tscn")
 
 func _on_spell_library_pressed() -> void:
-	get_tree().change_scene_to_file("res://assets/scenes/SpellLibrary.tscn")
+	# 暂时禁用，后续替换为长安西市
+	pass
 
 func _on_rainbow_garden_pressed() -> void:
-	get_tree().change_scene_to_file("res://assets/scenes/RainbowGarden.tscn")
+	# 暂时禁用，后续替换为其他国风场景
+	pass

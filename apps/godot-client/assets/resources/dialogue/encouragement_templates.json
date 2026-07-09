@@ -1,0 +1,201 @@
+{
+  "templates": [
+    {
+      "id": "perfect_success",
+      "condition": {
+        "asr_confidence": {"min": 0.9},
+        "detected_language": ["en"]
+      },
+      "priority": 15,
+      "response": {
+        "npc_text": "Excellent! {player_input}! 你说得太棒了！",
+        "spark_action": "celebrate",
+        "difficulty_adjustment": "none",
+        "audio_speed": 1.0
+      },
+      "variants": [
+        "Excellent! {player_input}! 你说得太棒了！",
+        "Perfect! 太厉害了！",
+        "Wow! Amazing! 完美！",
+        "Brilliant! 你做到了！",
+        "Fantastic! 说得非常好！"
+      ]
+    },
+    {
+      "id": "good_attempt",
+      "condition": {
+        "asr_confidence": {"min": 0.7, "max": 0.9},
+        "detected_language": ["en"]
+      },
+      "priority": 14,
+      "response": {
+        "npc_text": "Great job! Very good! 继续加油！",
+        "spark_action": "encourage",
+        "difficulty_adjustment": "none",
+        "audio_speed": 1.0
+      },
+      "variants": [
+        "Great job! Very good! 继续加油！",
+        "Good try! 很不错！",
+        "Nice! 继续努力！",
+        "Well done! 加油！",
+        "Almost perfect! 很棒！"
+      ]
+    },
+    {
+      "id": "breakthrough_success",
+      "condition": {
+        "asr_confidence": {"min": 0.6},
+        "detected_language": ["en"],
+        "fallback_count": {"min": 2, "max": 10}
+      },
+      "priority": 16,
+      "response": {
+        "npc_text": "You did it! 太厉害了！我就知道你可以！",
+        "spark_action": "celebrate_big",
+        "difficulty_adjustment": "none",
+        "audio_speed": 1.0
+      },
+      "variants": [
+        "You did it! 太厉害了！我就知道你可以！",
+        "成功了！See? 你做到了！",
+        "Wonderful! 我就知道你行！",
+        "Amazing! 坚持就是胜利！",
+        "You made it! 太棒了！"
+      ]
+    },
+    {
+      "id": "demonstration_mode",
+      "condition": {
+        "fallback_count": {"min": 2, "max": 2}
+      },
+      "priority": 12,
+      "response": {
+        "npc_text": "Let me show you how! 听我说：{demo}",
+        "spark_action": "demonstrate",
+        "difficulty_adjustment": "none",
+        "audio_speed": 0.7
+      },
+      "variants": [
+        "Let me show you how! 听我说：{demo}",
+        "Watch and listen! 看我怎么说的：{demo}",
+        "Listen carefully! 仔细听：{demo}",
+        "Let me demonstrate! 听好了：{demo}"
+      ]
+    },
+    {
+      "id": "repeated_failure",
+      "condition": {
+        "fallback_count": {"min": 3}
+      },
+      "priority": 11,
+      "response": {
+        "npc_text": "No worries! 跟我一起说：{demo}",
+        "spark_action": "simplify",
+        "difficulty_adjustment": "down",
+        "audio_speed": 0.6
+      },
+      "variants": [
+        "No worries! 跟我一起说：{demo}",
+        "It's okay! 慢慢来，跟我念：{demo}",
+        "Don't give up! 我们一起试试：{demo}",
+        "Take your time! 跟我读：{demo}"
+      ]
+    },
+    {
+      "id": "asr_unclear",
+      "condition": {
+        "asr_confidence": {"max": 0.3},
+        "detected_language": ["unclear"],
+        "fallback_count": {"max": 1}
+      },
+      "priority": 10,
+      "response": {
+        "npc_text": "Let me show you! {demo}",
+        "spark_action": "demonstrate",
+        "difficulty_adjustment": "none",
+        "audio_speed": 0.8
+      },
+      "variants": [
+        "Let me show you! {demo}",
+        "Listen carefully: {demo}",
+        "Watch and listen: {demo}",
+        "Let's try together: {demo}"
+      ]
+    },
+    {
+      "id": "spoken_chinese",
+      "condition": {
+        "detected_language": ["zh"],
+        "asr_confidence": {"min": 0.6}
+      },
+      "priority": 8,
+      "response": {
+        "npc_text": "很好！试试用英文说：{demo}",
+        "spark_action": "encourage",
+        "difficulty_adjustment": "none",
+        "audio_speed": 1.0
+      },
+      "variants": [
+        "很好！试试用英文说：{demo}",
+        "Good! 现在用英文说说看：{demo}",
+        "Nice! 试试英文怎么说：{demo}",
+        "Great! 英文是这样的：{demo}"
+      ]
+    },
+    {
+      "id": "partial_correct",
+      "condition": {
+        "error_type": ["incomplete"]
+      },
+      "priority": 7,
+      "response": {
+        "npc_text": "Good try! 试试说完整的：{target}",
+        "spark_action": "encourage",
+        "difficulty_adjustment": "none",
+        "audio_speed": 1.0
+      },
+      "variants": [
+        "Good try! 试试说完整的：{target}",
+        "Almost! 完整地说一遍：{target}",
+        "Close! 再试一次完整的：{target}"
+      ]
+    },
+    {
+      "id": "grammar_error",
+      "condition": {
+        "error_type": ["grammar"]
+      },
+      "priority": 6,
+      "response": {
+        "npc_text": "Close! 试试这样说：{demo}",
+        "spark_action": "demonstrate",
+        "difficulty_adjustment": "none",
+        "audio_speed": 1.0
+      },
+      "variants": [
+        "Close! 试试这样说：{demo}",
+        "Almost! 正确的说法是：{demo}",
+        "Good try! 应该这样说：{demo}"
+      ]
+    },
+    {
+      "id": "pronunciation_unclear",
+      "condition": {
+        "asr_confidence": {"min": 0.3, "max": 0.6}
+      },
+      "priority": 5,
+      "response": {
+        "npc_text": "Almost! 听我说：{demo}",
+        "spark_action": "demonstrate",
+        "difficulty_adjustment": "none",
+        "audio_speed": 0.7
+      },
+      "variants": [
+        "Almost! 听我说：{demo}",
+        "Nearly there! 听我读一遍：{demo}",
+        "So close! 再听一次：{demo}"
+      ]
+    }
+  ]
+}

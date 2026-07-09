@@ -1,19 +1,53 @@
 extends CanvasLayer
 
+## ============================================================
+## Node引用
+## ============================================================
+
 var dialogue_panel: PanelContainer
 var npc_name_label: Label
 var message_label: Label
 var voice_indicator: Control
+
+## ============================================================
+## 动画状态
+## ============================================================
+
 var is_showing: bool = false
 var chinese_font: FontFile
+var _display_tween: Tween
+var _typing_timer: Timer
+var _current_message: String = ""
+var _typing_index: int = 0
+var _typing_speed: float = 0.05  ## 每字符间隔（秒）
+
+## ============================================================
+## 信号定义
+## ============================================================
 
 signal message_displayed()
 signal voice_started()
 signal voice_stopped()
 
+## ============================================================
+## 初始化
+## ============================================================
+
 func _ready() -> void:
+	# Set layer to 20 (DialogueCanvasLayer)
+	layer = 20
+	print("[DialogueBox] Set layer to 20 (DialogueCanvasLayer)")
+
 	_load_font()
 	_create_ui()
+	_create_typing_timer()
+
+func _create_typing_timer() -> void:
+	# 创建逐字显示Timer
+	_typing_timer = Timer.new()
+	_typing_timer.one_shot = false
+	_typing_timer.timeout.connect(_on_typing_tick)
+	add_child(_typing_timer)
 
 func _load_font() -> void:
 	# 加载中文字体资源
@@ -72,15 +106,76 @@ func _create_ui() -> void:
 	add_child(dialogue_panel)
 
 func show_message(npc_id: String, message: String) -> void:
+	# 弹出动画
 	dialogue_panel.visible = true
+	dialogue_panel.modulate.a = 0.0
+	dialogue_panel.scale = Vector2(UIAnimationPresets.ScalePop.START_SCALE,
+								   UIAnimationPresets.ScalePop.START_SCALE)
 	is_showing = true
 
 	npc_name_label.text = npc_id
-	message_label.text = message
+
+	# 播放弹出动画
+	var tween = dialogue_panel.create_tween()
+	tween.set_trans(UIAnimationPresets.ScalePop.TRANS)
+	tween.set_ease(UIAnimationPresets.ScalePop.EASE)
+
+	tween.tween_property(dialogue_panel, "modulate:a", 1.0, 0.2)
+	tween.tween_property(dialogue_panel, "scale",
+						 Vector2(UIAnimationPresets.ScalePop.OVERSHOOT,
+								 UIAnimationPresets.ScalePop.OVERSHOOT),
+						 UIAnimationPresets.ScalePop.DURATION * 0.6)
+	tween.tween_property(dialogue_panel, "scale",
+						 Vector2(1.0, 1.0),
+						 UIAnimationPresets.ScalePop.DURATION * 0.4)
 
 	voice_indicator.visible = false
 
-	message_displayed.emit()
+	# 启动逐字显示动画
+	_start_typing_animation(message)
+
+## ============================================================
+## 逐字显示动画（打字机效果）
+## ============================================================
+
+func _start_typing_animation(message: String) -> void:
+	_current_message = message
+	_typing_index = 0
+	message_label.text = ""
+
+	# 根据消息长度调整速度
+	var char_count = message.length()
+	if char_count > 50:
+		_typing_speed = 0.03  # 快速显示长文本
+	else:
+		_typing_speed = 0.05  # 普通速度
+
+	_typing_timer.wait_time = _typing_speed
+	_typing_timer.start()
+
+func _on_typing_tick() -> void:
+	if _typing_index >= _current_message.length():
+		_typing_timer.stop()
+		message_displayed.emit()
+		return
+
+	# 添加下一个字符
+	_typing_index += 1
+	message_label.text = _current_message.substr(0, _typing_index)
+
+	# 可选：播放打字音效
+	# AudioManager.play_sfx("typing_tick")
+
+## ============================================================
+## TTS同步（根据语音时长调整速度）
+## ============================================================
+
+func sync_with_tts(audio_duration: float) -> void:
+	# 计算每字符间隔：总时长 / 字符数
+	var char_count = _current_message.length()
+	if char_count > 0 and audio_duration > 0:
+		_typing_speed = audio_duration / char_count
+		_typing_timer.wait_time = _typing_speed
 
 func show_voice_listening() -> void:
 	voice_indicator.visible = true

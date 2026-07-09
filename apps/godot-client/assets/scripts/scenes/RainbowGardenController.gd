@@ -37,17 +37,17 @@ const REQUIRED_PLANT_COMBOS = [
 var planted_flowers: Array[String] = []
 
 # ——— 节点引用 ———
-@onready var coach_overlay: CoachOverlay = $CoachOverlay
-@onready var mic_panel: Control = $MicPanel
-@onready var mic_icon: ColorRect = $MicPanel/MicIcon
-@onready var mic_label: Label = $MicPanel/MicLabel
+@onready var coach_overlay: CoachOverlay = $CoachLayer/CoachOverlay
+@onready var mic_panel: Control = $OverlayLayer/MicPanel
+@onready var mic_icon: ColorRect = $OverlayLayer/MicPanel/MicIcon
+@onready var mic_label: Label = $OverlayLayer/MicPanel/MicLabel
 @onready var sunny_npc: Node2D = $SunnyNPC
 @onready var flora_npc: Node2D = $FloraNPC
 @onready var weather_crystal: Node2D = $WeatherCrystal
 @onready var animal_hiding_spot: Node2D = $AnimalHidingSpot
 @onready var flower_garden: Node2D = $FlowerGarden
-@onready var badge_ui: Control = $BadgeUI
-@onready var navigation_ui: Control = $NavigationUI
+@onready var badge_ui: Control = $OverlayLayer/BadgeUI
+@onready var navigation_ui: Control = $OverlayLayer/NavigationUI
 
 # ——— 语音状态 ———
 var voice_listening: bool = false
@@ -133,17 +133,17 @@ func _init_flower_garden() -> void:
 
 func _await_tts(timeout: float = 30.0) -> bool:
 	"""Wait for TTS playback to finish. Returns true if completed, false if timed out."""
-	var done := false
-	var cb := func(): done = true
+	var state := {"done": false}
+	var cb := func(_duration: float): state["done"] = true
 	AudioManager.tts_finished.connect(cb)
 
 	var elapsed := 0.0
-	while not done and elapsed < timeout:
-		await get_tree().process_frame
-		elapsed += get_process_delta_time()
+	while not state["done"] and elapsed < timeout:
+		await get_tree().create_timer(0.1).timeout
+		elapsed += 0.1
 
 	AudioManager.tts_finished.disconnect(cb)
-	return done
+	return state["done"]
 
 func _start_sunny_introduction() -> void:
 	var greeting = _get_localized_string("sunny_greeting")
@@ -288,6 +288,7 @@ func _show_mic_panel() -> void:
 		mic_panel.modulate.a = 0
 		var tween = create_tween()
 		tween.tween_property(mic_panel, "modulate:a", 1.0, 0.3)
+		UITweenManager.register_tween("ui_feedback", tween)
 		_start_mic_pulse()
 
 func _hide_mic_panel() -> void:
@@ -296,6 +297,7 @@ func _hide_mic_panel() -> void:
 		var tween = create_tween()
 		tween.tween_property(mic_panel, "modulate:a", 0.0, 0.3)
 		tween.tween_callback(func(): mic_panel.visible = false)
+		UITweenManager.register_tween("ui_feedback", tween)
 
 func _start_mic_pulse() -> void:
 	if not mic_icon:
@@ -306,6 +308,7 @@ func _start_mic_pulse() -> void:
 	mic_tween.set_loops()
 	mic_tween.tween_property(mic_icon, "color", Color(0.2, 1.0, 0.4, 1.0), 0.6)
 	mic_tween.tween_property(mic_icon, "color", Color(0.2, 0.4, 0.2, 1.0), 0.6)
+	UITweenManager.register_tween("ui_feedback", mic_tween)
 
 func _stop_mic_pulse() -> void:
 	if mic_tween:
@@ -464,6 +467,7 @@ func _show_badge_unlocked(badge_id: String) -> void:
 		tween.tween_property(badge_ui, "modulate:a", 1.0, 1.0)
 		tween.tween_property(badge_ui, "scale", Vector2(1.2, 1.2), 0.3)
 		tween.tween_property(badge_ui, "scale", Vector2(1.0, 1.0), 0.2)
+		UITweenManager.register_tween("vfx", tween)
 
 	badge_earned.emit()
 
@@ -483,6 +487,7 @@ func _award_garden_badge() -> void:
 		tween.tween_property(badge_ui, "modulate:a", 1.0, 1.0)
 		tween.tween_property(badge_ui, "scale", Vector2(1.2, 1.2), 0.3)
 		tween.tween_property(badge_ui, "scale", Vector2(1.0, 1.0), 0.2)
+		UITweenManager.register_tween("vfx", tween)
 
 	badge_earned.emit()
 

@@ -1,8 +1,17 @@
 [gd_scene format=3 uid="uid://c86xre2b75bjx"]
 
+[ext_resource type="Texture2D" uid="uid://cbaw0206d7xa1" path="res://assets/sprites/spark/spark_idle.png" id="18_qibpq"]
+[ext_resource type="Texture2D" uid="uid://doex2qcwdfl6q" path="res://assets/textures/objects/tree_big.png" id="21_7as8w"]
+[ext_resource type="Texture2D" uid="uid://dc5v3r2jya7e4" path="res://assets/textures/objects/mushroom_glow.png" id="21_myj53"]
+[ext_resource type="Texture2D" uid="uid://cvvm6mlh4a47l" path="res://assets/textures/backgrounds/forest_ground.png" id="bg_ground"]
+[ext_resource type="Texture2D" uid="uid://bdng00rygsxpf" path="res://assets/textures/backgrounds/forest_sky.png" id="bg_sky"]
+[ext_resource type="Texture2D" uid="uid://b3jrfoie2ups" path="res://assets/textures/backgrounds/forest_trees_far.png" id="bg_trees_far"]
+[ext_resource type="Texture2D" uid="uid://by2vlligknnxn" path="res://assets/textures/backgrounds/forest_trees_mid.png" id="bg_trees_mid"]
 [ext_resource type="Script" uid="uid://he8al45fkcd2" path="res://assets/scripts/components/TreasureChest.gd" id="chest_ctrl"]
 [ext_resource type="Script" uid="uid://c8frsxljiqqlp" path="res://assets/scripts/components/CoachOverlay.gd" id="coach_overlay"]
+[ext_resource type="Script" uid="uid://bab1m04jmghpq" path="res://assets/scripts/components/EasterEggTrigger.gd" id="easter_egg"]
 [ext_resource type="Script" uid="uid://d12o4o7t4mchg" path="res://assets/scripts/components/MagicFlower.gd" id="flower_ctrl"]
+[ext_resource type="Script" uid="uid://buy7xmvqcrpbc" path="res://assets/scripts/components/InteractiveObject.gd" id="interactive_obj"]
 [ext_resource type="Script" uid="uid://cn7dj4kaex1qv" path="res://assets/scripts/components/PlayerController.gd" id="player_ctrl"]
 [ext_resource type="SpriteFrames" path="res://assets/resources/player_sprite_frames.tres" id="player_frames"]
 [ext_resource type="Script" uid="uid://c8s4k3vh4cyf3" path="res://assets/scripts/scenes/SpiritForestController.gd" id="scene_ctrl"]
@@ -15,6 +24,13 @@
 [ext_resource type="Texture2D" uid="uid://pxbjt0mdfhyh" path="res://assets/resources/sprites/spark/63_480x270.png" id="spark_6"]
 [ext_resource type="Texture2D" uid="uid://cr0kg0qkyiy5o" path="res://assets/resources/sprites/spark/64_480x270.png" id="spark_7"]
 [ext_resource type="Texture2D" uid="uid://cscran6sftqi7" path="res://assets/resources/sprites/spark/spark_idle.png" id="spark_idle"]
+[ext_resource type="Script" path="res://assets/scripts/ui/SpiritPreview.gd" id="spirit_preview"]
+[ext_resource type="Script" path="res://assets/scripts/components/WateringCan.gd" id="watering_can_ctrl"]
+[ext_resource type="Script" path="res://assets/scripts/components/SceneTransitionArrow.gd" id="arrow_ctrl"]
+[ext_resource type="Script" path="res://assets/scripts/components/dialogue/DialogueLanguageManager.gd" id="dlg_lang_mgr"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_hug7n"]
+load_path = "res://.godot/imported/forest_mountains.png-0fab83787603458feb9f5e7010643ed1.ctex"
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_t6dbj"]
 animations = [{
@@ -60,24 +76,113 @@ animations = [{
 radius = 60.0
 
 [node name="SpiritForest" type="Node2D" unique_id=1551762553]
+position = Vector2(960, 540)
 script = ExtResource("scene_ctrl")
 
-[node name="CoachOverlay" type="Control" parent="." unique_id=1225714271]
+[node name="WorldLayer" type="CanvasLayer" parent="." unique_id=1045325322]
+layer = 0
+
+[node name="ParallaxBackground" type="ParallaxBackground" parent="WorldLayer" unique_id=1560950552]
+
+[node name="SkyLayer" type="ParallaxLayer" parent="WorldLayer/ParallaxBackground" unique_id=98728003]
+z_index = -100
+motion_scale = Vector2(0.1, 0.1)
+motion_mirroring = Vector2(1920, 0)
+
+[node name="Sky" type="Sprite2D" parent="WorldLayer/ParallaxBackground/SkyLayer" unique_id=475469184]
+texture = ExtResource("bg_sky")
+centered = false
+
+[node name="MountainLayer" type="ParallaxLayer" parent="WorldLayer/ParallaxBackground" unique_id=1222175632]
+z_index = -80
+motion_scale = Vector2(0.15, 0.15)
+motion_mirroring = Vector2(1920, 0)
+
+[node name="Mountains" type="Sprite2D" parent="WorldLayer/ParallaxBackground/MountainLayer" unique_id=196149619]
+scale = Vector2(1, 0.9497712)
+texture = SubResource("CompressedTexture2D_hug7n")
+centered = false
+
+[node name="FarTreeLayer" type="ParallaxLayer" parent="WorldLayer/ParallaxBackground" unique_id=997721602]
+z_index = -60
+motion_scale = Vector2(0.35, 0.35)
+motion_mirroring = Vector2(1920, 0)
+
+[node name="TreesFar" type="Sprite2D" parent="WorldLayer/ParallaxBackground/FarTreeLayer" unique_id=1304734915]
+position = Vector2(0, 184)
+scale = Vector2(1.7130634, 0.895015)
+texture = ExtResource("bg_trees_far")
+centered = false
+
+[node name="MidTreeLayer" type="ParallaxLayer" parent="WorldLayer/ParallaxBackground" unique_id=213909172]
+z_index = -40
+motion_scale = Vector2(0.55, 0.55)
+motion_mirroring = Vector2(1920, 0)
+
+[node name="TreesMid" type="Sprite2D" parent="WorldLayer/ParallaxBackground/MidTreeLayer" unique_id=2123018536]
+position = Vector2(-32, 0)
+scale = Vector2(0.7342993, 0.8045649)
+texture = ExtResource("bg_trees_mid")
+centered = false
+
+[node name="GroundLayer" type="ParallaxLayer" parent="WorldLayer/ParallaxBackground" unique_id=179389863]
+z_index = -20
+motion_scale = Vector2(0.8, 0.8)
+motion_mirroring = Vector2(1920, 0)
+
+[node name="Ground" type="Sprite2D" parent="WorldLayer/ParallaxBackground/GroundLayer" unique_id=1184685720]
+position = Vector2(-6.790811, 831.9821)
+rotation = 0.0026329877
+scale = Vector2(1.1287739, 0.40223998)
+texture = ExtResource("bg_ground")
+centered = false
+
+[node name="GameGround" type="ColorRect" parent="WorldLayer" unique_id=810378167]
+offset_left = 248.0
+offset_top = 1400.0
+offset_right = 2168.0
+offset_bottom = 1780.0
+color = Color(0.25, 0.45, 0.2, 0.3)
+
+[node name="Path" type="ColorRect" parent="WorldLayer" unique_id=1667650643]
+z_index = 1
+offset_top = 1200.0
+offset_right = 1320.0
+offset_bottom = 1270.0
+color = Color(0.55, 0.4, 0.25, 1)
+
+[node name="FXLayer" type="CanvasLayer" parent="." unique_id=1948361527]
+layer = 5
+
+[node name="HUDLayer" type="CanvasLayer" parent="." unique_id=1268792306]
+layer = 10
+
+[node name="DialogueLayer" type="CanvasLayer" parent="." unique_id=1350997528]
+layer = 20
+
+[node name="CoachLayer" type="CanvasLayer" parent="." unique_id=1972243268]
+layer = 30
+
+[node name="CoachOverlay" type="Control" parent="CoachLayer" unique_id=1225714271]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = -824.0
+offset_top = 264.0
+offset_right = -824.0
+offset_bottom = 264.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("coach_overlay")
 
-[node name="CoachSprite" type="AnimatedSprite2D" parent="CoachOverlay" unique_id=458963493]
+[node name="CoachSprite" type="AnimatedSprite2D" parent="CoachLayer/CoachOverlay" unique_id=458963493]
 visible = false
 position = Vector2(1508, 691)
 sprite_frames = SubResource("SpriteFrames_t6dbj")
 animation = &"idle"
 
-[node name="DialogueBubble" type="Panel" parent="CoachOverlay" unique_id=230388273]
+[node name="DialogueBubble" type="Panel" parent="CoachLayer/CoachOverlay" unique_id=230388273]
 visible = false
 layout_mode = 1
 offset_left = 350.0
@@ -85,7 +190,7 @@ offset_top = 100.0
 offset_right = 650.0
 offset_bottom = 250.0
 
-[node name="DialogueText" type="RichTextLabel" parent="CoachOverlay/DialogueBubble" unique_id=436440268]
+[node name="DialogueText" type="RichTextLabel" parent="CoachLayer/CoachOverlay/DialogueBubble" unique_id=436440268]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -98,28 +203,98 @@ grow_horizontal = 2
 grow_vertical = 2
 bbcode_enabled = true
 
+[node name="OverlayLayer" type="CanvasLayer" parent="." unique_id=1343859126]
+layer = 40
+
+[node name="BadgeUI" type="Control" parent="OverlayLayer" unique_id=1197520718]
+visible = false
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -50.0
+offset_right = 150.0
+offset_bottom = 50.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BadgeIcon" type="ColorRect" parent="OverlayLayer/BadgeUI" unique_id=101516260]
+layout_mode = 1
+offset_left = -40.0
+offset_top = -40.0
+offset_right = 40.0
+offset_bottom = 40.0
+color = Color(1, 0.843, 0, 1)
+
+[node name="BadgeLabel" type="Label" parent="OverlayLayer/BadgeUI" unique_id=749314340]
+layout_mode = 1
+offset_left = -100.0
+offset_top = 50.0
+offset_right = 100.0
+offset_bottom = 70.0
+text = "Forest Badge!"
+horizontal_alignment = 1
+
+[node name="MicPanel" type="Control" parent="OverlayLayer" unique_id=244085601]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MicIcon" type="ColorRect" parent="OverlayLayer/MicPanel" unique_id=1596473897]
+layout_mode = 1
+offset_left = 620.0
+offset_top = 340.0
+offset_right = 700.0
+offset_bottom = 420.0
+color = Color(0.2, 0.8, 0.4, 1)
+
+[node name="MicLabel" type="Label" parent="OverlayLayer/MicPanel" unique_id=22427298]
+layout_mode = 1
+offset_left = 580.0
+offset_top = 430.0
+offset_right = 740.0
+offset_bottom = 465.0
+text = "请说话..."
+horizontal_alignment = 1
+
+[node name="NavigationUI" type="Control" parent="OverlayLayer" unique_id=1693311575]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LibraryButton" type="Button" parent="OverlayLayer/NavigationUI" unique_id=403577995]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -25.0
+offset_right = 100.0
+offset_bottom = 25.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Go to Library"
+
+[node name="TransitionLayer" type="CanvasLayer" parent="." unique_id=96899549]
+layer = 50
+
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1328887785]
-position = Vector2(400, 300)
-
-[node name="Background" type="ColorRect" parent="." unique_id=2104561634]
-offset_right = 1920.0
-offset_bottom = 1080.0
-color = Color(0.15, 0.3, 0.15, 1)
-
-[node name="Ground" type="ColorRect" parent="." unique_id=810378167]
-offset_top = 700.0
-offset_right = 1920.0
-offset_bottom = 1080.0
-color = Color(0.25, 0.45, 0.2, 1)
-
-[node name="Path" type="ColorRect" parent="." unique_id=1667650643]
-offset_left = 300.0
-offset_top = 750.0
-offset_right = 1620.0
-offset_bottom = 820.0
-color = Color(0.55, 0.4, 0.25, 1)
 
 [node name="Player" type="CharacterBody2D" parent="." unique_id=1611382656]
+z_index = 20
 position = Vector2(100, 750)
 script = ExtResource("player_ctrl")
 
@@ -138,14 +313,13 @@ text = "Player"
 horizontal_alignment = 1
 
 [node name="SparkNPC" type="StaticBody2D" parent="." unique_id=1986662794]
+z_index = 10
 position = Vector2(400, 720)
 
-[node name="Sprite" type="ColorRect" parent="SparkNPC" unique_id=1531543785]
-offset_left = -20.0
-offset_top = -40.0
-offset_right = 20.0
-offset_bottom = 20.0
-color = Color(1, 0.92, 0.2, 1)
+[node name="Sprite" type="Sprite2D" parent="SparkNPC" unique_id=2081212989]
+position = Vector2(-1256, -1156.0001)
+scale = Vector2(0.103515565, 0.104492225)
+texture = ExtResource("18_qibpq")
 
 [node name="Label" type="Label" parent="SparkNPC" unique_id=1262604264]
 offset_left = -35.0
@@ -156,6 +330,7 @@ text = "Spark"
 horizontal_alignment = 1
 
 [node name="OakleyNPC" type="StaticBody2D" parent="." unique_id=85327767]
+z_index = 10
 position = Vector2(800, 680)
 
 [node name="Sprite" type="ColorRect" parent="OakleyNPC" unique_id=1689000325]
@@ -174,15 +349,17 @@ text = "Oakley"
 horizontal_alignment = 1
 
 [node name="MagicFlowers" type="Node2D" parent="." unique_id=1034429218]
+z_index = 10
 
 [node name="RedFlower" type="StaticBody2D" parent="MagicFlowers" unique_id=1658838486]
 position = Vector2(1100, 700)
 script = ExtResource("flower_ctrl")
 
 [node name="Sprite" type="ColorRect" parent="MagicFlowers/RedFlower" unique_id=1408159775]
-offset_left = -15.0
-offset_top = -30.0
-offset_right = 15.0
+offset_left = -22.0
+offset_top = -37.0
+offset_right = 22.0
+offset_bottom = 7.0
 color = Color(0.9, 0.2, 0.2, 1)
 
 [node name="Label" type="Label" parent="MagicFlowers/RedFlower" unique_id=1910687076]
@@ -199,9 +376,10 @@ script = ExtResource("flower_ctrl")
 flower_color = "blue"
 
 [node name="Sprite" type="ColorRect" parent="MagicFlowers/BlueFlower" unique_id=363568750]
-offset_left = -15.0
-offset_top = -30.0
-offset_right = 15.0
+offset_left = -22.0
+offset_top = -37.0
+offset_right = 22.0
+offset_bottom = 7.0
 color = Color(0.2, 0.4, 0.9, 1)
 
 [node name="Label" type="Label" parent="MagicFlowers/BlueFlower" unique_id=941439265]
@@ -218,9 +396,10 @@ script = ExtResource("flower_ctrl")
 flower_color = "yellow"
 
 [node name="Sprite" type="ColorRect" parent="MagicFlowers/YellowFlower" unique_id=880613791]
-offset_left = -15.0
-offset_top = -30.0
-offset_right = 15.0
+offset_left = -22.0
+offset_top = -37.0
+offset_right = 22.0
+offset_bottom = 7.0
 color = Color(0.95, 0.85, 0.1, 1)
 
 [node name="Label" type="Label" parent="MagicFlowers/YellowFlower" unique_id=902961182]
@@ -232,14 +411,15 @@ text = "Yellow"
 horizontal_alignment = 1
 
 [node name="TreasureChest" type="StaticBody2D" parent="." unique_id=1412284743]
+z_index = 10
 position = Vector2(1550, 720)
 script = ExtResource("chest_ctrl")
 
 [node name="Sprite" type="ColorRect" parent="TreasureChest" unique_id=165438190]
 offset_left = -30.0
-offset_top = -20.0
+offset_top = -22.0
 offset_right = 30.0
-offset_bottom = 20.0
+offset_bottom = 22.0
 color = Color(0.6, 0.45, 0.2, 1)
 
 [node name="Label" type="Label" parent="TreasureChest" unique_id=236262404]
@@ -255,86 +435,197 @@ horizontal_alignment = 1
 [node name="CollisionShape2D" type="CollisionShape2D" parent="TreasureChest/InteractionArea" unique_id=509851637]
 shape = SubResource("CircleShape2D_83")
 
-[node name="BadgeUI" type="Control" parent="." unique_id=1197520718]
-visible = false
-layout_mode = 3
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -150.0
-offset_top = -50.0
-offset_right = 150.0
-offset_bottom = 50.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="EnvironmentObjects" type="Node2D" parent="." unique_id=2000000001]
+z_index = 10
 
-[node name="BadgeIcon" type="ColorRect" parent="BadgeUI" unique_id=101516260]
-layout_mode = 1
+[node name="GlowingMushroom" type="Area2D" parent="EnvironmentObjects" unique_id=2000000002]
+position = Vector2(600, 680)
+script = ExtResource("interactive_obj")
+object_id = "glowing_mushroom"
+interaction_keywords = ["glow", "shine", "light"]
+response_text_zh = "蘑菇发出了温暖的光芒！"
+response_text_en = "The mushroom glows with warm light!"
+visual_effect = "glow"
+
+[node name="Sprite" type="Sprite2D" parent="EnvironmentObjects/GlowingMushroom" unique_id=126187926]
+position = Vector2(-103.99999, -195.99997)
+scale = Vector2(0.10459026, 0.12147085)
+texture = ExtResource("21_myj53")
+
+[node name="Label" type="Label" parent="EnvironmentObjects/GlowingMushroom" unique_id=2000000004]
+offset_left = -30.0
+offset_top = 15.0
+offset_right = 30.0
+offset_bottom = 35.0
+text = "Mushroom"
+horizontal_alignment = 1
+
+[node name="Stream" type="Area2D" parent="EnvironmentObjects" unique_id=2000000005]
+position = Vector2(200, 750)
+script = ExtResource("interactive_obj")
+object_id = "stream"
+interaction_keywords = ["water", "river", "stream"]
+response_text_zh = "小溪欢快地流淌着！"
+response_text_en = "The stream flows cheerfully!"
+visual_effect = "color_shift"
+
+[node name="Sprite" type="ColorRect" parent="EnvironmentObjects/Stream" unique_id=2000000006]
 offset_left = -40.0
-offset_top = -40.0
+offset_top = -22.0
 offset_right = 40.0
-offset_bottom = 40.0
-color = Color(1, 0.843, 0, 1)
+offset_bottom = 22.0
+color = Color(0.3, 0.6, 0.9, 0.7)
 
-[node name="BadgeLabel" type="Label" parent="BadgeUI" unique_id=749314340]
-layout_mode = 1
-offset_left = -100.0
-offset_top = 50.0
-offset_right = 100.0
-offset_bottom = 70.0
-text = "Forest Badge!"
+[node name="Label" type="Label" parent="EnvironmentObjects/Stream" unique_id=2000000007]
+offset_left = -20.0
+offset_top = 15.0
+offset_right = 20.0
+offset_bottom = 35.0
+text = "Stream"
 horizontal_alignment = 1
 
-[node name="MicPanel" type="Control" parent="." unique_id=244085601]
-visible = false
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="BigTree" type="Area2D" parent="EnvironmentObjects" unique_id=2000000008]
+position = Vector2(150, 650)
+script = ExtResource("interactive_obj")
+object_id = "big_tree"
+interaction_keywords = ["tree", "bird", "fly"]
+response_text_zh = "树叶沙沙响，小鸟飞走了！"
+response_text_en = "The leaves rustle, and a bird flies away!"
+visual_effect = "bounce"
 
-[node name="MicIcon" type="ColorRect" parent="MicPanel" unique_id=1596473897]
-layout_mode = 1
-offset_left = 620.0
-offset_top = 340.0
-offset_right = 700.0
-offset_bottom = 420.0
-color = Color(0.2, 0.8, 0.4, 1)
+[node name="Sprite" type="Sprite2D" parent="EnvironmentObjects/BigTree" unique_id=1739397601]
+position = Vector2(97.99994, -574.00006)
+scale = Vector2(0.69736844, 0.647528)
+texture = ExtResource("21_7as8w")
 
-[node name="MicLabel" type="Label" parent="MicPanel" unique_id=22427298]
-layout_mode = 1
-offset_left = 580.0
-offset_top = 430.0
-offset_right = 740.0
-offset_bottom = 465.0
-text = "请说话..."
+[node name="Label" type="Label" parent="EnvironmentObjects/BigTree" unique_id=2000000010]
+offset_left = -20.0
+offset_top = 15.0
+offset_right = 20.0
+offset_bottom = 35.0
+text = "Tree"
 horizontal_alignment = 1
 
-[node name="NavigationUI" type="Control" parent="." unique_id=1693311575]
-visible = false
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="ColorfulMushroom" type="Area2D" parent="EnvironmentObjects" unique_id=2000000011]
+position = Vector2(700, 690)
+script = ExtResource("interactive_obj")
+object_id = "colorful_mushroom"
+interaction_keywords = ["mushroom", "colorful"]
+response_text_zh = "蘑菇变换了颜色！"
+response_text_en = "The mushroom changed color!"
+visual_effect = "color_shift"
 
-[node name="LibraryButton" type="Button" parent="NavigationUI" unique_id=403577995]
-layout_mode = 1
-anchors_preset = 8
+[node name="Sprite" type="ColorRect" parent="EnvironmentObjects/ColorfulMushroom" unique_id=2000000012]
+offset_left = -22.0
+offset_top = -32.0
+offset_right = 22.0
+offset_bottom = 12.0
+color = Color(0.9, 0.5, 0.8, 1)
+
+[node name="Label" type="Label" parent="EnvironmentObjects/ColorfulMushroom" unique_id=2000000013]
+offset_left = -40.0
+offset_top = 12.0
+offset_right = 40.0
+offset_bottom = 32.0
+text = "Mushroom"
+horizontal_alignment = 1
+
+[node name="EasterEggTrigger" type="Node" parent="." unique_id=2000000014]
+script = ExtResource("easter_egg")
+
+[node name="SpiritPreview" type="Control" parent="." unique_id=2000000015]
+layout_mode = 3
 anchor_left = 0.5
-anchor_top = 0.5
+anchor_top = 0.1
 anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -100.0
-offset_top = -25.0
-offset_right = 100.0
+anchor_bottom = 0.1
+grow_horizontal = 2
+script = ExtResource("spirit_preview")
+
+[node name="AnchorPoints" type="Node2D" parent="."]
+
+[node name="SparkShoulder" type="Marker2D" parent="AnchorPoints"]
+position = Vector2(300, 600)
+
+[node name="SparkCenter" type="Marker2D" parent="AnchorPoints"]
+position = Vector2(0, 400)
+
+[node name="SparkPointLeft" type="Marker2D" parent="AnchorPoints"]
+position = Vector2(200, 500)
+
+[node name="WateringCan" type="StaticBody2D" parent="."]
+z_index = 15
+position = Vector2(-400, 200)
+visible = false
+script = ExtResource("watering_can_ctrl")
+
+[node name="Sprite" type="ColorRect" parent="WateringCan"]
+offset_left = -18.0
+offset_top = -22.0
+offset_right = 18.0
+offset_bottom = 22.0
+color = Color(0.3, 0.6, 0.9, 1)
+
+[node name="Label" type="Label" parent="WateringCan"]
+offset_left = -25.0
+offset_top = 25.0
+offset_right = 25.0
+offset_bottom = 45.0
+text = "Can"
+horizontal_alignment = 1
+
+[node name="InteractionArea" type="Area2D" parent="WateringCan"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="WateringCan/InteractionArea"]
+shape = SubResource("CircleShape2D_83")
+
+[node name="WhiteFlower" type="StaticBody2D" parent="MagicFlowers"]
+position = Vector2(1550, 650)
+script = ExtResource("flower_ctrl")
+flower_color = "white"
+
+[node name="Sprite" type="ColorRect" parent="MagicFlowers/WhiteFlower"]
+offset_left = -22.0
+offset_top = -37.0
+offset_right = 22.0
+offset_bottom = 7.0
+color = Color(0.95, 0.95, 0.95, 1)
+
+[node name="Label" type="Label" parent="MagicFlowers/WhiteFlower"]
+offset_left = -20.0
+offset_top = 5.0
+offset_right = 20.0
 offset_bottom = 25.0
+text = "White"
+horizontal_alignment = 1
+
+[node name="TransitionArrow" type="Control" parent="OverlayLayer"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "Go to Library"
+script = ExtResource("arrow_ctrl")
 
-[connection signal="pressed" from="NavigationUI/LibraryButton" to="." method="_on_library_button_pressed"]
+[node name="ArrowButton" type="Button" parent="OverlayLayer/TransitionArrow"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -120.0
+offset_top = -40.0
+offset_right = -40.0
+offset_bottom = 40.0
+grow_horizontal = 0
+grow_vertical = 2
+text = "→"
+
+[node name="DialogueLanguageManager" type="Node" parent="."]
+script = ExtResource("dlg_lang_mgr")
+
+[connection signal="pressed" from="OverlayLayer/NavigationUI/LibraryButton" to="." method="_on_library_button_pressed"]
+[connection signal="arrow_pressed" from="OverlayLayer/TransitionArrow" to="." method="_on_transition_arrow_pressed"]

@@ -15,7 +15,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="LinguaQuest RPG"
-run/main_scene="uid://cfwp6ryr61toa"
+run/main_scene="res://assets/scenes/SpiritForestFP.tscn"
 config/features=PackedStringArray("4.6", "Mobile")
 config/icon="res://icon.svg"
 
@@ -25,7 +25,10 @@ driver/enable_input=true
 
 [autoload]
 
+UIFramework="*res://assets/scripts/ui/framework/ui_framework.gd"
+SaveSystem="*res://assets/scripts/core/save_system.gd"
 GameManager="*res://assets/scripts/autoload/GameManager.gd"
+SceneManagementSystem="*res://assets/scripts/core/scene_management_system.gd"
 HybridAPI="*res://assets/scripts/autoload/HybridAPI.gd"
 VoicePipeline="*res://assets/scripts/autoload/VoicePipeline.gd"
 DialogueManager="*res://assets/scripts/autoload/DialogueManager.gd"
@@ -33,10 +36,18 @@ AudioManager="*res://assets/scripts/autoload/AudioManager.gd"
 DialogueBox="*res://assets/scripts/autoload/DialogueBox.gd"
 CoachClient="*res://assets/scripts/autoload/CoachClient.gd"
 QuestWebSocket="*res://assets/scripts/autoload/QuestWebSocket.gd"
+SpiritDatabase="*res://assets/scripts/autoload/SpiritDatabase.gd"
+SpiritCollectionManager="*res://assets/scripts/autoload/SpiritCollectionManager.gd"
+PerformanceMonitor="*res://assets/scripts/components/PerformanceMonitor.gd"
+VFXManager="*res://assets/scripts/autoload/VFXManager.gd"
+UITweenManager="*res://assets/scripts/autoload/UITweenManager.gd"
 
 [display]
 
+window/size/viewport_width=1920
+window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 
 [gui]
 

@@ -1,0 +1,22 @@
+[gd_resource type="SpriteFrames" load_steps=4 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/textures/effects/effect_bounce_01.png" id="1"]
+[ext_resource type="Texture2D" path="res://assets/textures/effects/effect_bounce_02.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/textures/effects/effect_bounce_03.png" id="3"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3")
+}],
+"loop": false,
+"name": &"default",
+"speed": 15.0
+}]

@@ -1,0 +1,28 @@
+{
+  "preset_id": "magic_flower_bloom",
+  "preset_name": "Magic Flower Bloom",
+  "description": "花朵绽放粒子效果 - 柔和向上飘散",
+  "particle_config": {
+    "amount": 30,
+    "lifetime": 1.5,
+    "explosiveness": 0.5,
+    "randomness": 0.3,
+    "process_material": {
+      "emission_shape": "point",
+      "direction": [0, -1, 0],
+      "spread": 45.0,
+      "initial_velocity_min": 30.0,
+      "initial_velocity_max": 60.0,
+      "gravity": [0, 10, 0],
+      "damping_min": 5.0,
+      "damping_max": 10.0,
+      "scale_min": 0.5,
+      "scale_max": 1.0,
+      "color": [0.9, 0.95, 1.0, 0.8]
+    }
+  },
+  "texture_path": "res://assets/sprites/particles/flower_particle.png",
+  "duration": 2.0,
+  "auto_recycle": true,
+  "vfx_layer": 1
+}

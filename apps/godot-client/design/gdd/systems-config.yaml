@@ -1,0 +1,282 @@
+# LinguaQuest RPG 统一系统配置
+
+**版本**: 1.0
+**日期**: 2026-06-25
+**用途**: 跨系统共享配置，确保 quest-system、star-economy、spirit-coach 等系统定义一致
+
+---
+
+## Player Difficulty / Struggle Score
+
+**单一源头**: `assessment-service` 计算并发布事件
+
+```typescript
+// 统一困难指标计算（所有系统共享此定义）
+interface PlayerStruggleScore {
+  score: number;        // 0.0 - 1.0
+  components: {
+    consecutive_low_lxp: boolean;   // LXP < 40 连续3次
+    consecutive_errors: boolean;    // 语法/发音错误连续3次
+    asr_failure_rate: boolean;      // ASR 置信度 < 0.3 比例 > 50%
+  };
+  timestamp: string;
+}
+
+// 计算公式
+function calculateStruggleScore(input: StruggleInput): number {
+  const sLxp = input.consecutive_low_lxp ? 1 : 0;
+  const sError = input.consecutive_errors ? 1 : 0;
+  const sAsr = input.asr_failure_rate ? 1 : 0;
+  return (sLxp + sError + sAsr) / 3;
+}
+
+// 触发阈值（统一）
+const STRUGGLE_THRESHOLD: number = 0.67;
+
+// 触发后行为（各系统订阅同一事件执行）
+interface StruggleTriggeredEvent {
+  event_type: 'struggle_threshold_breached';
+  player_id: string;
+  struggle_score: number;
+  triggered_systems: ['spirit-coach', 'quest-system', 'star-economy'];
+  actions: {
+    spirit_coach: 'intervention_prompt';      // Spark介入提示
+    quest_system: 'difficulty_downgrade';    // 任务难度降低一级
+    star_economy: 'floor_increase_to_2';      // 保底星星提升到2星
+  };
+}
+```
+
+**职责分配**:
+- `assessment-service`: 唯一计算源头，发布事件到 Redis
+- `spirit-coach-service`: 订阅事件，触发 Spark 介入
+- `quest-service`: 订阅事件，降低任务难度
+- `star-economy`: 订阅事件，提升保底星星
+
+---
+
+## Session Configuration
+
+```typescript
+// 会话时长（统一为 30-45 分钟）
+const SESSION_CONFIG = {
+  min_duration_min: 30,
+  max_duration_min: 45,
+  recommended_duration_min: 35,
+
+  // 休息提醒
+  short_break_interval_min: 15,     // 15分钟提醒休息1分钟
+  long_break_interval_min: 30,      // 30分钟建议大休息5分钟
+
+  // 自动保存
+  auto_save_interval_min: 5,
+
+  // 单会话场景上限
+  max_scenes_per_session: 3,
+
+  // 单会话日常任务上限
+  daily_tasks_per_session: 3,
+};
+```
+
+---
+
+## Star Economy Configuration
+
+```typescript
+const STAR_ECONOMY_CONFIG = {
+  // 阈值（从动态改为固定，避免目标不清晰）
+  badge_threshold: {
+    SpiritForest: 15,
+    SpellLibrary: 18,
+    RainbowGarden: 20,
+  },
+
+  // LXP 到星星映射（统一）
+  star_mapping: {
+    threshold_1: 40,   // 1星
+    threshold_2: 60,   // 2星
+    threshold_3: 75,   // 3星
+    threshold_4: 90,   // 4星
+    threshold_5: 100,  // 5星（封顶）
+  },
+
+  // 星星转LXP
+  lxp_conversion: {
+    base_rate: 10,     // 每星10 LXP
+    no_excess_penalty: true,  // 超额星星无惩罚
+  },
+
+  // 防刷机制
+  daily_scene_lxp_cap: 500,  // 同一场景每日LXP上限
+  max_stars_per_scene: 100,
+  soft_cap_threshold: 60,    // 超过后效率-50%
+
+  // 保底机制
+  floor_stars_default: 1,
+  floor_stars_ddr: 2,        // 动态难度调整后
+  ddr_trigger_responses: 15, // 15次低星后触发
+};
+```
+
+---
+
+## LXP Assessment Configuration
+
+```typescript
+const LXP_CONFIG = {
+  // 权重（确保总和=1.0）
+  weights: {
+    accuracy: 0.4,
+    fluency: 0.3,
+    vocabulary: 0.3,
+  },
+
+  // 目标语速（四年级中国儿童 ESL）
+  wpm_target: 60,
+  wpm_tolerance: 0.25,  // 25%容忍度
+
+  // 停顿惩罚
+  pause_penalty: 15,    // 每次停顿扣15分
+
+  // 重试惩罚
+  retry_penalty: {
+    step: 0.1,         // 每次尝试-10%
+    min: 0.7,          // 最低70%
+  },
+
+  // 保底分数（第3次尝试）
+  min_score_retry_3: 30,
+
+  // 边界保护（防止除以零）
+  zero_phoneme_fallback: 0,  // ASR返回空时返回0分，不崩溃
+};
+```
+
+---
+
+## Quest System Configuration
+
+```typescript
+const QUEST_CONFIG = {
+  // 日常任务
+  daily: {
+    count: 3,
+    refresh_hour: 0,        // UTC+8 00:00
+    refresh_timezone: 'Asia/Shanghai',
+    lxp_bonus: 1.2,         // 日常任务20%加成
+    streak_bonus_per_quest: 0.1,  // 连续完成+10%
+  },
+
+  // 主线任务
+  main: {
+    tasks_per_scene: 3,
+    max_attempts: -1,       // -1 = 无限
+  },
+
+  // 动态难度调整
+  ddr: {
+    threshold_low: 40,      // LXP < 40 降级
+    threshold_high: 80,   // LXP > 80 升级
+    max_level: 4,
+    min_level: 1,
+  },
+};
+```
+
+---
+
+## Spirit Coach Configuration
+
+```typescript
+const SPIRIT_COACH_CONFIG = {
+  // 冷却时间（秒）
+  cooldowns: {
+    error: 20,
+    silence: 30,
+    // wake: 无冷却
+  },
+
+  // 沉默检测
+  silence_threshold_ms: 15000,
+
+  // 优先级
+  priorities: {
+    wake: 3,
+    error: 2,
+    silence: 1,
+  },
+
+  // 显示时长
+  bubble_ttl_ms: 8000,
+  bubble_ttl_min_ms: 3000,
+};
+```
+
+---
+
+## 跨系统一致性检查清单
+
+修改任何配置时，必须更新以下文档：
+
+1. **修改 `struggle_score` 阈值** → 更新:
+   - `spirit-coach.md`
+   - `quest-system.md`
+   - `star-economy.md`
+
+2. **修改会话时长** → 更新:
+   - `game-concept.md`
+   - `core-loop.md`
+   - `quest-system.md`
+
+3. **修改星星阈值** → 更新:
+   - `game-concept.md`
+   - `star-economy.md`
+   - `quest-system.md`
+
+4. **修改 LXP 权重** → 更新:
+   - `lxp-system.md`
+   - `star-economy.md`
+
+---
+
+## 数据类型定义
+
+```typescript
+// 所有系统共享的通用类型
+
+interface PlayerSession {
+  session_id: string;
+  player_id: string;
+  start_time: string;
+  max_duration_min: number;
+  scenes_completed: string[];
+  total_stars_earned: number;
+}
+
+interface SceneProgress {
+  scene_id: string;
+  player_id: string;
+  stars_accumulated: number;
+  badge_unlocked: boolean;
+  last_updated: string;
+}
+
+interface StarTransaction {
+  transaction_id: string;
+  player_id: string;
+  scene_id: string;
+  delta: number;           // 正数=获得，负数=消费
+  reason: 'earned' | 'spent' | 'refunded';
+  balance_after: number; // 玩家总星星余额
+  timestamp: string;
+}
+
+interface LXPTransaction {
+  transaction_id: string;
+  player_id: string;
+  source: 'scene' | 'daily_quest' | 'badge' | 'treasure_box';
+  amount: number;
+  timestamp: string;
+}
+```

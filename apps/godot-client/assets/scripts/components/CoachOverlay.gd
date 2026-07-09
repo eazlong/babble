@@ -50,8 +50,18 @@ signal hint_shown()
 # ── Lifecycle ──
 
 func _ready() -> void:
+	# Move from scene tree to UIFramework Layer 3 (OverlayCanvasLayer)
+	# 使用 call_deferred() 避免 "Parent node is busy" 错误
+	call_deferred("_move_to_overlay_layer")
+
 	DialogueManager.coach_overlay = self
-	_base_position = coach_sprite.position
+
+	# 动态计算精灵位置：基于当前视口大小
+	var viewport_size = get_viewport().get_visible_rect().size
+	var margin_x = 150.0  # 距离右边缘 150px（精灵宽度 480px，中心点偏移 240px）
+	var margin_y = 160.0  # 距离底部 160px（精灵高度 270px，中心点偏移 135px + 额外边距）
+	_base_position = Vector2(viewport_size.x - margin_x, viewport_size.y - margin_y)
+	coach_sprite.position = _base_position
 
 	_bubble_ttl_timer = Timer.new()
 	_bubble_ttl_timer.one_shot = true
@@ -62,6 +72,18 @@ func _ready() -> void:
 	dialogue_bubble.modulate.a = 0
 
 	_start_idle_loop()
+
+func _move_to_overlay_layer() -> void:
+	var ui_framework = get_node("/root/UIFramework")
+	var overlay_layer = ui_framework.get_layer_root(ui_framework.LayerIndex.OVERLAY)
+	if overlay_layer:
+		var current_parent = get_parent()
+		if current_parent:
+			current_parent.remove_child(self)
+		overlay_layer.add_child(self)
+		print("[CoachOverlay] Moved from scene tree to OverlayCanvasLayer (Layer 3)")
+	else:
+		push_warning("[CoachOverlay] UIFramework OverlayCanvasLayer not found, staying in scene tree")
 
 # ── Utilities ──
 
@@ -237,22 +259,37 @@ func _show_bubble(_text: String) -> void:
 	dialogue_text.text = _text
 	dialogue_bubble.visible = true
 	dialogue_bubble.modulate.a = 0
-	dialogue_bubble.scale = Vector2(0.9, 0.9)
+	dialogue_bubble.scale = Vector2(UIAnimationPresets.BubbleAnim.START_SCALE,
+									UIAnimationPresets.BubbleAnim.START_SCALE)
 
 	_bubble_tween = create_tween()
 	_bubble_tween.set_parallel(true)
-	_bubble_tween.tween_property(dialogue_bubble, "modulate:a", 1.0, 0.3) \
-		.set_ease(Tween.EASE_OUT)
-	_bubble_tween.tween_property(dialogue_bubble, "scale", Vector2(1.0, 1.0), 0.3) \
-		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	_bubble_tween.set_trans(UIAnimationPresets.BubbleAnim.TRANS)
+	_bubble_tween.set_ease(UIAnimationPresets.BubbleAnim.SHOW_EASE)
+
+	# ScalePop动画：先弹到overshoot再回弹
+	_bubble_tween.tween_property(dialogue_bubble, "modulate:a", 1.0,
+								 UIAnimationPresets.BubbleAnim.SHOW_DURATION)
+	_bubble_tween.tween_property(dialogue_bubble, "scale",
+								 Vector2(UIAnimationPresets.ScalePop.OVERSHOOT,
+										 UIAnimationPresets.ScalePop.OVERSHOOT),
+								 UIAnimationPresets.BubbleAnim.SHOW_DURATION * 0.6)
+
+	_bubble_tween.set_parallel(false)
+	_bubble_tween.tween_property(dialogue_bubble, "scale",
+								 Vector2(UIAnimationPresets.ScalePop.END_SCALE,
+										 UIAnimationPresets.ScalePop.END_SCALE),
+								 UIAnimationPresets.BubbleAnim.SHOW_DURATION * 0.4)
 
 func _hide_bubble() -> void:
 	if _bubble_tween and _bubble_tween.is_valid():
 		_bubble_tween.kill()
 
 	_bubble_tween = create_tween()
-	_bubble_tween.tween_property(dialogue_bubble, "modulate:a", 0.0, 0.25) \
-		.set_ease(Tween.EASE_IN)
+	_bubble_tween.set_trans(UIAnimationPresets.BubbleAnim.TRANS)
+	_bubble_tween.set_ease(UIAnimationPresets.BubbleAnim.HIDE_EASE)
+	_bubble_tween.tween_property(dialogue_bubble, "modulate:a", 0.0,
+								 UIAnimationPresets.BubbleAnim.HIDE_DURATION)
 	_bubble_tween.tween_callback(func():
 		dialogue_bubble.visible = false
 	)
@@ -296,6 +333,10 @@ func fly_in_from(start_pos: Vector2, end_pos: Vector2, duration: float = fly_dur
 		)
 
 func show_hint(text: String, emotion: String = "neutral") -> void:
+	# Activate Overlay Layer when showing hint
+	var ui_framework = get_node("/root/UIFramework")
+	ui_framework.activate_overlay()
+
 	var state = STATE_HINT
 	if emotion in PRIORITY:
 		state = emotion
@@ -303,6 +344,10 @@ func show_hint(text: String, emotion: String = "neutral") -> void:
 	hint_shown.emit()
 
 func show_hint_for_duration(text: String, emotion: String, ttl_ms: int) -> void:
+	# Activate Overlay Layer when showing hint
+	var ui_framework = get_node("/root/UIFramework")
+	ui_framework.activate_overlay()
+
 	var state = STATE_HINT
 	if emotion in PRIORITY:
 		state = emotion
@@ -319,6 +364,10 @@ func hide_hint() -> void:
 	if _current_state == STATE_HINT or _current_state == STATE_SPEAKING:
 		_current_state = STATE_IDLE
 		_play_idle()
+
+	# Deactivate Overlay Layer when hiding hint
+	var ui_framework = get_node("/root/UIFramework")
+	ui_framework.deactivate_overlay()
 
 # ── Main Public API ──
 
