@@ -70,3 +70,10 @@ tests/test-results/
 tests/tts_sample.wav
 tests/*.wav
 playwright-report/
+
+# ==================== Generated / Cache ====================
+.agents/
+.codegraph/
+design/
+screenshots/
+spark_fly_split/
