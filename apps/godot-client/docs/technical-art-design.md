@@ -1,7 +1,9 @@
 # LinguaQuest RPG 技术美术设计文档
 
 > Technical Art Design Document
-> 版本: 1.0 | 日期: 2026-06-26
+> 版本: 1.1 | 日期: 2026-07-09
+>
+> v1.1 对齐 `docs/new/PRD-v1.md` v0.2：AI 伴生精灵改为小飞猫；`SpiritForest` 改造为混沌迷雾序章；儿童端移除学习数据面板、传统错题本、StarBar/Badge 核心进度；视觉反馈改为 LXP、蜃气币、客栈进度、神器阵眼与国风奖励演出。
 
 ---
 
@@ -52,19 +54,19 @@ Layer 1: 环境特效层 (Ambient)
 
 Layer 2: 场景交互层 (Interactive)
   - NPC 精灵
-  - 可交互物体（花朵、宝箱）
+  - 可交互物体（茶棚、客栈订单、神器阵眼、场景道具）
   - Shader 特效（触发时）
 
 Layer 3: UI 层 (UI)
-  - HUD（星星条、对话气泡）
+  - HUD（当前任务、语音状态、轻提示）
   - 对话面板
-  - CoachOverlay (Spark)
+  - CoachOverlay（小飞猫）
   - 输入面板
 
 Layer 4: 特效覆盖层 (VFX Overlay)
   - 全屏转场效果
-  - 星级评价动画
-  - 解锁仪式特效
+  - 国风奖励开箱动画
+  - 客栈升级 / 神器阵眼演出
 ```
 
 ### 1.3 Shader 系统
@@ -73,17 +75,17 @@ Layer 4: 特效覆盖层 (VFX Overlay)
 
 | Shader 名称 | 用途 | 复杂度 | 性能预算 |
 |-------------|------|--------|----------|
-| `spirit_glow.gdshader` | Spark 精灵发光 | Medium | 2.0ms/帧 |
-| `magic_burst.gdshader` | 魔法爆发效果 | Medium | 2.5ms/帧 |
+| `spirit_glow.gdshader` | 小飞猫微光 / 翅膀提示光 | Medium | 2.0ms/帧 |
+| `magic_burst.gdshader` | 迷雾退散、神器阵眼、客栈升级效果 | Medium | 2.5ms/帧 |
 | `transition_wipe.gdshader` | 场景转场 | Low | 1.0ms/帧 |
 | `ambient_particle.gdshader` | 环境粒子 | Low | 1.5ms/帧 |
-| `star_trail.gdshader` | 星星拖尾 | High | 3.0ms/帧 |
+| `star_trail.gdshader` | 旧版星星拖尾；新版本仅可复用于蜃气币飞行或奖励粒子 | High | 3.0ms/帧 |
 
 **Shader 降级策略**（已实现于 `ShaderManager.gd`）:
 
 ```
 Level 0 (正常): 全部 Shader 启用
-Level 1 (警告): 禁用 star_trail，降低 ambient_particle 质量
+Level 1 (警告): 禁用高成本奖励粒子，降低 ambient_particle 质量
 Level 2 (严重): 禁用所有 Shader，使用 ColorRect 降级
 ```
 
@@ -174,42 +176,45 @@ CanvasLayer 0: 游戏世界层
   - 游戏场景内容
 
 CanvasLayer 10: HUD 层
-  - StarBar（星星进度条）
-  - SessionTimer（会话计时器）
   - QuestTracker（任务追踪器）
+  - VoiceStatus（聚气灵石语音状态）
+  - InnProgress（客栈经营进度，仅表现为游戏进度）
+  - SessionTimer（会话计时器）
 
 CanvasLayer 20: 对话层
   - DialogueBox（对话气泡）
   - NPC 头像
 
 CanvasLayer 30: Coach 层
-  - CoachOverlay（Spark 精灵）
+  - CoachOverlay（小飞猫）
   - 提示气泡
 
 CanvasLayer 40: 覆盖层
-  - SpiritUnlockOverlay（解锁动画）
-  - AchievementPanel（成就面板）
+  - RewardRevealOverlay（国风奖励开箱）
+  - InnUpgradeOverlay（客栈升级演出）
 
 CanvasLayer 50: 转场层
   - SceneTransition（黑屏淡入淡出）
 ```
 
-### 3.2 星星条 (StarBar) 视觉设计
+### 3.2 聚气灵石与客栈进度视觉设计
 
-**位置**: 屏幕顶部中央
-**形态**: 弧形进度条，填满 20 颗星星后触发 Badge 解锁
+**语音按钮位置**: 底部中心
+**语音按钮形态**: 聚气灵石，按住说话，松开发送
+**客栈进度位置**: 客栈经营场景顶部或建筑旁
+**客栈进度形态**: “聚沙成塔”进度条，蜃气币飞入后推动客栈升级
 
-**视觉状态映射**:
+**聚气灵石状态映射**:
 
-| 星星占比 | 视觉表现 | Spark 提示语 |
-|---------|---------|-------------|
-| 0-25% | 灰色底色，微弱发光 | "刚开始，加油！" |
-| 25-50% | 金色填充 1/4，光点闪烁 | "已经四分之一啦！" |
-| 50-75% | 金色填充过半，粒子增强 | "过半啦，继续！" |
-| 75-100% | 金色填充 3/4，光晕增强 | "就差一点点，冲刺！" |
-| >=100% | 全满彩虹色，震动特效 | "徽章解锁！太棒了！" |
+| 状态 | 视觉表现 | 说明 |
+|------|----------|------|
+| Idle | 微弱呼吸光 | 可开始说话 |
+| Listening | 水波纹 / 星沙涟漪 | 正在录音 |
+| Processing | 光效向主视窗汇聚 | 语音正在影响世界 |
+| Success | 石青 / 竹绿短闪 | 表达被理解 |
+| Hint | 琥珀金短闪 | 小飞猫准备提示 |
 
-**动画参数**（来自 `StarFlightAnimation.gd`）:
+**蜃气币飞行动画参数**（可复用旧星星飞行动画实现）:
 
 ```gdscript
 BEZIER_CONTROL_OFFSET: Vector2 = Vector2(0, -200)  # 抛物线高度
@@ -217,7 +222,7 @@ ROTATION: float = 720.0  # 旋转度数
 FLY_DURATION: float = 0.8s
 ```
 
-### 3.3 CoachOverlay (Spark) 状态系统
+### 3.3 CoachOverlay（小飞猫）状态系统
 
 **7 状态显示层**（来自 `spirit-coach.md`）:
 
@@ -228,8 +233,8 @@ FLY_DURATION: float = 0.8s
 | happy | 2 | 跳跃庆祝，缩放脉冲 | 连续正确/任务完成 |
 | hint | 3 | 提示状态，缓慢浮动 | 显示沉默/错误提示 |
 | speaking | 4 | 说话动画，较快浮动 | 播放 TTS 时 |
-| enter | 5 | 飞入动画，透明度+缩放 | Spark 进入屏幕 |
-| exit | 6 | 淡出动画，缩小消失 | Spark 离开屏幕 |
+| enter | 5 | 飞入动画，透明度+缩放 | 小飞猫进入屏幕 |
+| exit | 6 | 淡出动画，缩小消失 | 小飞猫离开屏幕 |
 
 **状态切换规则**: 优先级门控，新状态优先级 >= 当前状态才允许切换
 
@@ -247,7 +252,7 @@ MAX_ACTIVE_TWEENS: int = 50
 "scene_transition": {"max": 1, "priority": "高"}    # 必须保证
 "dialogue": {"max": 3, "priority": "高"}              # 气泡+文字+头像
 "ui_feedback": {"max": 10, "priority": "中"}          # 按钮点击
-"vfx": {"max": 20, "priority": "中"}                  # 星星飞行
+"vfx": {"max": 20, "priority": "中"}                  # 蜃气币 / 奖励飞行
 "ambient": {"max": 16, "priority": "低"}              # 可降级
 ```
 
@@ -267,20 +272,20 @@ MAX_ACTIVE_TWEENS: int = 50
 
 ### 4.2 关键动画规范
 
-**星星飞行动画**:
+**蜃气币 / 奖励飞行动画**:
 - 路径: 贝塞尔曲线（二次曲线）
 - 旋转: 720 度
 - 时长: 0.8 秒
 - 缓动: Quad.InOut
 
-**Spark 动画**:
+**小飞猫动画**:
 - 呼吸动画: scale 1.0 → 1.05 → 1.0，周期 2 秒
 - 飞入: 从屏幕边缘滑入 + 淡入，0.5 秒
 - 跳跃庆祝: 弹跳 3 次，1 秒
 
-**徽章解锁仪式**:
+**客栈升级 / 奖励开箱仪式**:
 - 总时长: 30-60 秒（不可跳过）
-- 包含: 全屏闪光 + Spark 祝贺 + Badge 旋转 + 奖励展示
+- 包含: 迷雾退散 + 小飞猫评价 + 神器阵眼亮起 + 奖励展示
 
 ### 4.3 动画缓动标准
 
@@ -398,12 +403,12 @@ HISTORY_SIZE: int = 10  # 滑动窗口大小
   → [VoicePipeline VAD 检测]
     → [voice-service ASR]
       → [dialogue-service LLM 评估]
-        → [LXP 计算 + 星级映射]
+        → [LXP / Error Profile / 蜃气币事件]
           → [视觉反馈]:
-              - 星星飞行动画 (StarFlightAnimation)
-              - 星星条增长 (StarBar)
-              - Spark 反馈 (CoachOverlay)
-              - 场景特效 (魔法花绽放等)
+              - 聚气灵石状态变化
+              - 蜃气币飞行动画 / 客栈进度
+              - 小飞猫反馈 (CoachOverlay)
+              - 场景特效（迷雾退散、客栈点亮、神器阵眼）
         → [TTS 响应]
           → [NPC 嘴唇动画同步]
 ```
@@ -413,10 +418,10 @@ HISTORY_SIZE: int = 10  # 滑动窗口大小
 | 后端事件 | 视觉反馈 | 优先级 |
 |---------|---------|--------|
 | ASR 结果返回 | 录音面板关闭动画 | 高 |
-| 星级计算完成 | 星星飞行动画 | 高 |
-| 星星累积更新 | 星星条增长 + 震动 | 高 |
-| Badge 解锁 | 全屏仪式动画 | 高 |
-| Spark 干预 | CoachOverlay 状态切换 | 中 |
+| LXP 获得 | 轻量 LXP 反馈，不打断剧情 | 中 |
+| 蜃气币获得 | 蜃气币飞入客栈进度 | 高 |
+| 客栈升级 | 客栈建筑升级 + 神器阵眼演出 | 高 |
+| 小飞猫干预 | CoachOverlay 状态切换 | 中 |
 | 场景切换 | 转场 Shader 效果 | 高 |
 
 ### 7.3 延迟预算
@@ -441,27 +446,18 @@ HISTORY_SIZE: int = 10  # 滑动窗口大小
 ### 8.1 色彩系统
 
 **主色调**:
-- 魔法主题: 深紫 `#4A148C` + 金色 `#FFD700`
-- 自然主题: 森林绿 `#2E7D32` + 天蓝 `#4FC3F7`
-- 星星系统: 金黄 `#FFC107` → 彩虹渐变（5 星时）
-
-**星星色彩映射**:
-
-| 星级 | 主色 | 发光色 | 粒子色 |
-|------|------|--------|--------|
-| 1 星 | `#9E9E9E` | 无 | `#BDBDBD` |
-| 2 星 | `#FFC107` | `#FFECB3` | `#FFE082` |
-| 3 星 | `#FFB300` | `#FFECB3` | `#FFD54F` |
-| 4 星 | `#FF8F00` | `#FFE082` | `#FFCA28` |
-| 5 星 | 彩虹渐变 | `#FFFFFF` | 多色闪烁 |
+- 日间模式（白露）: 宣纸白 / 极浅汝窑青
+- 夜间模式（玄墨）: 玄青 / 墨黑
+- 正确 / 鼓励: 石青 / 竹绿
+- 提示 / 纠正: 琥珀金 / 低饱和朱砂红
+- 奖励 / 蜃气币: 星沙金
 
 ### 8.2 视觉语言
 
-**魔法能量表达**:
-- 1-2 星: 微弱发光，暗淡色调
-- 3 星: 明亮金色，标准发光
-- 4 星: 彩虹拖尾，强烈光晕
-- 5 星: 全屏闪光，粒子爆发
+**国风语音能量表达**:
+- 轻反馈: 聚气灵石微光、字幕关键词高亮
+- 中反馈: 小飞猫翅膀提示光、NPC 自然接话、迷雾轻微退散
+- 强反馈: 神器阵眼亮起、客栈升级、国风奖励开箱
 
 **UI 反馈强度**:
 - 轻微: 透明度变化，位置微调
@@ -471,8 +467,8 @@ HISTORY_SIZE: int = 10  # 滑动窗口大小
 ### 8.3 字体规范
 
 **中文显示**:
-- 主要: Noto Sans CJK SC（思源黑体）
-- 标题: 圆润风格字体
+- 系统正文: Noto Sans CJK SC（思源黑体）或现代黑体
+- 神话背景 / 任务卷轴标题: 宋体 / 楷体风格字体
 - 字号: 最小 16px（适配儿童阅读）
 
 **英文显示**:
@@ -498,7 +494,14 @@ CoachIntervention:
 QuestStatusEvent:
   quest_id: String
   new_status: 'completed' | 'in_progress'
-  stars_earned: int
+  lxp_earned: int
+  mist_coin_earned: int
+
+# 来自 inn-service
+InnProgressEvent:
+  inn_level: int
+  progress_delta: int
+  upgrade_ready: bool
 ```
 
 ### 9.2 数据流映射
@@ -507,18 +510,22 @@ QuestStatusEvent:
 后端评估结果 → 前端视觉映射:
 
 LXP 分数 (0-100)
-  → 星级 (1-5)
-    → 星星飞行动画参数
-    → Spark 反馈表情
-    → 粒子效果强度
+  → 轻量 LXP 反馈
+    → 小飞猫反馈表情
+    → 关键词高亮 / 轻粒子效果
 
-任务完成事件
-  → Badge 解锁检查
-    → 解锁动画触发
+Error Profile 更新
+  → 客栈经营任务生成
+    → 蜃气币飞行动画
+    → 客栈进度更新
+
+神器获得事件
+  → 客栈阵眼点亮
+    → 客栈升级演出检查
     → 场景状态更新
 
 ASR 失败事件
-  → 示范模式 UI
+  → 小飞猫搭桥提示
     → 录音按钮状态变化
     → 提示气泡显示
 ```
@@ -579,8 +586,8 @@ if Engine.get_frames_per_second() < 45:
 
 **解决方案**:
 - 本地预测动画: 录音停止后立即播放"思考中"动画
-- 后端校正: 识别失败时切换示范模式 UI
-- 超时保护: 3 秒无响应自动触发 Spark 鼓励
+- 后端校正: 识别失败时切换小飞猫搭桥提示
+- 超时保护: 3 秒无响应自动触发小飞猫鼓励
 
 ### 风险 2: 低端设备 Shader 性能
 
@@ -598,7 +605,7 @@ if Engine.get_frames_per_second() < 45:
 **解决方案**:
 - 场景设计控制在 8-12 分钟
 - 强制课间休息机制
-- SessionTimer 视觉提醒（星星条颜色渐变）
+- SessionTimer 视觉提醒（轻量状态栏，不展示学习数据面板）
 
 ### 风险 4: 跨会话状态同步的视觉连续性
 
@@ -606,7 +613,7 @@ if Engine.get_frames_per_second() < 45:
 
 **解决方案**:
 - 加载画面显示上次进度
-- Spark 问候语回顾上次进度
+- 小飞猫问候语回顾上次进度
 - 本地缓存关键视觉状态
 
 ---
@@ -620,7 +627,7 @@ if Engine.get_frames_per_second() < 45:
 | Tween 管理 | `assets/scripts/autoload/UITweenManager.gd` |
 | 性能监控 | `assets/scripts/components/PerformanceMonitor.gd` |
 | 场景转换 | `assets/scripts/core/scene_transition.gd` |
-| 星星动画 | `assets/scripts/ui/StarFlightAnimation.gd` |
+| 蜃气币 / 奖励飞行动画 | `assets/scripts/ui/StarFlightAnimation.gd`（可复用或重命名） |
 | Coach 覆盖层 | `assets/scripts/components/CoachOverlay.gd` |
 | 对话系统 | `assets/scripts/autoload/DialogueBox.gd` |
 
@@ -629,6 +636,6 @@ if Engine.get_frames_per_second() < 45:
 - `design/gdd/game-concept.md` — 游戏概念
 - `design/gdd/core-loop.md` — 核心循环
 - `design/gdd/quest-system.md` — 任务系统
-- `design/gdd/star-economy.md` — 星星经济
+- `docs/new/Gameplay.md` — 蜃影客栈与奖励系统
 - `design/gdd/spirit-coach.md` — 精灵教练
 - `design/gdd/lxp-system.md` — LXP 系统
