@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from fastapi.responses import Response
 from pydantic import BaseModel
-from src.services.tts import tts_service
+from src.services.service_manager import service_manager
 
 router = APIRouter()
 
@@ -15,7 +15,9 @@ class TTSRequest(BaseModel):
 @router.post("/api/v1/voice/tts")
 async def synthesize_speech(req: TTSRequest):
     """Return audio data directly as base64."""
-    audio_data, format_type = await tts_service.synthesize_audio(req.text, req.voice_id)
+    audio_data, format_type = await service_manager.synthesize(
+        req.text, req.voice_id, req.language
+    )
     return {
         "audio_data": audio_data,
         "duration_ms": len(req.text) * 50,
@@ -26,7 +28,9 @@ async def synthesize_speech(req: TTSRequest):
 @router.post("/tts/synthesize")
 async def synthesize_speech_godot(req: TTSRequest):
     """Godot client compatible endpoint."""
-    audio_data, format_type = await tts_service.synthesize_audio(req.text, req.voice_id)
+    audio_data, format_type = await service_manager.synthesize(
+        req.text, req.voice_id, req.language
+    )
     return {
         "audio_data": audio_data,
         "duration_ms": len(req.text) * 50,

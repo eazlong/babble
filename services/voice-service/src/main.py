@@ -11,8 +11,7 @@ from fastapi import FastAPI
 from src.api.routes import health
 from src.api.routes import asr
 from src.api.routes import tts
-from src.services.tts import tts_service
-from src.services.whisper import whisper_service
+from src.services.service_manager import service_manager
 
 app = FastAPI(title="LinguaQuest Voice Service", version="0.1.0")
 app.include_router(health.router)
@@ -23,10 +22,14 @@ app.include_router(tts.router)
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup."""
-    await tts_service.init()
-    whisper_service.init()
+    # 使用ServiceManager统一初始化所有引擎
+    await service_manager.init_all()
 
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok", "service": "voice-service"}
+    return {
+        "status": "ok",
+        "service": "voice-service",
+        "mode": service_manager.mode.value
+    }

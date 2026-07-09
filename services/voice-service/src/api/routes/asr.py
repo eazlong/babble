@@ -1,7 +1,7 @@
 import base64
 from fastapi import APIRouter, UploadFile, File, Form
 from pydantic import BaseModel
-from src.services.whisper import whisper_service
+from src.services.service_manager import service_manager
 
 router = APIRouter()
 
@@ -12,7 +12,8 @@ async def transcribe(
     language: str = Form(default="en")
 ):
     audio_bytes = await audio.read()
-    result = await whisper_service.transcribe(audio_bytes, language)
+    # 使用ServiceManager处理引擎选择和fallback
+    result = await service_manager.transcribe(audio_bytes, language)
     return {
         "text": result.text,
         "confidence": result.confidence,
@@ -27,7 +28,7 @@ async def recognize_godot(
 ):
     """Godot client compatible endpoint (multipart form-data)."""
     audio_bytes = await audio.read()
-    result = await whisper_service.transcribe(audio_bytes, language)
+    result = await service_manager.transcribe(audio_bytes, language)
     return {
         "text": result.text,
         "confidence": result.confidence,
@@ -44,7 +45,7 @@ class ASRRequest(BaseModel):
 async def transcribe_json(req: ASRRequest):
     """Accept base64 audio in JSON body (Godot/Cocos clients)."""
     audio_bytes = base64.b64decode(req.audio_data)
-    result = await whisper_service.transcribe(audio_bytes, req.lang)
+    result = await service_manager.transcribe(audio_bytes, req.lang)
     return {
         "text": result.text,
         "confidence": result.confidence,

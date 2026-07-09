@@ -50,6 +50,21 @@ def _detect_compute_type(device: str) -> str:
 
 def _raw_pcm_to_wav(audio_bytes: bytes) -> io.BytesIO:
     """Convert raw PCM float32 stereo 44100Hz to a mono int16 WAV in memory."""
+
+    # 处理空数据
+    if len(audio_bytes) == 0:
+        logger.error("Empty audio data")
+        raise ValueError("Empty audio data")
+
+    # 处理奇数长度：截断到 float32 倍数
+    if len(audio_bytes) % 4 != 0:
+        logger.warning(f"Audio bytes size {len(audio_bytes)} not multiple of 4, truncating")
+        audio_bytes = audio_bytes[:len(audio_bytes) - (len(audio_bytes) % 4)]
+
+    if len(audio_bytes) == 0:
+        logger.error("Audio data became empty after truncation")
+        raise ValueError("Empty audio data after truncation")
+
     samples = np.frombuffer(audio_bytes, dtype=np.float32)
     if len(samples) % 2 == 0:
         samples = samples.reshape(-1, 2).mean(axis=1)
