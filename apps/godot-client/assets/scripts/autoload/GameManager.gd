@@ -1,13 +1,21 @@
 extends Node
 
+# 全局课程语言配置
+# 默认是中国人学英语；交换这两组配置即可改成美国人学中文等反向课程。
+const SOURCE_LANGUAGE_CODE: String = "zh"
+const SOURCE_LANGUAGE_NAME: String = "中文"
+const SPECIAL_LANGUAGE_CODE: String = "en"
+const SPECIAL_LANGUAGE_NAME: String = "英语"
+const DEFAULT_SPECIAL_LANGUAGE_PLAYER_NAME: String = "Carl"
+
 # 玩家数据
 var player_name: String = ""
 var player_age: int = 0
-var current_lang: String = "zh"
+var current_lang: String = SOURCE_LANGUAGE_CODE
 var current_scene: String = "MainMenu"
 
 # 游戏进度
-var unlocked_areas: Array[String] = ["SpiritForest"]
+var unlocked_areas: Array[String] = ["BeginningFP"]
 var completed_dialogues: Array[String] = []
 var vocabulary_learned: Array[String] = []
 
@@ -89,9 +97,9 @@ func load_progress() -> bool:
 			if data and data is Dictionary:
 				player_name = data.get("player_name", "")
 				player_age = data.get("player_age", 0)
-				current_lang = data.get("current_lang", "zh")
+				current_lang = data.get("current_lang", SOURCE_LANGUAGE_CODE)
 				# Convert arrays to typed Array[String]
-				var areas_data = data.get("unlocked_areas", ["SpiritForest"])
+				var areas_data = data.get("unlocked_areas", ["BeginningFP"])
 				unlocked_areas.clear()
 				for area in areas_data:
 					unlocked_areas.append(area)
@@ -111,7 +119,7 @@ func reset() -> void:
 	player_name = ""
 	player_age = 0
 	lxp_score = 0
-	unlocked_areas = ["SpiritForest"]
+	unlocked_areas = ["BeginningFP"]
 	completed_dialogues.clear()
 	vocabulary_learned.clear()
 	unlocked_spirits.clear()
