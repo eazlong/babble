@@ -64,7 +64,7 @@ describe('buildContextFromInput', () => {
     expect(ctx.player_level).toBe('A2')
     expect(ctx.player_text).toBe('I am go')
     expect(ctx.npc_response).toBe('Good try!')
-    expect(ctx.silence_seconds).toBe(0)
+    expect(ctx.silence_ms).toBe(0)
     expect(ctx.recent_turns).toContain('player: hi')
     expect(ctx.recent_turns).toContain('npc: hello')
   })
@@ -81,7 +81,7 @@ describe('buildContextFromInput', () => {
       recent_turns: [],
     }
     const ctx = buildContextFromInput(input)
-    expect(ctx.silence_seconds).toBe(20)
+    expect(ctx.silence_ms).toBe(20000)
     expect(ctx.player_text).toBe('')
   })
 
@@ -160,7 +160,7 @@ describe('PromptBuilder', () => {
     const bundle = await builder.build('silence', input)
 
     expect(bundle.system).toContain('小飞猫')
-    expect(bundle.user).toContain('15')
+    expect(bundle.user).toContain('15000')
     expect(bundle.user).toContain('B2')
   })
 

@@ -31,6 +31,17 @@ function createMockOpenAI(response: object) {
 }
 
 describe('LLMCoach', () => {
+  it('throws at construction if OPENAI_API_KEY is missing and no DI openai', async () => {
+    const original = process.env.OPENAI_API_KEY
+    delete process.env.OPENAI_API_KEY
+
+    try {
+      expect(() => new LLMCoach()).toThrow('OPENAI_API_KEY')
+    } finally {
+      if (original !== undefined) process.env.OPENAI_API_KEY = original
+    }
+  })
+
   it('calls OpenAI with correct parameters', async () => {
     const mockResponse = {
       text: '喵~ 差一点点！正确的说法是 I am going 或者 I go。',

@@ -12,7 +12,7 @@ export interface PromptContext {
   player_level: string
   player_text: string
   npc_response: string
-  silence_seconds: number
+  silence_ms: number
   recent_turns: string // pre-formatted
 }
 
@@ -52,7 +52,7 @@ export function buildContextFromInput(input: CoachInput): PromptContext {
 
   let player_text = ''
   let npc_response = ''
-  let silence_seconds = 0
+  let silence_ms = 0
 
   if (input.event_type === 'dialogue_turn') {
     player_text = input.player_text
@@ -60,7 +60,7 @@ export function buildContextFromInput(input: CoachInput): PromptContext {
   } else if (input.event_type === 'wake_request') {
     player_text = input.player_text
   } else if (input.event_type === 'silence_timeout') {
-    silence_seconds = Math.round(input.silence_ms / 1000)
+    silence_ms = input.silence_ms
   }
 
   const turns = input.recent_turns ?? []
@@ -72,7 +72,7 @@ export function buildContextFromInput(input: CoachInput): PromptContext {
     player_level,
     player_text,
     npc_response,
-    silence_seconds,
+    silence_ms,
     recent_turns,
   }
 }
@@ -92,7 +92,7 @@ export class PromptBuilder {
       player_level: context.player_level,
       player_text: context.player_text,
       npc_response: context.npc_response,
-      silence_seconds: String(context.silence_seconds),
+      silence_ms: String(context.silence_ms),
       recent_turns: context.recent_turns,
     })
 

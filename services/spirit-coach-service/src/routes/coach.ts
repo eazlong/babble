@@ -27,7 +27,9 @@ export async function registerCoachRoutes(app: FastifyInstance, redis: Redis) {
 
     const pairs: string[] = []
     for (const [key, value] of Object.entries(body)) {
-      pairs.push(key, String(value))
+      // Arrays (recent_turns) must be JSON-serialized; primitives become strings
+      const serialized = Array.isArray(value) ? JSON.stringify(value) : String(value)
+      pairs.push(key, serialized)
     }
 
     await redis.xadd('coach.input', '*', ...pairs)
