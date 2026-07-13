@@ -4,6 +4,30 @@ const API_BASE_URL = "http://localhost:8301"
 const QUEST_SERVICE_URL = "http://localhost:8306"
 const ASSESSMENT_SERVICE_URL = "http://localhost:8308"
 const REWARD_SERVICE_URL = "http://localhost:8307"
+const DEFAULT_ASR_TEST_ANSWERS: Array[String] = [
+	"hello",
+	"Carl",
+	"yes I can",
+	"hello",
+	"big",
+	"small",
+	"red",
+	"stand up",
+	"open the book",
+	"read aloud",
+	"I like magic books",
+	"I feel happy",
+	"thank you Luna",
+	"sunny",
+	"rainy",
+	"cloudy",
+	"cat in the tree",
+	"dog under the bridge",
+	"bird in the bush",
+	"plant red",
+	"water blue",
+	"grow yellow",
+]
 
 var http_request: HTTPRequest
 var error_panel: PanelContainer
@@ -24,13 +48,18 @@ var tts_http_request: HTTPRequest
 var parallel_asr_http_request: HTTPRequest
 var _ping_in_progress: bool = false
 var services_ready_done: bool = false
+var asr_default_answer_test_enabled: bool = false
+var asr_default_test_answers: Array[String] = DEFAULT_ASR_TEST_ANSWERS.duplicate()
 
 # ——— 并行ASR状态追踪 ———
 var _parallel_asr_pending: bool = false
 var _parallel_asr_result: Dictionary = {}
 var _parallel_asr_timeout_ms: int = 1500
+var _asr_default_test_answer_index: int = 0
 
 func _ready() -> void:
+	_configure_asr_test_options()
+
 	http_request = HTTPRequest.new()
 	add_child(http_request)
 	http_request.request_completed.connect(_on_request_completed)
@@ -54,6 +83,81 @@ func _ready() -> void:
 
 	# Auto-connect quest WebSocket when services are ready
 	services_ready.connect(_on_services_ready)
+
+func set_asr_default_answer_test_enabled(enabled: bool, answers: Array[String] = []) -> void:
+	asr_default_answer_test_enabled = enabled
+	_asr_default_test_answer_index = 0
+	if not answers.is_empty():
+		asr_default_test_answers = answers.duplicate()
+	elif asr_default_test_answers.is_empty():
+		asr_default_test_answers = DEFAULT_ASR_TEST_ANSWERS.duplicate()
+	print("[HybridAPI] ASR default-answer test enabled: ", asr_default_answer_test_enabled)
+
+func _configure_asr_test_options() -> void:
+	_configure_asr_test_options_from_project_settings()
+	_configure_asr_test_options_from_cmdline()
+
+func _configure_asr_test_options_from_project_settings() -> void:
+	var enabled := bool(ProjectSettings.get_setting("hybrid_api/asr_default_answer_test_enabled", false))
+	var answers_value: Variant = ProjectSettings.get_setting("hybrid_api/asr_default_answers", PackedStringArray())
+	var answers: Array[String] = _asr_answers_from_value(answers_value)
+	if enabled:
+		set_asr_default_answer_test_enabled(true, answers)
+
+func _configure_asr_test_options_from_cmdline() -> void:
+	var args: Array[String] = []
+	for arg in OS.get_cmdline_args():
+		args.append(arg)
+	for arg in OS.get_cmdline_user_args():
+		args.append(arg)
+
+	var enabled := false
+	var answers: Array[String] = []
+	for arg in args:
+		if arg == "--asr-default-answer-test":
+			enabled = true
+		elif arg.begins_with("--asr-default-answers="):
+			enabled = true
+			var raw_answers := arg.trim_prefix("--asr-default-answers=")
+			for answer in raw_answers.split("|", false):
+				var trimmed_answer := answer.strip_edges()
+				if not trimmed_answer.is_empty():
+					answers.append(trimmed_answer)
+
+	if enabled:
+		set_asr_default_answer_test_enabled(true, answers)
+
+func _asr_answers_from_value(value: Variant) -> Array[String]:
+	var answers: Array[String] = []
+	if value is PackedStringArray:
+		for answer in value:
+			var trimmed_answer := str(answer).strip_edges()
+			if not trimmed_answer.is_empty():
+				answers.append(trimmed_answer)
+	elif value is Array:
+		for answer in value:
+			var trimmed_answer := str(answer).strip_edges()
+			if not trimmed_answer.is_empty():
+				answers.append(trimmed_answer)
+	return answers
+
+func _apply_asr_default_answer_test(asr_result: Dictionary) -> Dictionary:
+	if not asr_default_answer_test_enabled:
+		return asr_result
+	if asr_default_test_answers.is_empty():
+		asr_default_test_answers = DEFAULT_ASR_TEST_ANSWERS.duplicate()
+
+	var result := asr_result.duplicate(true)
+	var actual_text := str(result.get("text", ""))
+	var answer_index: int = mini(_asr_default_test_answer_index, asr_default_test_answers.size() - 1)
+	var replacement_text: String = asr_default_test_answers[answer_index]
+	_asr_default_test_answer_index += 1
+	result["actual_text"] = actual_text
+	result["text"] = replacement_text
+	result["test_override"] = "asr_default_answer"
+	result["test_answer_index"] = answer_index
+	print("[HybridAPI] ASR default-answer test replaced '%s' with '%s'" % [actual_text, replacement_text])
+	return result
 
 func ping_services() -> void:
 	_ping_in_progress = true
@@ -252,8 +356,9 @@ func _on_request_completed(result: int, response_code: int, headers: PackedStrin
 		AudioManager.play_audio_from_base64(audio_data, format_type)
 		tts_received.emit(json)
 	elif json.has("text"):
-		print("[HybridAPI] ASR response: ", json)
-		asr_received.emit(json)
+		var asr_result: Dictionary = _apply_asr_default_answer_test(json)
+		print("[HybridAPI] ASR response: ", asr_result)
+		asr_received.emit(asr_result)
 	elif json.has("npc_text") or json.has("response"):
 		# Normalize dialogue response format
 		if json.has("npc_text") and not json.has("response"):
@@ -350,9 +455,16 @@ func _on_parallel_asr_request_completed(result: int, response_code: int, headers
 		"detected_language": json.get("detected_language", "unclear"),
 		"processing_time_ms": json.get("processing_time_ms", 0)
 	}
+	_parallel_asr_result = _apply_asr_default_answer_test(_parallel_asr_result)
 	print("[HybridAPI] Parallel ASR result: ", _parallel_asr_result)
 
-func publish_coach_silence_timeout(session_id: String, npc_id: String, silence_ms: int) -> void:
+func publish_coach_silence_timeout(
+	session_id: String,
+	npc_id: String,
+	silence_ms: int,
+	player_level: String = "A1",
+	recent_turns: Array = []
+) -> void:
 	var body = JSON.stringify({
 		"event_type": "silence_timeout",
 		"session_id": session_id,
@@ -360,11 +472,20 @@ func publish_coach_silence_timeout(session_id: String, npc_id: String, silence_m
 		"npc_id": npc_id,
 		"silence_ms": silence_ms,
 		"timestamp": int(Time.get_unix_time_from_system() * 1000),
+		"player_level": player_level,
+		"recent_turns": recent_turns,
 	})
 	var headers = ["Content-Type: application/json"]
 	coach_http_request.request("http://localhost:8305/api/v1/coach/events", headers, HTTPClient.METHOD_POST, body)
 
-func publish_coach_wake_request(session_id: String, npc_id: String, player_text: String) -> void:
+
+func publish_coach_wake_request(
+	session_id: String,
+	npc_id: String,
+	player_text: String,
+	player_level: String = "A1",
+	recent_turns: Array = []
+) -> void:
 	var body = JSON.stringify({
 		"event_type": "wake_request",
 		"session_id": session_id,
@@ -372,6 +493,33 @@ func publish_coach_wake_request(session_id: String, npc_id: String, player_text:
 		"npc_id": npc_id,
 		"player_text": player_text,
 		"timestamp": int(Time.get_unix_time_from_system() * 1000),
+		"player_level": player_level,
+		"recent_turns": recent_turns,
+	})
+	var headers = ["Content-Type: application/json"]
+	coach_http_request.request("http://localhost:8305/api/v1/coach/events", headers, HTTPClient.METHOD_POST, body)
+
+
+func publish_coach_dialogue_turn(
+	session_id: String,
+	npc_id: String,
+	player_text: String,
+	npc_response: String,
+	language: String = "en",
+	player_level: String = "A1",
+	recent_turns: Array = []
+) -> void:
+	var body = JSON.stringify({
+		"event_type": "dialogue_turn",
+		"session_id": session_id,
+		"user_id": "anonymous",
+		"npc_id": npc_id,
+		"player_text": player_text,
+		"npc_response": npc_response,
+		"language": language,
+		"timestamp": int(Time.get_unix_time_from_system() * 1000),
+		"player_level": player_level,
+		"recent_turns": recent_turns,
 	})
 	var headers = ["Content-Type: application/json"]
 	coach_http_request.request("http://localhost:8305/api/v1/coach/events", headers, HTTPClient.METHOD_POST, body)

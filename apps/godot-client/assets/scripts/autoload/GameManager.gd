@@ -11,6 +11,7 @@ const DEFAULT_SPECIAL_LANGUAGE_PLAYER_NAME: String = "Carl"
 # 玩家数据
 var player_name: String = ""
 var player_age: int = 0
+var player_cefr_level: String = "A1"  # A1, A2, B1, B2 — used by coach service
 var current_lang: String = SOURCE_LANGUAGE_CODE
 var current_scene: String = "MainMenu"
 
@@ -74,6 +75,7 @@ func save_progress() -> void:
 	var save_data = {
 		"player_name": player_name,
 		"player_age": player_age,
+		"player_cefr_level": player_cefr_level,
 		"current_lang": current_lang,
 		"unlocked_areas": unlocked_areas,
 		"lxp_score": lxp_score,
@@ -97,6 +99,7 @@ func load_progress() -> bool:
 			if data and data is Dictionary:
 				player_name = data.get("player_name", "")
 				player_age = data.get("player_age", 0)
+				player_cefr_level = data.get("player_cefr_level", "A1")
 				current_lang = data.get("current_lang", SOURCE_LANGUAGE_CODE)
 				# Convert arrays to typed Array[String]
 				var areas_data = data.get("unlocked_areas", ["BeginningFP"])

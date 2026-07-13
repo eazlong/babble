@@ -6,6 +6,7 @@ var dialogue_state: String = "idle"
 var coach_session_id: String = ""
 var silence_timer: Timer
 var coach_overlay: CoachOverlay
+var coach_tracker: CoachContextTracker = CoachContextTracker.new()
 
 # --- reconnection state ---
 var _dialogue_context_snapshot: Dictionary = {}
@@ -40,11 +41,14 @@ func _ready() -> void:
 func start_npc_dialogue(npc_id: String, greeting: String) -> void:
 	current_npc_id = npc_id
 	dialogue_history.clear()
+	coach_tracker.clear()
 	dialogue_state = "active"
 
 	dialogue_started.emit(npc_id)
 
 	DialogueBox.show_message(npc_id, greeting)
+	# NPC greeting counts as an NPC turn for the coach context
+	coach_tracker.add_turn("npc", greeting)
 
 	HybridAPI.synthesize_tts(greeting, npc_id, GameManager.current_lang)
 	await HybridAPI.tts_received
@@ -75,7 +79,13 @@ func _on_voice_ended(audio_data: PackedByteArray) -> void:
 	_check_spirit_unlocks(result.get("user_text", ""), current_npc_id)
 
 	if _is_wake_request(result.get("user_text", "")):
-		HybridAPI.publish_coach_wake_request(coach_session_id, current_npc_id, result.user_text)
+		HybridAPI.publish_coach_wake_request(
+			coach_session_id,
+			current_npc_id,
+			result.user_text,
+			GameManager.player_cefr_level,
+			coach_tracker.get_recent_turns()
+		)
 
 	if result.has("error"):
 		DialogueBox.show_message(current_npc_id, "抱歉，我没听清楚，请再说一次。")
@@ -83,10 +93,26 @@ func _on_voice_ended(audio_data: PackedByteArray) -> void:
 		dialogue_state = "active"
 		return
 
+	# Record this player turn in the coach context tracker
+	coach_tracker.add_turn("player", result.user_text)
+
 	player_response_ready.emit(result.user_text)
 
 	DialogueBox.show_message(current_npc_id, result.npc_response)
+	# Record the NPC response for coach context
+	coach_tracker.add_turn("npc", result.npc_response)
 	npc_response_ready.emit(result.npc_response)
+
+	# Publish dialogue_turn to coach (for error detection / personalized response)
+	HybridAPI.publish_coach_dialogue_turn(
+		coach_session_id,
+		current_npc_id,
+		result.user_text,
+		result.npc_response,
+		GameManager.current_lang,
+		GameManager.player_cefr_level,
+		coach_tracker.get_recent_turns()
+	)
 
 	var tts_duration: float = 0.0
 	if result.audio_data:
@@ -126,6 +152,7 @@ func end_dialogue() -> void:
 	VoicePipeline.stop_listening()
 	DialogueBox.hide_message()
 	CoachClient.disconnect_socket()
+	coach_tracker.clear()
 	dialogue_ended.emit()
 
 	GameManager.completed_dialogues.append(current_npc_id)
@@ -137,7 +164,13 @@ func _reset_silence_watch() -> void:
 func _on_silence_timeout() -> void:
 	if dialogue_state != "active" and dialogue_state != "waiting_response":
 		return
-	HybridAPI.publish_coach_silence_timeout(coach_session_id, current_npc_id, 15000)
+	HybridAPI.publish_coach_silence_timeout(
+		coach_session_id,
+		current_npc_id,
+		15000,
+		GameManager.player_cefr_level,
+		coach_tracker.get_recent_turns()
+	)
 
 func _is_wake_request(text: String) -> bool:
 	var lower = text.to_lower()
