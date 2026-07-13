@@ -1,5 +1,5 @@
 import OpenAI from 'openai'
-import { PromptBuilder, type Trigger } from './prompt-builder.js'
+import { PromptBuilder, type Trigger, type StreakData } from './prompt-builder.js'
 import { coachResponseSchema, type CoachInput, type CoachResponse } from '../types/coach-events.js'
 
 export interface LLMCoachOptions {
@@ -27,8 +27,8 @@ export class LLMCoach {
     this.promptBuilder = new PromptBuilder()
   }
 
-  async generate(input: CoachInput, trigger: Trigger): Promise<CoachResponse> {
-    const { system, user } = await this.promptBuilder.build(trigger, input)
+  async generate(input: CoachInput, trigger: Trigger, streak?: StreakData): Promise<CoachResponse> {
+    const { system, user } = await this.promptBuilder.build(trigger, input, streak)
 
     let timeoutId: NodeJS.Timeout | undefined
     try {

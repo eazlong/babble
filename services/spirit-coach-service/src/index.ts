@@ -10,6 +10,7 @@ import { InterventionPolicy } from './services/intervention-policy.js'
 import { CoachInputConsumer } from './workers/coach-input-consumer.js'
 import { ErrorDetector } from './services/error-detector.js'
 import { LLMCoach } from './services/llm-coach.js'
+import { StreakTracker } from './services/streak-tracker.js'
 
 const app = Fastify({ logger: true })
 
@@ -21,6 +22,7 @@ const errorDetector = new ErrorDetector()
 const classifier = new TriggerClassifier(errorDetector)
 const policy = new InterventionPolicy(redis as any)
 const llmCoach = new LLMCoach()
+const streakTracker = new StreakTracker()
 
 const consumer = new CoachInputConsumer(
   redis as any,
@@ -28,6 +30,7 @@ const consumer = new CoachInputConsumer(
   policy,
   llmCoach,
   sessionManager,
+  streakTracker,
 )
 
 app.register(cors, { origin: true })

@@ -9,6 +9,12 @@
 - 最近对话：
 {{recent_turns}}
 {{/if}}
+{{#if error_streak}}
+- 连续错误：{{error_streak}} 次（请降低难度、多鼓励、避免重复纠正同一错误）
+{{/if}}
+{{#if correct_streak}}
+- 连续正确：{{correct_streak}} 次（请表扬、可适当提升挑战）
+{{/if}}
 
 ## 任务
 1. 检测玩家句子里的错误（语法、词汇、语用）

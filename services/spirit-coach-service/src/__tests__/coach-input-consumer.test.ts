@@ -98,6 +98,19 @@ function createFailingLLMCoach() {
   }
 }
 
+function createMockStreakTracker() {
+  return {
+    recordError: vi.fn(),
+    recordCorrect: vi.fn(),
+    getErrorStreak: vi.fn().mockReturnValue(0),
+    getCorrectStreak: vi.fn().mockReturnValue(0),
+    shouldReduceDifficulty: vi.fn().mockReturnValue(false),
+    checkStreakReward: vi.fn().mockReturnValue(false),
+    clearStreak: vi.fn(),
+    clearAll: vi.fn(),
+  }
+}
+
 const mockLogger = {
   warn: vi.fn(),
   error: vi.fn(),
@@ -119,7 +132,7 @@ describe('CoachInputConsumer', () => {
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      llmCoach as never, sessionManager as never, mockLogger as never,
+      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, mockLogger as never,
     )
 
     await consumer.consumeOnce()
@@ -156,7 +169,7 @@ describe('CoachInputConsumer', () => {
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      llmCoach as never, sessionManager as never, mockLogger as never,
+      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, mockLogger as never,
     )
 
     await consumer.consumeOnce()
@@ -206,7 +219,7 @@ describe('CoachInputConsumer', () => {
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      llmCoach as never, sessionManager as never, mockLogger as never,
+      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, mockLogger as never,
     )
 
     await consumer.consumeOnce()
@@ -269,7 +282,7 @@ describe('CoachInputConsumer', () => {
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      llmCoach as never, sessionManager as never, mockLogger as never,
+      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, mockLogger as never,
     )
 
     await consumer.consumeOnce()
@@ -326,7 +339,7 @@ describe('CoachInputConsumer', () => {
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      llmCoach as never, sessionManager as never, mockLogger as never,
+      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, mockLogger as never,
     )
 
     await consumer.consumeOnce()
@@ -335,6 +348,45 @@ describe('CoachInputConsumer', () => {
     expect(redis.added[0].values.trigger).toBe('wake')
     expect(redis.added[0].values.priority).toBe('3')
     expect(sessionManager.push).toHaveBeenCalledTimes(1)
+  })
+
+  it('passes streak data to LLMCoach on error trigger', async () => {
+    const redis = createMockRedis([
+      ['coach.input', [makeDialogueTurnMessage({ player_text: 'I am go' })]],
+    ])
+
+    const classifier = {
+      classify: vi.fn().mockResolvedValue({
+        trigger: 'error',
+        priority: 2,
+        input: {},
+        errors: [{ type: 'grammar', severity: 'high' }],
+      }),
+    }
+
+    const policy = {
+      shouldIntervene: vi.fn().mockResolvedValue(true),
+      markIntervened: vi.fn().mockResolvedValue(undefined),
+    }
+
+    const llmCoach = createMockLLMCoach()
+    const sessionManager = { push: vi.fn().mockResolvedValue(undefined) }
+
+    const streakTracker = createMockStreakTracker()
+    ;(streakTracker.getErrorStreak as any).mockReturnValue(2)
+    ;(streakTracker.getCorrectStreak as any).mockReturnValue(0)
+
+    const consumer = new CoachInputConsumer(
+      redis as never, classifier as never, policy as never,
+      llmCoach as never, sessionManager as never, streakTracker as never, mockLogger as never,
+    )
+
+    await consumer.consumeOnce()
+
+    expect(streakTracker.recordError).toHaveBeenCalledWith('user-1')
+    expect(llmCoach.generate).toHaveBeenCalledTimes(1)
+    const [_input, _trigger, streakData] = (llmCoach.generate as any).mock.calls[0]
+    expect(streakData).toEqual({ error_streak: 2, correct_streak: 0 })
   })
 
   it('handles silence_timeout trigger with LLM', async () => {
@@ -377,7 +429,7 @@ describe('CoachInputConsumer', () => {
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      llmCoach as never, sessionManager as never, mockLogger as never,
+      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, mockLogger as never,
     )
 
     await consumer.consumeOnce()
@@ -427,7 +479,7 @@ describe('CoachInputConsumer', () => {
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      llmCoach as never, sessionManager as never, mockLogger as never,
+      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, mockLogger as never,
     )
 
     await consumer.consumeOnce()
@@ -451,7 +503,7 @@ describe('CoachInputConsumer', () => {
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      llmCoach as never, sessionManager as never, mockLogger as never,
+      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, mockLogger as never,
     )
 
     await consumer.consumeOnce()

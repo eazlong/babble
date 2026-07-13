@@ -77,11 +77,16 @@ export function buildContextFromInput(input: CoachInput): PromptContext {
   }
 }
 
+export interface StreakData {
+  error_streak: number
+  correct_streak: number
+}
+
 export class PromptBuilder {
   private systemCache: string | null = null
   private templateCache: Map<Trigger, string> = new Map()
 
-  async build(trigger: Trigger, input: CoachInput): Promise<PromptBundle> {
+  async build(trigger: Trigger, input: CoachInput, streak?: StreakData): Promise<PromptBundle> {
     const [system, template] = await Promise.all([
       this.getSystemPrompt(),
       this.getTemplate(trigger),
@@ -94,6 +99,9 @@ export class PromptBuilder {
       npc_response: context.npc_response,
       silence_ms: String(context.silence_ms),
       recent_turns: context.recent_turns,
+      // Streak data is conditionally injected — only rendered when > 0
+      error_streak: streak && streak.error_streak > 0 ? String(streak.error_streak) : undefined,
+      correct_streak: streak && streak.correct_streak > 0 ? String(streak.correct_streak) : undefined,
     })
 
     return { system, user }
