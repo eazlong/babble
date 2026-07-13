@@ -8,6 +8,15 @@ export interface LLMCoachOptions {
   timeoutMs?: number
 }
 
+export interface LLMCoachResult {
+  response: CoachResponse
+  tokenUsage?: {
+    promptTokens: number
+    completionTokens: number
+    totalTokens: number
+  }
+}
+
 export class LLMCoach {
   private openai: OpenAI
   private model: string
@@ -28,6 +37,10 @@ export class LLMCoach {
   }
 
   async generate(input: CoachInput, trigger: Trigger, streak?: StreakData): Promise<CoachResponse> {
+    return (await this.generateWithUsage(input, trigger, streak)).response
+  }
+
+  async generateWithUsage(input: CoachInput, trigger: Trigger, streak?: StreakData): Promise<LLMCoachResult> {
     const { system, user } = await this.promptBuilder.build(trigger, input, streak)
 
     let timeoutId: NodeJS.Timeout | undefined
@@ -64,7 +77,15 @@ export class LLMCoach {
         throw new Error(`Invalid JSON from LLM: ${content.slice(0, 200)}`)
       }
 
-      return coachResponseSchema.parse(parsed)
+      const coachResponse = coachResponseSchema.parse(parsed)
+      return {
+        response: coachResponse,
+        tokenUsage: response.usage ? {
+          promptTokens: response.usage.prompt_tokens,
+          completionTokens: response.usage.completion_tokens,
+          totalTokens: response.usage.total_tokens,
+        } : undefined,
+      }
     } finally {
       if (timeoutId !== undefined) clearTimeout(timeoutId)
     }

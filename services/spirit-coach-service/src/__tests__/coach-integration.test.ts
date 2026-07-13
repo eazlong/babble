@@ -109,7 +109,7 @@ function buildConsumer(
   const logger = { warn: vi.fn(), error: vi.fn() }
   return new CoachInputConsumer(
     redis as any, classifier, policy,
-    llmCoach as any, sessionManager, streakTracker, logger as any,
+    llmCoach as any, sessionManager, streakTracker, undefined, logger as any,
   )
 }
 

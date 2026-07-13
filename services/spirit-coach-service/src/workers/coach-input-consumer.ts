@@ -1,16 +1,15 @@
 import { randomUUID } from 'node:crypto'
-import { coachInputSchema, type CoachInput } from '../types/coach-events.js'
+import { coachInputSchema, type CoachInput, type CoachResponse } from '../types/coach-events.js'
 import { getFallback } from '../services/fallback-templates.js'
 import type { Trigger, StreakData } from '../services/prompt-builder.js'
 import type { StreakTracker } from '../services/streak-tracker.js'
+import type { CoachMetrics, LLMTokenUsage } from '../services/coach-metrics.js'
 
 export interface LLMCoachLike {
-  generate(input: CoachInput, trigger: Trigger, streak?: StreakData): Promise<{
-    text: string
-    emotion: string
-    repeat_phrase?: string
-    should_tts: boolean
-    ttl_ms: number
+  generate(input: CoachInput, trigger: Trigger, streak?: StreakData): Promise<CoachResponse>
+  generateWithUsage?(input: CoachInput, trigger: Trigger, streak?: StreakData): Promise<{
+    response: CoachResponse
+    tokenUsage?: LLMTokenUsage
   }>
 }
 
@@ -26,6 +25,7 @@ export class CoachInputConsumer {
     private readonly llmCoach: LLMCoachLike,
     private readonly sessionManager: { push(sessionId: string, payload: Record<string, unknown>): Promise<void> },
     private readonly streakTracker: StreakTracker,
+    private readonly metrics?: CoachMetrics,
     private readonly logger: { warn(...args: unknown[]): void; error(...args: unknown[]): void } = console,
   ) {}
 
@@ -75,13 +75,10 @@ export class CoachInputConsumer {
           continue
         }
 
-        let response: {
-          text: string
-          emotion: string
-          repeat_phrase?: string
-          should_tts: boolean
-          ttl_ms: number
-        }
+        let response: CoachResponse
+        let tokenUsage: LLMTokenUsage | undefined
+        let fallback = false
+        const startTimeMs = Date.now()
 
         // Update streak tracking based on trigger type.
         // Only error triggers reliably indicate a wrong answer; silence/wake
@@ -96,14 +93,28 @@ export class CoachInputConsumer {
         }
 
         try {
-          response = await this.llmCoach.generate(input, trigger, streakData)
+          if (this.llmCoach.generateWithUsage) {
+            const resultWithUsage = await this.llmCoach.generateWithUsage(input, trigger, streakData)
+            response = resultWithUsage.response
+            tokenUsage = resultWithUsage.tokenUsage
+          } else {
+            response = await this.llmCoach.generate(input, trigger, streakData)
+          }
         } catch (err) {
           this.logger.warn('LLM coach failed, using fallback', {
             trigger,
             error: err instanceof Error ? err.message : String(err),
           })
+          fallback = true
           response = getFallback(trigger)
         }
+
+        this.metrics?.recordCall({
+          trigger,
+          latencyMs: Date.now() - startTimeMs,
+          fallback,
+          tokenUsage,
+        })
 
         const payload = {
           event_id: randomUUID(),

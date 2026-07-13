@@ -11,6 +11,7 @@ import { CoachInputConsumer } from './workers/coach-input-consumer.js'
 import { ErrorDetector } from './services/error-detector.js'
 import { LLMCoach } from './services/llm-coach.js'
 import { StreakTracker } from './services/streak-tracker.js'
+import { CoachMetrics } from './services/coach-metrics.js'
 
 const app = Fastify({ logger: true })
 
@@ -23,6 +24,7 @@ const classifier = new TriggerClassifier(errorDetector)
 const policy = new InterventionPolicy(redis as any)
 const llmCoach = new LLMCoach()
 const streakTracker = new StreakTracker()
+const coachMetrics = new CoachMetrics()
 
 const consumer = new CoachInputConsumer(
   redis as any,
@@ -31,6 +33,7 @@ const consumer = new CoachInputConsumer(
   llmCoach,
   sessionManager,
   streakTracker,
+  coachMetrics,
 )
 
 app.register(cors, { origin: true })
@@ -46,6 +49,17 @@ app.get('/health', async () => ({
   status: 'ok',
   service: 'spirit-coach-service',
   timestamp: new Date().toISOString(),
+}))
+
+app.get('/metrics', async (_request, reply) => {
+  return reply
+    .type('text/plain; version=0.0.4')
+    .send(coachMetrics.toPrometheus())
+})
+
+app.get('/api/v1/coach/metrics', async () => ({
+  ...coachMetrics.snapshot(),
+  alertFallbackRate: coachMetrics.shouldAlertFallbackRate(0.05),
 }))
 
 const start = async () => {

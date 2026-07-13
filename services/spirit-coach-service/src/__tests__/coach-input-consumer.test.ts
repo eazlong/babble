@@ -132,7 +132,7 @@ describe('CoachInputConsumer', () => {
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, mockLogger as never,
+      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, undefined, mockLogger as never,
     )
 
     await consumer.consumeOnce()
@@ -169,7 +169,7 @@ describe('CoachInputConsumer', () => {
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, mockLogger as never,
+      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, undefined, mockLogger as never,
     )
 
     await consumer.consumeOnce()
@@ -219,7 +219,7 @@ describe('CoachInputConsumer', () => {
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, mockLogger as never,
+      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, undefined, mockLogger as never,
     )
 
     await consumer.consumeOnce()
@@ -282,7 +282,7 @@ describe('CoachInputConsumer', () => {
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, mockLogger as never,
+      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, undefined, mockLogger as never,
     )
 
     await consumer.consumeOnce()
@@ -339,7 +339,7 @@ describe('CoachInputConsumer', () => {
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, mockLogger as never,
+      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, undefined, mockLogger as never,
     )
 
     await consumer.consumeOnce()
@@ -378,7 +378,7 @@ describe('CoachInputConsumer', () => {
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      llmCoach as never, sessionManager as never, streakTracker as never, mockLogger as never,
+      llmCoach as never, sessionManager as never, streakTracker as never, undefined, mockLogger as never,
     )
 
     await consumer.consumeOnce()
@@ -429,7 +429,7 @@ describe('CoachInputConsumer', () => {
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, mockLogger as never,
+      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, undefined, mockLogger as never,
     )
 
     await consumer.consumeOnce()
@@ -479,7 +479,7 @@ describe('CoachInputConsumer', () => {
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, mockLogger as never,
+      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, undefined, mockLogger as never,
     )
 
     await consumer.consumeOnce()
@@ -503,7 +503,7 @@ describe('CoachInputConsumer', () => {
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, mockLogger as never,
+      llmCoach as never, sessionManager as never, createMockStreakTracker() as never, undefined, mockLogger as never,
     )
 
     await consumer.consumeOnce()
