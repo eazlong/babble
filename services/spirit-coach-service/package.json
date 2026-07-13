@@ -15,6 +15,7 @@
     "@supabase/supabase-js": "^2.43.0",
     "fastify": "^4.28.0",
     "ioredis": "^5.4.0",
+    "openai": "^4.104.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {

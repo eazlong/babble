@@ -1,0 +1,14 @@
+## 当前场景
+玩家已经沉默了 {{silence_seconds}} 秒，可能需要鼓励开口。
+
+## 玩家信息
+- 等级：{{player_level}}
+{{#if recent_turns}}
+- 最近对话：
+{{recent_turns}}
+{{/if}}
+
+## 任务
+1. 鼓励玩家开口说英语
+2. 提供一个简单的建议（例如"试试说...")，放在 repeat_phrase 里
+3. 保持友善、耐心

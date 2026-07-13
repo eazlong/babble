@@ -6,6 +6,15 @@ export const interventionPriority = {
   wake: 3,
 } as const
 
+const playerLevelSchema = z.enum(['A1', 'A2', 'B1', 'B2']).default('A1')
+
+const recentTurnSchema = z.object({
+  speaker: z.enum(['player', 'npc']),
+  text: z.string(),
+})
+
+const recentTurnsSchema = z.array(recentTurnSchema).default([])
+
 const dialogueTurnSchema = z.object({
   event_type: z.literal('dialogue_turn'),
   session_id: z.string().min(1),
@@ -15,6 +24,8 @@ const dialogueTurnSchema = z.object({
   npc_response: z.string().min(1),
   language: z.string().min(1),
   timestamp: z.number(),
+  player_level: playerLevelSchema,
+  recent_turns: recentTurnsSchema,
 })
 
 const silenceTimeoutSchema = z.object({
@@ -24,6 +35,8 @@ const silenceTimeoutSchema = z.object({
   npc_id: z.string().min(1),
   silence_ms: z.number().int().min(15000),
   timestamp: z.number(),
+  player_level: playerLevelSchema,
+  recent_turns: recentTurnsSchema,
 })
 
 const wakeRequestSchema = z.object({
@@ -33,6 +46,8 @@ const wakeRequestSchema = z.object({
   npc_id: z.string().min(1),
   player_text: z.string().min(1),
   timestamp: z.number(),
+  player_level: playerLevelSchema,
+  recent_turns: recentTurnsSchema,
 })
 
 export const coachInputSchema = z.union([
@@ -55,5 +70,16 @@ export const coachInterventionSchema = z.object({
   timestamp: z.number(),
 })
 
+export const coachResponseSchema = z.object({
+  text: z.string().min(30).max(300),
+  emotion: z.enum(['encourage', 'neutral', 'celebrate']),
+  repeat_phrase: z.string().optional(),
+  should_tts: z.boolean(),
+  ttl_ms: z.number().int().positive().default(8000),
+})
+
 export type CoachInput = z.infer<typeof coachInputSchema>
 export type CoachIntervention = z.infer<typeof coachInterventionSchema>
+export type CoachResponse = z.infer<typeof coachResponseSchema>
+export type PlayerLevel = z.infer<typeof playerLevelSchema>
+export type RecentTurn = z.infer<typeof recentTurnSchema>

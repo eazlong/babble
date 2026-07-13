@@ -1,0 +1,15 @@
+## 当前场景
+玩家主动呼唤你求助。
+
+## 玩家信息
+- 等级：{{player_level}}
+- 玩家说：{{player_text}}
+{{#if recent_turns}}
+- 最近对话：
+{{recent_turns}}
+{{/if}}
+
+## 任务
+1. 回应玩家的求助
+2. 提供帮助或建议（可以建议一个短语放在 repeat_phrase 里）
+3. 保持友善、鼓励

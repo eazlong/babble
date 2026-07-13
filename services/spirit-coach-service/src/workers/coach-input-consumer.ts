@@ -1,5 +1,17 @@
 import { randomUUID } from 'node:crypto'
-import { coachInputSchema } from '../types/coach-events.js'
+import { coachInputSchema, type CoachInput } from '../types/coach-events.js'
+import { getFallback } from '../services/fallback-templates.js'
+import type { Trigger } from '../services/prompt-builder.js'
+
+export interface LLMCoachLike {
+  generate(input: CoachInput, trigger: Trigger): Promise<{
+    text: string
+    emotion: string
+    repeat_phrase?: string
+    should_tts: boolean
+    ttl_ms: number
+  }>
+}
 
 export class CoachInputConsumer {
   constructor(
@@ -10,8 +22,9 @@ export class CoachInputConsumer {
     },
     private readonly classifier: { classify(input: ReturnType<typeof coachInputSchema.parse>): Promise<any> },
     private readonly policy: { shouldIntervene(arg: { trigger: 'wake' | 'error' | 'silence'; userId: string }): Promise<boolean>; markIntervened(arg: { trigger: 'wake' | 'error' | 'silence'; userId: string }): Promise<void> },
-    private readonly generator: { generate(arg: { trigger: 'wake' | 'error' | 'silence'; errors: any[] }): { text: string; repeat_phrase?: string; emotion: string; should_tts: boolean; ttl_ms: number } },
+    private readonly llmCoach: LLMCoachLike,
     private readonly sessionManager: { push(sessionId: string, payload: Record<string, unknown>): Promise<void> },
+    private readonly logger: { warn(...args: unknown[]): void; error(...args: unknown[]): void } = console,
   ) {}
 
   async consumeOnce() {
@@ -26,7 +39,19 @@ export class CoachInputConsumer {
         for (let i = 0; i < raw.length; i += 2) {
           const key = raw[i]
           const value = raw[i + 1]
-          data[key] = key === 'timestamp' || key === 'silence_ms' ? Number(value) : value
+          if (key === 'timestamp' || key === 'silence_ms') {
+            data[key] = Number(value)
+          } else if (key === 'player_level') {
+            data[key] = value
+          } else if (key === 'recent_turns') {
+            try {
+              data[key] = JSON.parse(value as string)
+            } catch {
+              data[key] = []
+            }
+          } else {
+            data[key] = value
+          }
         }
 
         const input = coachInputSchema.parse(data)
@@ -36,8 +61,10 @@ export class CoachInputConsumer {
           continue
         }
 
+        const trigger = classified.trigger as Trigger
+
         const allowed = await this.policy.shouldIntervene({
-          trigger: classified.trigger,
+          trigger,
           userId: input.user_id,
         })
 
@@ -46,22 +73,35 @@ export class CoachInputConsumer {
           continue
         }
 
-        const hint = this.generator.generate({
-          trigger: classified.trigger,
-          errors: classified.errors,
-        })
+        let response: {
+          text: string
+          emotion: string
+          repeat_phrase?: string
+          should_tts: boolean
+          ttl_ms: number
+        }
+
+        try {
+          response = await this.llmCoach.generate(input, trigger)
+        } catch (err) {
+          this.logger.warn('LLM coach failed, using fallback', {
+            trigger,
+            error: err instanceof Error ? err.message : String(err),
+          })
+          response = getFallback(trigger)
+        }
 
         const payload = {
           event_id: randomUUID(),
           session_id: input.session_id,
           user_id: input.user_id,
-          trigger: classified.trigger,
+          trigger,
           priority: classified.priority,
-          text: hint.text,
-          repeat_phrase: hint.repeat_phrase,
-          emotion: hint.emotion,
-          should_tts: hint.should_tts,
-          ttl_ms: hint.ttl_ms,
+          text: response.text,
+          repeat_phrase: response.repeat_phrase,
+          emotion: response.emotion,
+          should_tts: response.should_tts,
+          ttl_ms: response.ttl_ms,
           timestamp: Date.now(),
         }
 
@@ -70,7 +110,7 @@ export class CoachInputConsumer {
           .flatMap(([key, value]) => [key, String(value)])
 
         await this.redis.xadd('coach.intervention', 'MAXLEN', '~', '10000', '*', ...pairs)
-        await this.policy.markIntervened({ trigger: classified.trigger, userId: input.user_id })
+        await this.policy.markIntervened({ trigger, userId: input.user_id })
         await this.sessionManager.push(input.session_id, payload)
         await this.redis.xdel('coach.input', messageId)
       }

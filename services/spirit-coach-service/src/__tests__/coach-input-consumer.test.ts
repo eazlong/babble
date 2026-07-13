@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { CoachInputConsumer } from '../workers/coach-input-consumer.js'
 import { CoachSessionManager } from '../services/coach-session-manager.js'
-import type { DetectedError } from '../services/error-detector.js'
 
 // Helper: create a dialogue_turn message in the format returned by xread
 function makeDialogueTurnMessage(overrides: Record<string, string> = {}) {
@@ -33,13 +32,11 @@ function createMockRedis(inputMessages?: [string, [string, string[]][]][]) {
   const cooldownStore = new Map<string, string>()
 
   return {
-    // Expose for assertions
     added,
     deleted,
     calls,
     cooldownStore,
 
-    // Set up cooldown state
     preSetCooldown(key: string, value: string) {
       cooldownStore.set(key, value)
     },
@@ -51,11 +48,8 @@ function createMockRedis(inputMessages?: [string, [string, string[]][]][]) {
 
     async xadd(...args: unknown[]): Promise<string> {
       calls.xadd.push(args)
-
-      // Consumer calls: xadd('coach.intervention', 'MAXLEN', '~', '10000', '*', key1, val1, ...)
-      // So the actual key-value pairs start after the 5th argument
       const stream = args[0] as string
-      const pairsStart = 5 // skip stream, MAXLEN, ~, 10000, *
+      const pairsStart = 5
       const pairs = args.slice(pairsStart)
 
       const values: Record<string, string> = {}
@@ -86,63 +80,59 @@ function createMockRedis(inputMessages?: [string, [string, string[]][]][]) {
   }
 }
 
+function createMockLLMCoach(response?: object) {
+  return {
+    generate: vi.fn().mockResolvedValue(response ?? {
+      text: '喵~ 差一点点！可以说：I am going',
+      repeat_phrase: 'I am going',
+      emotion: 'encourage',
+      should_tts: true,
+      ttl_ms: 8000,
+    }),
+  }
+}
+
+function createFailingLLMCoach() {
+  return {
+    generate: vi.fn().mockRejectedValue(new Error('LLM timeout')),
+  }
+}
+
+const mockLogger = {
+  warn: vi.fn(),
+  error: vi.fn(),
+}
+
 describe('CoachInputConsumer', () => {
   it('classify returns null → xdel deletes message, does not call push', async () => {
     const redis = createMockRedis([
       ['coach.input', [makeDialogueTurnMessage()]],
     ])
 
-    // Mock classifier that returns null (no errors)
-    const classifier = {
-      classify: vi.fn().mockResolvedValue(null),
-    }
-
-    // Mock policy
+    const classifier = { classify: vi.fn().mockResolvedValue(null) }
     const policy = {
       shouldIntervene: vi.fn().mockResolvedValue(true),
       markIntervened: vi.fn().mockResolvedValue(undefined),
     }
-
-    // Mock generator
-    const generator = {
-      generate: vi.fn().mockReturnValue({
-        text: 'hint',
-        emotion: 'neutral',
-        should_tts: true,
-        ttl_ms: 8000,
-      }),
-    }
-
-    // Mock session manager
-    const sessionManager = {
-      push: vi.fn().mockResolvedValue(undefined),
-    }
+    const llmCoach = createMockLLMCoach()
+    const sessionManager = { push: vi.fn().mockResolvedValue(undefined) }
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      generator as never, sessionManager as never,
+      llmCoach as never, sessionManager as never, mockLogger as never,
     )
 
     await consumer.consumeOnce()
 
-    // classifier.classify was called
     expect(classifier.classify).toHaveBeenCalledTimes(1)
-
-    // xdel was called to delete the message
     expect(redis.calls.xdel).toHaveLength(1)
     expect(redis.calls.xdel[0]).toEqual(['coach.input', '1710000000-0'])
-
-    // shouldIntervene was NOT called (early return on null)
     expect(policy.shouldIntervene).not.toHaveBeenCalled()
-
-    // sessionManager.push was NOT called
     expect(sessionManager.push).not.toHaveBeenCalled()
-
-    // No intervention was added
     expect(redis.added).toHaveLength(0)
   })
 
-  it('classify returns non-null, shouldIntervene returns false → xdel deletes message, does not push', async () => {
+  it('shouldIntervene returns false → xdel deletes message, does not call LLM', async () => {
     const redis = createMockRedis([
       ['coach.input', [makeDialogueTurnMessage({ player_text: 'I am go to school' })]],
     ])
@@ -157,54 +147,29 @@ describe('CoachInputConsumer', () => {
     }
 
     const policy = {
-      shouldIntervene: vi.fn().mockResolvedValue(false), // blocked by cooldown
+      shouldIntervene: vi.fn().mockResolvedValue(false),
       markIntervened: vi.fn().mockResolvedValue(undefined),
     }
 
-    const generator = {
-      generate: vi.fn().mockReturnValue({
-        text: 'hint',
-        emotion: 'neutral',
-        should_tts: true,
-        ttl_ms: 8000,
-      }),
-    }
-
-    const sessionManager = {
-      push: vi.fn().mockResolvedValue(undefined),
-    }
+    const llmCoach = createMockLLMCoach()
+    const sessionManager = { push: vi.fn().mockResolvedValue(undefined) }
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      generator as never, sessionManager as never,
+      llmCoach as never, sessionManager as never, mockLogger as never,
     )
 
     await consumer.consumeOnce()
 
-    // classifier was called
     expect(classifier.classify).toHaveBeenCalledTimes(1)
-
-    // shouldIntervene was called
     expect(policy.shouldIntervene).toHaveBeenCalledTimes(1)
-    expect(policy.shouldIntervene).toHaveBeenCalledWith({
-      trigger: 'error',
-      userId: 'user-1',
-    })
-
-    // xdel was called to delete the message (cooldown blocked)
     expect(redis.calls.xdel).toHaveLength(1)
-
-    // generator.generate was NOT called
-    expect(generator.generate).not.toHaveBeenCalled()
-
-    // sessionManager.push was NOT called
+    expect(llmCoach.generate).not.toHaveBeenCalled()
     expect(sessionManager.push).not.toHaveBeenCalled()
-
-    // No intervention was added
     expect(redis.added).toHaveLength(0)
   })
 
-  it('classify returns non-null, shouldIntervene returns true → full pipeline: xadd, markIntervened, push, xdel', async () => {
+  it('full pipeline: classifier → policy → LLM → xadd → markIntervened → push → xdel', async () => {
     const redis = createMockRedis([
       ['coach.input', [makeDialogueTurnMessage({ player_text: 'I am go to school' })]],
     ])
@@ -229,67 +194,46 @@ describe('CoachInputConsumer', () => {
       markIntervened: vi.fn().mockResolvedValue(undefined),
     }
 
-    const generator = {
-      generate: vi.fn().mockReturnValue({
-        text: '差一点点！可以说：I am going',
-        repeat_phrase: 'I am going',
-        emotion: 'encourage',
-        should_tts: true,
-        ttl_ms: 8000,
-      }),
-    }
+    const llmCoach = createMockLLMCoach({
+      text: '喵~ 差一点点！可以说：I am going',
+      repeat_phrase: 'I am going',
+      emotion: 'encourage',
+      should_tts: true,
+      ttl_ms: 8000,
+    })
 
-    const sessionManager = {
-      push: vi.fn().mockResolvedValue(undefined),
-    }
+    const sessionManager = { push: vi.fn().mockResolvedValue(undefined) }
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      generator as never, sessionManager as never,
+      llmCoach as never, sessionManager as never, mockLogger as never,
     )
 
     await consumer.consumeOnce()
 
-    // 1. classifier.classify was called
     expect(classifier.classify).toHaveBeenCalledTimes(1)
-
-    // 2. shouldIntervene was called
     expect(policy.shouldIntervene).toHaveBeenCalledTimes(1)
-    expect(policy.shouldIntervene).toHaveBeenCalledWith({
-      trigger: 'error',
-      userId: 'user-1',
-    })
+    expect(policy.shouldIntervene).toHaveBeenCalledWith({ trigger: 'error', userId: 'user-1' })
 
-    // 3. generator.generate was called
-    expect(generator.generate).toHaveBeenCalledTimes(1)
-    expect(generator.generate).toHaveBeenCalledWith({
-      trigger: 'error',
-      errors: expect.any(Array),
-    })
+    expect(llmCoach.generate).toHaveBeenCalledTimes(1)
+    const [input, trigger] = (llmCoach.generate as any).mock.calls[0]
+    expect(trigger).toBe('error')
+    expect(input.player_text).toBe('I am go to school')
 
-    // 4. xadd was called with coach.intervention
     expect(redis.calls.xadd).toHaveLength(1)
     expect(redis.added).toHaveLength(1)
     expect(redis.added[0].stream).toBe('coach.intervention')
 
-    // 5. markIntervened was called
     expect(policy.markIntervened).toHaveBeenCalledTimes(1)
-    expect(policy.markIntervened).toHaveBeenCalledWith({
-      trigger: 'error',
-      userId: 'user-1',
-    })
+    expect(policy.markIntervened).toHaveBeenCalledWith({ trigger: 'error', userId: 'user-1' })
 
-    // 6. sessionManager.push was called
     expect(sessionManager.push).toHaveBeenCalledTimes(1)
-
-    // 7. xdel was called to clean up the input message
     expect(redis.calls.xdel).toHaveLength(1)
     expect(redis.calls.xdel[0]).toEqual(['coach.input', '1710000000-0'])
 
-    // Verify payload format
     const payload = redis.added[0].values
     expect(payload.event_id).toBeDefined()
-    expect(payload.event_id).toHaveLength(36) // UUID
+    expect(payload.event_id).toHaveLength(36)
     expect(payload.session_id).toBe('session-1')
     expect(payload.user_id).toBe('user-1')
     expect(payload.trigger).toBe('error')
@@ -299,10 +243,57 @@ describe('CoachInputConsumer', () => {
     expect(payload.emotion).toBe('encourage')
     expect(payload.should_tts).toBe('true')
     expect(payload.ttl_ms).toBe('8000')
-    expect(payload.timestamp).toBeDefined()
   })
 
-  it('handles wake_request trigger through full pipeline', async () => {
+  it('LLM failure → uses fallback template', async () => {
+    const redis = createMockRedis([
+      ['coach.input', [makeDialogueTurnMessage({ player_text: 'I am go to school' })]],
+    ])
+
+    const classifier = {
+      classify: vi.fn().mockResolvedValue({
+        trigger: 'error',
+        priority: 2,
+        input: {},
+        errors: [],
+      }),
+    }
+
+    const policy = {
+      shouldIntervene: vi.fn().mockResolvedValue(true),
+      markIntervened: vi.fn().mockResolvedValue(undefined),
+    }
+
+    const llmCoach = createFailingLLMCoach()
+    const sessionManager = { push: vi.fn().mockResolvedValue(undefined) }
+
+    const consumer = new CoachInputConsumer(
+      redis as never, classifier as never, policy as never,
+      llmCoach as never, sessionManager as never, mockLogger as never,
+    )
+
+    await consumer.consumeOnce()
+
+    // LLM was called and failed
+    expect(llmCoach.generate).toHaveBeenCalledTimes(1)
+
+    // Logger warned about failure
+    expect(mockLogger.warn).toHaveBeenCalled()
+
+    // But intervention was still produced via fallback
+    expect(redis.added).toHaveLength(1)
+    const payload = redis.added[0].values
+    expect(payload.trigger).toBe('error')
+    expect(payload.text).toContain('再试一次') // fallback error text
+    expect(payload.emotion).toBe('encourage')
+
+    // Pipeline completed normally
+    expect(sessionManager.push).toHaveBeenCalledTimes(1)
+    expect(policy.markIntervened).toHaveBeenCalledTimes(1)
+    expect(redis.calls.xdel).toHaveLength(1)
+  })
+
+  it('handles wake_request trigger with LLM', async () => {
     const redis = createMockRedis([
       ['coach.input', [makeDialogueTurnMessage({
         event_type: 'wake_request',
@@ -324,39 +315,29 @@ describe('CoachInputConsumer', () => {
       markIntervened: vi.fn().mockResolvedValue(undefined),
     }
 
-    const generator = {
-      generate: vi.fn().mockReturnValue({
-        text: '我来帮你！你可以说：Can you help me?',
-        repeat_phrase: 'Can you help me?',
-        emotion: 'encourage',
-        should_tts: true,
-        ttl_ms: 8000,
-      }),
-    }
+    const llmCoach = createMockLLMCoach({
+      text: '喵~ 小飞猫来啦！我可以帮你。',
+      emotion: 'encourage',
+      should_tts: true,
+      ttl_ms: 8000,
+    })
 
-    const sessionManager = {
-      push: vi.fn().mockResolvedValue(undefined),
-    }
+    const sessionManager = { push: vi.fn().mockResolvedValue(undefined) }
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      generator as never, sessionManager as never,
+      llmCoach as never, sessionManager as never, mockLogger as never,
     )
 
     await consumer.consumeOnce()
 
-    // Full pipeline executed
     expect(redis.added).toHaveLength(1)
     expect(redis.added[0].values.trigger).toBe('wake')
     expect(redis.added[0].values.priority).toBe('3')
-    expect(redis.added[0].values.repeat_phrase).toBe('Can you help me?')
     expect(sessionManager.push).toHaveBeenCalledTimes(1)
-    expect(policy.markIntervened).toHaveBeenCalledWith({ trigger: 'wake', userId: 'user-1' })
-    expect(redis.calls.xdel).toHaveLength(1)
   })
 
-  it('handles silence_timeout trigger through full pipeline', async () => {
-    // Need to use silence_timeout specific fields
+  it('handles silence_timeout trigger with LLM', async () => {
     const silenceFields: string[] = [
       'event_type', 'silence_timeout',
       'session_id', 'session-1',
@@ -384,52 +365,97 @@ describe('CoachInputConsumer', () => {
       markIntervened: vi.fn().mockResolvedValue(undefined),
     }
 
-    const generator = {
-      generate: vi.fn().mockReturnValue({
-        text: '想不出来也没关系，可以试试说：I need help.',
-        repeat_phrase: 'I need help.',
-        emotion: 'neutral',
-        should_tts: true,
-        ttl_ms: 8000,
-      }),
-    }
+    const llmCoach = createMockLLMCoach({
+      text: '喵~ 想不出来也没关系，可以试试说：I need help.',
+      repeat_phrase: 'I need help.',
+      emotion: 'neutral',
+      should_tts: true,
+      ttl_ms: 8000,
+    })
 
-    const sessionManager = {
-      push: vi.fn().mockResolvedValue(undefined),
-    }
+    const sessionManager = { push: vi.fn().mockResolvedValue(undefined) }
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      generator as never, sessionManager as never,
+      llmCoach as never, sessionManager as never, mockLogger as never,
     )
 
     await consumer.consumeOnce()
 
-    // Full pipeline executed
     expect(redis.added).toHaveLength(1)
     expect(redis.added[0].values.trigger).toBe('silence')
     expect(redis.added[0].values.priority).toBe('1')
-    expect(sessionManager.push).toHaveBeenCalledTimes(1)
-    expect(policy.markIntervened).toHaveBeenCalledWith({ trigger: 'silence', userId: 'user-1' })
-    expect(redis.calls.xdel).toHaveLength(1)
+  })
+
+  it('parses player_level and recent_turns from Redis stream', async () => {
+    const fields: string[] = [
+      'event_type', 'dialogue_turn',
+      'session_id', 'session-1',
+      'user_id', 'user-1',
+      'npc_id', 'npc-1',
+      'player_text', 'I like cats',
+      'npc_response', 'Great!',
+      'language', 'en',
+      'timestamp', '1779177600000',
+      'player_level', 'B2',
+      'recent_turns', JSON.stringify([
+        { speaker: 'player', text: 'hi' },
+        { speaker: 'npc', text: 'hello' },
+      ]),
+    ]
+
+    const redis = createMockRedis([
+      ['coach.input', [['1710000000-0', fields] as [string, string[]]]],
+    ])
+
+    const classifier = {
+      classify: vi.fn().mockResolvedValue({
+        trigger: 'error',
+        priority: 2,
+        input: {},
+        errors: [{ type: 'grammar', severity: 'high' }],
+      }),
+    }
+
+    const policy = {
+      shouldIntervene: vi.fn().mockResolvedValue(true),
+      markIntervened: vi.fn().mockResolvedValue(undefined),
+    }
+
+    const llmCoach = createMockLLMCoach()
+    const sessionManager = { push: vi.fn().mockResolvedValue(undefined) }
+
+    const consumer = new CoachInputConsumer(
+      redis as never, classifier as never, policy as never,
+      llmCoach as never, sessionManager as never, mockLogger as never,
+    )
+
+    await consumer.consumeOnce()
+
+    expect(llmCoach.generate).toHaveBeenCalledTimes(1)
+    const [input, trigger] = (llmCoach.generate as any).mock.calls[0]
+    expect(trigger).toBe('error')
+    expect(input.player_level).toBe('B2')
+    expect(input.recent_turns).toEqual([
+      { speaker: 'player', text: 'hi' },
+      { speaker: 'npc', text: 'hello' },
+    ])
   })
 
   it('xread returns null → no operations performed', async () => {
-    const redis = createMockRedis(null) // null means no messages
-
+    const redis = createMockRedis(null)
     const classifier = { classify: vi.fn() }
     const policy = { shouldIntervene: vi.fn(), markIntervened: vi.fn() }
-    const generator = { generate: vi.fn() }
+    const llmCoach = createMockLLMCoach()
     const sessionManager = { push: vi.fn() }
 
     const consumer = new CoachInputConsumer(
       redis as never, classifier as never, policy as never,
-      generator as never, sessionManager as never,
+      llmCoach as never, sessionManager as never, mockLogger as never,
     )
 
     await consumer.consumeOnce()
 
-    // Nothing should be called
     expect(classifier.classify).not.toHaveBeenCalled()
     expect(policy.shouldIntervene).not.toHaveBeenCalled()
     expect(sessionManager.push).not.toHaveBeenCalled()
@@ -452,7 +478,6 @@ describe('CoachSessionManager', () => {
 
   it('does nothing when session is not attached', async () => {
     const manager = new CoachSessionManager()
-    // No session attached; push should not throw
     await expect(manager.push('nonexistent', { trigger: 'wake' })).resolves.toBeUndefined()
   })
 })

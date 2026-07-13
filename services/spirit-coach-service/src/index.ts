@@ -7,9 +7,9 @@ import { registerCoachWsRoute } from './routes/coach-ws.js'
 import { CoachSessionManager } from './services/coach-session-manager.js'
 import { TriggerClassifier } from './services/trigger-classifier.js'
 import { InterventionPolicy } from './services/intervention-policy.js'
-import { CoachHintGenerator } from './services/coach-hint-generator.js'
 import { CoachInputConsumer } from './workers/coach-input-consumer.js'
 import { ErrorDetector } from './services/error-detector.js'
+import { LLMCoach } from './services/llm-coach.js'
 
 const app = Fastify({ logger: true })
 
@@ -20,13 +20,13 @@ const sessionManager = new CoachSessionManager()
 const errorDetector = new ErrorDetector()
 const classifier = new TriggerClassifier(errorDetector)
 const policy = new InterventionPolicy(redis as any)
-const generator = new CoachHintGenerator()
+const llmCoach = new LLMCoach()
 
 const consumer = new CoachInputConsumer(
   redis as any,
   classifier,
   policy,
-  generator,
+  llmCoach,
   sessionManager,
 )
 
