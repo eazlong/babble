@@ -5,7 +5,7 @@ short_description: Generate LinguaQuest-ready Godot images, sprites, UI art, GLB
 default_prompt: "Use $asset-gen to plan and generate Godot-ready visual assets for LinguaQuest RPG."
 allow_implicit_invocation: true
 description: |
-  Generate and prepare visual assets for this Godot 4.6 GDScript project: PNG backgrounds, character sprites, UI art, GLB props, animated sprite frames, and background removal. Use for replacing placeholders or creating new game resources while preserving LinguaQuest paths, style, costs, and verification gates.
+  Generate and prepare visual assets for this Godot 4.6 GDScript project: PNG backgrounds, character sprites, UI art, GLB props, animated sprite frames, and background removal. Supports Gemini, xAI Grok, Tongyi Wanxiang/DashScope, and Tripo3D while preserving LinguaQuest paths, style, costs, and verification gates.
 ---
 
 # LinguaQuest Asset Generator
@@ -44,9 +44,9 @@ Cost reference:
 
 | Output | Typical model | Approx cost | Use here |
 |---|---:|---:|---|
-| Texture/simple prop | Grok | 2 cents | rocks, flowers, inn objects, simple UI texture |
-| Character/reference | Gemini 1K | 7 cents | Feifei, NPCs, player hand style anchor |
-| Background | Grok or Gemini 2K | 2-10 cents | Mirage Inn, fog forest, market layers |
+| Texture/simple prop | Grok or Wanxiang | provider billing | rocks, flowers, inn objects, simple UI texture |
+| Character/reference | Gemini 1K or Wanxiang | provider billing | Feifei, NPCs, player hand style anchor |
+| Background | Grok, Gemini 2K, or Wanxiang | provider billing | Mirage Inn, fog forest, market layers |
 | GLB prop | Gemini ref + Tripo3D | 37 cents+ | inspectable 3D inn or market object |
 | Rigged biped with clips | Gemini + Tripo3D rig/retarget | about 92 cents | only after prototype approval |
 
@@ -78,8 +78,19 @@ For prompt writing, include:
 Basic command:
 
 ```bash
-python3 .codex/skills/asset-gen/tools/asset_gen.py image \
+.venv/bin/python .codex/skills/asset-gen/tools/asset_gen.py image \
   --model gemini \
+  --aspect-ratio 1:1 \
+  --prompt "full prompt" \
+  -o tmp/asset-gen/feifei/reference.png
+```
+
+Tongyi Wanxiang / DashScope command:
+
+```bash
+export DASHSCOPE_API_KEY="..."
+.venv/bin/python .codex/skills/asset-gen/tools/asset_gen.py image \
+  --model wanx \
   --aspect-ratio 1:1 \
   --prompt "full prompt" \
   -o tmp/asset-gen/feifei/reference.png
@@ -91,6 +102,7 @@ Model guidance:
 
 - Use Gemini for Feifei, NPCs, exact UI pieces, style anchors, and image-to-image variants.
 - Use Grok for lower-risk backgrounds, textures, simple props, and kit sheets where exact instruction following is less critical.
+- Use Wanxiang when domestic API access, Chinese prompt handling, or China-region billing/compliance is preferred. The current CLI supports Wanxiang text-to-image; use Gemini for image-to-image until Wanxiang image editing is wired.
 - Review every PNG before GLB conversion or sprite extraction.
 
 Small sprite guidance:
@@ -132,7 +144,7 @@ Workflow:
 
 1. Generate one approved reference image for the character or object.
 2. Generate pose frames using image-to-image; prompt only the action change.
-3. Generate a short video from the pose when motion is needed.
+3. Generate a short video from the pose when motion is needed. Grok uses the pose image as the starting frame; Wanxiang currently uses text-to-video in this CLI.
 4. Extract frames with `ffmpeg`.
 5. Trim loops with `find_loop_frame.py`.
 6. Matte frames with `rembg_matting.py`.
@@ -147,6 +159,18 @@ python3 .codex/skills/asset-gen/tools/find_loop_frame.py tmp/asset-gen/feifei/fl
 python3 .codex/skills/asset-gen/tools/rembg_matting.py \
   --batch tmp/asset-gen/feifei/fly_raw/ \
   -o tmp/asset-gen/feifei/fly_clean/
+```
+
+Wanxiang text-to-video example:
+
+```bash
+export DASHSCOPE_API_KEY="..."
+.venv/bin/python .codex/skills/asset-gen/tools/asset_gen.py video \
+  --model wanx \
+  --duration 5 \
+  --resolution 720p \
+  --prompt "Feifei gently hovering and waving in a Chinese mythic children's RPG style, seamless cute idle motion" \
+  -o tmp/asset-gen/feifei/fly.mp4
 ```
 
 Animation rules:

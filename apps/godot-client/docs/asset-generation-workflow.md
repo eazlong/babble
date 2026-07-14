@@ -33,8 +33,8 @@ The skill lives at:
 Tool commands run from the Godot client root. Example image generation command:
 
 ```bash
-python3 .codex/skills/asset-gen/tools/asset_gen.py image \
-  --model gemini \
+.venv/bin/python .codex/skills/asset-gen/tools/asset_gen.py image \
+  --model wanx \
   --aspect-ratio 1:1 \
   --prompt "Feifei, cute AI companion for a Chinese mythic children's RPG, readable 2D game sprite, centered on a solid muted teal background" \
   -o tmp/asset-gen/feifei/reference.png
@@ -56,7 +56,28 @@ Required API keys depend on the output:
 
 - `GOOGLE_API_KEY` for Gemini image generation.
 - `XAI_API_KEY` for Grok image/video generation.
+- `DASHSCOPE_API_KEY` for Tongyi Wanxiang image/video generation.
 - `TRIPO3D_API_KEY` for GLB, rig, and retarget generation.
+
+Domestic-provider examples:
+
+```bash
+export DASHSCOPE_API_KEY="..."
+.venv/bin/python .codex/skills/asset-gen/tools/asset_gen.py image \
+  --model wanx \
+  --aspect-ratio 16:9 \
+  --prompt "Mirage Inn background for a Chinese mythic children's RPG, warm readable first-person scene, no text" \
+  -o tmp/asset-gen/backgrounds/mirage_inn.png
+
+.venv/bin/python .codex/skills/asset-gen/tools/asset_gen.py video \
+  --model wanx \
+  --duration 5 \
+  --resolution 720p \
+  --prompt "Feifei gently hovering and waving, cute short idle loop, Chinese mythic children's RPG style" \
+  -o tmp/asset-gen/feifei/fly.mp4
+```
+
+Current Wanxiang support in this CLI is text-to-image and text-to-video. Use Gemini for image-to-image reference edits until Wanxiang image editing is added.
 
 ## 4. Keep Working Files Out Of Runtime Paths
 

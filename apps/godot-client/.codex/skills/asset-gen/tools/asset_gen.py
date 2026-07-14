@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Asset Generator CLI - creates images (Gemini / xAI Grok) and GLBs (Tripo3D).
+"""Asset Generator CLI - creates images (Gemini / xAI Grok / Tongyi Wanxiang) and GLBs (Tripo3D).
 
 Subcommands:
-  image     Generate a PNG from a prompt (Gemini 5-15¢ or Grok 2¢)
-  video     Generate MP4 video from prompt + reference image (5¢/sec, Grok)
+  image     Generate a PNG from a prompt (Gemini 5-15¢, Grok 2¢, or Wanxiang)
+  video     Generate MP4 video from prompt/reference image (Grok or Wanxiang)
   glb       Convert a PNG to a static GLB (30¢ default, 60¢ hd)
   rig       Convert a PNG to a rigged biped GLB (preset + 25¢)
   retarget  Apply a biped preset animation to a rigged GLB (10¢)
@@ -16,7 +16,9 @@ import argparse
 import base64
 import io
 import json
+import os
 import sys
+import time
 from pathlib import Path
 
 import requests
@@ -36,8 +38,11 @@ from tripo3d import (
 
 TOOLS_DIR = Path(__file__).parent
 
-VIDEO_MODEL = "grok-imagine-video"
+GROK_VIDEO_MODEL = "grok-imagine-video"
 VIDEO_COST_PER_SEC = 5  # cents
+DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/api/v1"
+DASHSCOPE_POLL_INTERVAL_SECONDS = 5
+DASHSCOPE_POLL_TIMEOUT_SECONDS = 600
 
 QUALITY_PRESETS = {
     "default": {
@@ -85,8 +90,20 @@ GROK_ASPECT_RATIOS = [
     "2:1", "1:2", "19.5:9", "9:19.5", "20:9", "9:20", "auto",
 ]
 
-ALL_SIZES = ["512", "1K", "2K", "4K"]
-ALL_ASPECT_RATIOS = sorted(set(GEMINI_ASPECT_RATIOS + GROK_ASPECT_RATIOS))
+WANX_IMAGE_MODEL = "wanx2.1-t2i-turbo"
+WANX_VIDEO_MODEL = "wan2.1-t2v-turbo"
+WANX_IMAGE_SIZES = ["1024*1024", "1280*720", "720*1280", "1024*768", "768*1024"]
+WANX_ASPECT_TO_SIZE = {
+    "1:1": "1024*1024",
+    "16:9": "1280*720",
+    "9:16": "720*1280",
+    "4:3": "1024*768",
+    "3:4": "768*1024",
+}
+WANX_VIDEO_RESOLUTIONS = ["480p", "720p"]
+
+ALL_SIZES = ["512", "1K", "2K", "4K"] + WANX_IMAGE_SIZES
+ALL_ASPECT_RATIOS = sorted(set(GEMINI_ASPECT_RATIOS + GROK_ASPECT_RATIOS + list(WANX_ASPECT_TO_SIZE)))
 
 
 def _mime_for_image(path: Path) -> str:
@@ -102,6 +119,81 @@ def _image_data_uri(image_path: Path) -> str:
     b64 = base64.b64encode(image_path.read_bytes()).decode()
     mime = _mime_for_image(image_path)
     return f"data:{mime};base64,{b64}"
+
+
+def _dashscope_headers(async_task: bool = True) -> dict[str, str]:
+    api_key = os.environ.get("DASHSCOPE_API_KEY")
+    if not api_key:
+        raise ValueError("DASHSCOPE_API_KEY environment variable not set")
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    if async_task:
+        headers["X-DashScope-Async"] = "enable"
+    return headers
+
+
+def _dashscope_api_base() -> str:
+    return os.environ.get("DASHSCOPE_API_BASE", DASHSCOPE_BASE_URL).rstrip("/")
+
+
+def _submit_dashscope_task(service_path: str, payload: dict) -> str:
+    url = f"{_dashscope_api_base()}/{service_path.lstrip('/')}"
+    resp = requests.post(url, headers=_dashscope_headers(async_task=True), json=payload, timeout=60)
+    if not resp.ok:
+        raise RuntimeError(f"DashScope task submit failed: HTTP {resp.status_code}: {resp.text}")
+    data = resp.json()
+    task_id = data.get("output", {}).get("task_id")
+    if not task_id:
+        raise RuntimeError(f"DashScope response missing output.task_id: {data}")
+    return task_id
+
+
+def _poll_dashscope_task(task_id: str, timeout: int = DASHSCOPE_POLL_TIMEOUT_SECONDS) -> dict:
+    url = f"{_dashscope_api_base()}/tasks/{task_id}"
+    start = time.time()
+    while time.time() - start < timeout:
+        resp = requests.get(url, headers=_dashscope_headers(async_task=False), timeout=60)
+        if not resp.ok:
+            raise RuntimeError(f"DashScope task poll failed: HTTP {resp.status_code}: {resp.text}")
+        data = resp.json()
+        output = data.get("output", {})
+        status = output.get("task_status")
+        if status == "SUCCEEDED":
+            return data
+        if status in {"FAILED", "CANCELED", "UNKNOWN"}:
+            raise RuntimeError(f"DashScope task {task_id} {status}: {data}")
+        print(f"  DashScope task {task_id}: {status or 'PENDING'}", file=sys.stderr)
+        time.sleep(DASHSCOPE_POLL_INTERVAL_SECONDS)
+    raise TimeoutError(f"DashScope task {task_id} timed out after {timeout}s")
+
+
+def _extract_dashscope_urls(data: dict, keys: tuple[str, ...]) -> list[str]:
+    output = data.get("output", {})
+    urls: list[str] = []
+
+    for key in keys:
+        value = output.get(key)
+        if isinstance(value, str):
+            urls.append(value)
+        elif isinstance(value, list):
+            urls.extend(item for item in value if isinstance(item, str))
+
+    for result in output.get("results", []) or []:
+        if isinstance(result, dict):
+            for key in keys:
+                value = result.get(key)
+                if isinstance(value, str):
+                    urls.append(value)
+
+    return urls
+
+
+def _download_url(url: str, output: Path) -> None:
+    resp = requests.get(url, timeout=180)
+    resp.raise_for_status()
+    output.write_bytes(resp.content)
 
 
 def _generate_gemini(args, output: Path, cost: int):
@@ -178,6 +270,56 @@ def _generate_grok(args, output: Path, cost: int):
     result_json(True, path=str(output), cost_cents=cost)
 
 
+def _wanx_size(args) -> str:
+    if args.size in WANX_IMAGE_SIZES:
+        return args.size
+    if args.aspect_ratio in WANX_ASPECT_TO_SIZE:
+        return WANX_ASPECT_TO_SIZE[args.aspect_ratio]
+    return "1024*1024"
+
+
+def _generate_wanx_image(args, output: Path):
+    if args.image:
+        result_json(
+            False,
+            error=(
+                "Wanxiang image-to-image is not wired in this CLI yet. "
+                "Use --model wanx without --image, or use Gemini for image-to-image."
+            ),
+        )
+        sys.exit(1)
+
+    model = args.wanx_model or WANX_IMAGE_MODEL
+    payload = {
+        "model": model,
+        "input": {"prompt": args.prompt},
+        "parameters": {
+            "size": _wanx_size(args),
+            "n": 1,
+        },
+    }
+
+    try:
+        task_id = _submit_dashscope_task("services/aigc/text2image/image-synthesis", payload)
+        print(f"  DashScope image task: {task_id}", file=sys.stderr)
+        result = _poll_dashscope_task(task_id)
+        urls = _extract_dashscope_urls(result, ("url", "image_url"))
+        if not urls:
+            result_json(False, error=f"DashScope image task returned no image URL: {result}")
+            sys.exit(1)
+        _download_url(urls[0], output)
+
+        # Normalize to PNG even if the provider returns another image format.
+        img = Image.open(output)
+        img.save(output, format="PNG")
+    except Exception as e:
+        result_json(False, error=str(e))
+        sys.exit(1)
+
+    print(f"Saved: {output}", file=sys.stderr)
+    result_json(True, path=str(output), cost_cents=0)
+
+
 def cmd_image(args):
     backend = args.model
     size = args.size
@@ -187,11 +329,16 @@ def cmd_image(args):
             result_json(False, error=f"Gemini does not support size {size}. Use: {', '.join(GEMINI_SIZES)}")
             sys.exit(1)
         cost = GEMINI_COSTS[size]
-    else:
+    elif backend == "grok":
         if size not in GROK_SIZES:
             result_json(False, error=f"Grok does not support size {size}. Use: {', '.join(GROK_SIZES)}")
             sys.exit(1)
         cost = GROK_COST
+    else:
+        if size not in ALL_SIZES:
+            result_json(False, error=f"Wanxiang size must be one of: {', '.join(WANX_IMAGE_SIZES)} or use aspect ratio mapping")
+            sys.exit(1)
+        cost = 0
 
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -203,15 +350,25 @@ def cmd_image(args):
 
     if backend == "gemini":
         _generate_gemini(args, output, cost)
-    else:
+    elif backend == "grok":
         _generate_grok(args, output, cost)
+    else:
+        _generate_wanx_image(args, output)
 
 
 def cmd_video(args):
-    cost = args.duration * VIDEO_COST_PER_SEC
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
 
+    if args.model == "wanx":
+        cmd_wanx_video(args, output)
+        return
+
+    cost = args.duration * VIDEO_COST_PER_SEC
+
+    if not args.image:
+        result_json(False, error="--image is required for Grok video generation")
+        sys.exit(1)
     image_path = Path(args.image)
     if not image_path.exists():
         result_json(False, error=f"Reference image not found: {image_path}")
@@ -224,7 +381,7 @@ def cmd_video(args):
         client = xai_sdk.Client()
         resp = client.video.generate(
             prompt=args.prompt,
-            model=VIDEO_MODEL,
+            model=GROK_VIDEO_MODEL,
             image_url=image_url,
             duration=args.duration,
             aspect_ratio="1:1",
@@ -241,6 +398,40 @@ def cmd_video(args):
 
     print(f"Saved: {output}", file=sys.stderr)
     result_json(True, path=str(output), cost_cents=cost)
+
+
+def cmd_wanx_video(args, output: Path):
+    if args.image:
+        print(
+            "Warning: Wanxiang video currently uses text-to-video in this CLI; --image is ignored.",
+            file=sys.stderr,
+        )
+
+    model = args.wanx_model or WANX_VIDEO_MODEL
+    payload = {
+        "model": model,
+        "input": {"prompt": args.prompt},
+        "parameters": {
+            "duration": args.duration,
+            "resolution": args.resolution,
+        },
+    }
+
+    try:
+        task_id = _submit_dashscope_task("services/aigc/video-generation/video-synthesis", payload)
+        print(f"  DashScope video task: {task_id}", file=sys.stderr)
+        result = _poll_dashscope_task(task_id)
+        urls = _extract_dashscope_urls(result, ("video_url", "url"))
+        if not urls:
+            result_json(False, error=f"DashScope video task returned no video URL: {result}")
+            sys.exit(1)
+        _download_url(urls[0], output)
+    except Exception as e:
+        result_json(False, error=str(e))
+        sys.exit(1)
+
+    print(f"Saved: {output}", file=sys.stderr)
+    result_json(True, path=str(output), cost_cents=0)
 
 
 def _sidecar_path(output: Path) -> Path:
@@ -522,27 +713,33 @@ def cmd_resume(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Asset Generator — images (Gemini / xAI Grok) and GLBs (Tripo3D)")
+    parser = argparse.ArgumentParser(description="Asset Generator — images (Gemini / xAI Grok / Tongyi Wanxiang) and GLBs (Tripo3D)")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p_img = sub.add_parser("image", help="Generate a PNG image (Gemini 5-15¢ or Grok 2¢)")
+    p_img = sub.add_parser("image", help="Generate a PNG image (Gemini 5-15¢, Grok 2¢, or Wanxiang)")
     p_img.add_argument("--prompt", required=True, help="Full image generation prompt")
-    p_img.add_argument("--model", choices=["gemini", "grok"], default="grok",
-                       help="Backend: grok (2¢, fast, simple images) or gemini (5-15¢, precise prompt following). Default: grok.")
+    p_img.add_argument("--model", choices=["gemini", "grok", "wanx"], default="grok",
+                       help="Backend: grok (2¢), gemini (5-15¢), or wanx (Tongyi Wanxiang / DashScope). Default: grok.")
     p_img.add_argument("--size", choices=ALL_SIZES, default="1K",
-                       help="Resolution. Grok: 1K, 2K. Gemini: 512, 1K, 2K, 4K. Default: 1K.")
+                       help="Resolution. Grok: 1K, 2K. Gemini: 512, 1K, 2K, 4K. Wanx: 1024*1024, 1280*720, 720*1280, 1024*768, 768*1024. Default: 1K.")
     p_img.add_argument("--aspect-ratio", choices=ALL_ASPECT_RATIOS, default="1:1",
                        help="Aspect ratio. Default: 1:1")
     p_img.add_argument("--image", default=None, help="Reference image for image-to-image edit")
+    p_img.add_argument("--wanx-model", default=None,
+                       help=f"Tongyi Wanxiang image model id. Default: {WANX_IMAGE_MODEL}")
     p_img.add_argument("-o", "--output", required=True, help="Output PNG path")
     p_img.set_defaults(func=cmd_image)
 
-    p_vid = sub.add_parser("video", help="Generate MP4 video from prompt + reference image (5¢/sec)")
+    p_vid = sub.add_parser("video", help="Generate MP4 video from prompt/reference image (Grok or Wanxiang)")
     p_vid.add_argument("--prompt", required=True, help="Video generation prompt")
-    p_vid.add_argument("--image", required=True, help="Reference image path (starting frame)")
+    p_vid.add_argument("--model", choices=["grok", "wanx"], default="grok",
+                       help="Backend: grok image-to-video or wanx text-to-video. Default: grok.")
+    p_vid.add_argument("--image", default=None, help="Reference image path. Required for Grok; currently ignored for Wanxiang text-to-video.")
     p_vid.add_argument("--duration", type=int, required=True, help="Duration in seconds (1-15)")
     p_vid.add_argument("--resolution", choices=["480p", "720p"], default="720p",
                        help="Video resolution. Default: 720p")
+    p_vid.add_argument("--wanx-model", default=None,
+                       help=f"Tongyi Wanxiang video model id. Default: {WANX_VIDEO_MODEL}")
     p_vid.add_argument("-o", "--output", required=True, help="Output MP4 path")
     p_vid.set_defaults(func=cmd_video)
 
