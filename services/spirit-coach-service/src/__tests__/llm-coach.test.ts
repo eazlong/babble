@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { LLMCoach } from '../services/llm-coach.js'
+import { LLMCoach, resolveLLMBaseURL } from '../services/llm-coach.js'
 import type { CoachInput } from '../types/coach-events.js'
 
 function makeDialogueInput(overrides: Partial<CoachInput> = {}): CoachInput {
@@ -28,6 +28,72 @@ function createMockOpenAI(response: object) {
       },
     },
   } as unknown as any
+}
+
+describe('resolveLLMBaseURL', () => {
+  it('prefers explicit options baseURL over env vars', () => {
+    const originalCoach = process.env.COACH_LLM_BASE_URL
+    const originalOpenAI = process.env.OPENAI_BASE_URL
+    process.env.COACH_LLM_BASE_URL = 'https://coach.example/v1'
+    process.env.OPENAI_BASE_URL = 'https://openai.example/v1'
+
+    try {
+      expect(resolveLLMBaseURL('https://explicit.example/v1')).toBe('https://explicit.example/v1')
+    } finally {
+      restoreEnv('COACH_LLM_BASE_URL', originalCoach)
+      restoreEnv('OPENAI_BASE_URL', originalOpenAI)
+    }
+  })
+
+  it('prefers COACH_LLM_BASE_URL over OPENAI_BASE_URL', () => {
+    const originalCoach = process.env.COACH_LLM_BASE_URL
+    const originalOpenAI = process.env.OPENAI_BASE_URL
+    process.env.COACH_LLM_BASE_URL = 'https://coach.example/v1'
+    process.env.OPENAI_BASE_URL = 'https://openai.example/v1'
+
+    try {
+      expect(resolveLLMBaseURL()).toBe('https://coach.example/v1')
+    } finally {
+      restoreEnv('COACH_LLM_BASE_URL', originalCoach)
+      restoreEnv('OPENAI_BASE_URL', originalOpenAI)
+    }
+  })
+
+  it('falls back to OPENAI_BASE_URL', () => {
+    const originalCoach = process.env.COACH_LLM_BASE_URL
+    const originalOpenAI = process.env.OPENAI_BASE_URL
+    delete process.env.COACH_LLM_BASE_URL
+    process.env.OPENAI_BASE_URL = 'https://openai.example/v1'
+
+    try {
+      expect(resolveLLMBaseURL()).toBe('https://openai.example/v1')
+    } finally {
+      restoreEnv('COACH_LLM_BASE_URL', originalCoach)
+      restoreEnv('OPENAI_BASE_URL', originalOpenAI)
+    }
+  })
+
+  it('returns undefined when no base URL is configured', () => {
+    const originalCoach = process.env.COACH_LLM_BASE_URL
+    const originalOpenAI = process.env.OPENAI_BASE_URL
+    delete process.env.COACH_LLM_BASE_URL
+    delete process.env.OPENAI_BASE_URL
+
+    try {
+      expect(resolveLLMBaseURL()).toBeUndefined()
+    } finally {
+      restoreEnv('COACH_LLM_BASE_URL', originalCoach)
+      restoreEnv('OPENAI_BASE_URL', originalOpenAI)
+    }
+  })
+})
+
+function restoreEnv(name: string, value: string | undefined): void {
+  if (value === undefined) {
+    delete process.env[name]
+  } else {
+    process.env[name] = value
+  }
 }
 
 describe('LLMCoach', () => {

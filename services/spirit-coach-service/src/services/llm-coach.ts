@@ -5,7 +5,12 @@ import { coachResponseSchema, type CoachInput, type CoachResponse } from '../typ
 export interface LLMCoachOptions {
   openai?: OpenAI
   model?: string
+  baseURL?: string
   timeoutMs?: number
+}
+
+export function resolveLLMBaseURL(optionsBaseURL?: string): string | undefined {
+  return optionsBaseURL || process.env.COACH_LLM_BASE_URL || process.env.OPENAI_BASE_URL || undefined
 }
 
 export interface LLMCoachResult {
@@ -30,7 +35,11 @@ export class LLMCoach {
     if (!options.openai && !apiKey) {
       throw new Error('LLMCoach: OPENAI_API_KEY environment variable is required')
     }
-    this.openai = options.openai ?? new OpenAI({ apiKey: apiKey! })
+    const baseURL = resolveLLMBaseURL(options.baseURL)
+    this.openai = options.openai ?? new OpenAI({
+      apiKey: apiKey!,
+      ...(baseURL ? { baseURL } : {}),
+    })
     this.model = options.model ?? process.env.COACH_LLM_MODEL ?? 'gpt-4o-mini'
     this.timeoutMs = options.timeoutMs ?? 5000
     this.promptBuilder = new PromptBuilder()
