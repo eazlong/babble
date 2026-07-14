@@ -1,0 +1,7 @@
+interface:
+  display_name: "LinguaQuest Asset Generator"
+  short_description: "Generate LinguaQuest-ready Godot images, sprites, UI art, GLB props, and animation frames"
+  default_prompt: "Use $asset-gen to plan and generate Godot-ready visual assets for LinguaQuest RPG."
+
+policy:
+  allow_implicit_invocation: true
