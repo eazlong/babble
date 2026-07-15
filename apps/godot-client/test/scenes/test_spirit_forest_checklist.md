@@ -15,7 +15,7 @@
 
 **测试步骤**：
 - [ ] 场景加载无错误
-- [ ] Spark NPC显示
+- [ ] Feifei NPC显示
 - [ ] CoachOverlay显示在右上角
 - [ ] MicPanel初始隐藏
 - [ ] MagicFlowers显示（3朵）
@@ -33,13 +33,13 @@
 
 ---
 
-### 2. Spark自我介绍流程
+### 2. Feifei自我介绍流程
 
 **测试步骤**：
-1. 等待1秒自动触发Spark介绍
-2. 观察DialogueBox显示"你好！我是 Spark..."
+1. 等待1秒自动触发Feifei介绍
+2. 观察DialogueBox显示"你好！我是 Feifei..."
 3. 观察CoachOverlay显示相同文本
-4. 等待TTS播放完成（Spark语音）
+4. 等待TTS播放完成（Feifei语音）
 5. 观察VoicePipeline启动（MicPanel显示）
 6. 语音输入名字："Alice"
 
@@ -216,7 +216,7 @@
 
 SpiritForest场景验证通过条件：
 - ✅ 场景初始化正确
-- ✅ Spark介绍流程完整
+- ✅ Feifei介绍流程完整
 - ✅ 颜色任务完成（3/3）
 - ✅ Oakley遭遇触发
 - ✅ 数字任务完成（正确输入）
