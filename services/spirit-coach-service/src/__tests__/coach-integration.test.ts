@@ -1,8 +1,8 @@
 /**
  * Integration tests for the LLM coach pipeline.
  *
- * These tests exercise the chain: CoachInputConsumer → LLMCoach → PromptBuilder
- * → template → (mocked) OpenAI → parse → output.
+ * These tests exercise the chain: CoachInputConsumer → CoachInterventionEngine
+ * → LLMCoach → PromptBuilder → template → (mocked) OpenAI → parse → output.
  *
  * The OpenAI API is mocked to return predetermined responses, so we test the
  * integration seams rather than LLM behaviour itself. Each test case corresponds
@@ -10,6 +10,7 @@
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { CoachInputConsumer } from '../workers/coach-input-consumer.js'
+import { CoachInterventionEngine } from '../services/coach-intervention-engine.js'
 import { LLMCoach } from '../services/llm-coach.js'
 import { StreakTracker } from '../services/streak-tracker.js'
 import type { CoachInput } from '../types/coach-events.js'
@@ -107,10 +108,14 @@ function buildConsumer(
   }
   const sessionManager = { push: vi.fn().mockResolvedValue(undefined) }
   const logger = { warn: vi.fn(), error: vi.fn() }
-  return new CoachInputConsumer(
-    redis as any, classifier, policy,
-    llmCoach as any, sessionManager, streakTracker, undefined, logger as any,
-  )
+  const engine = new CoachInterventionEngine({
+    classifier,
+    policy,
+    llmCoach: llmCoach as any,
+    streakTracker,
+    logger,
+  })
+  return new CoachInputConsumer(redis as any, engine, sessionManager)
 }
 
 function classifierFor(trigger: string, errors: any[] = []) {

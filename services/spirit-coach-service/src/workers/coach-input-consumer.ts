@@ -1,17 +1,5 @@
-import { randomUUID } from 'node:crypto'
-import { coachInputSchema, type CoachInput, type CoachResponse } from '../types/coach-events.js'
-import { getFallback } from '../services/fallback-templates.js'
-import type { Trigger, StreakData } from '../services/prompt-builder.js'
-import type { StreakTracker } from '../services/streak-tracker.js'
-import type { CoachMetrics, LLMTokenUsage } from '../services/coach-metrics.js'
-
-export interface LLMCoachLike {
-  generate(input: CoachInput, trigger: Trigger, streak?: StreakData): Promise<CoachResponse>
-  generateWithUsage?(input: CoachInput, trigger: Trigger, streak?: StreakData): Promise<{
-    response: CoachResponse
-    tokenUsage?: LLMTokenUsage
-  }>
-}
+import { coachInputSchema, type CoachInput } from '../types/coach-events.js'
+import type { CoachInterventionDecision } from '../services/coach-intervention-engine.js'
 
 export class CoachInputConsumer {
   constructor(
@@ -20,13 +8,8 @@ export class CoachInputConsumer {
       xadd(stream: string, id: string, ...pairs: string[]): Promise<string>
       xdel(stream: string, id: string): Promise<number>
     },
-    private readonly classifier: { classify(input: ReturnType<typeof coachInputSchema.parse>): Promise<any> },
-    private readonly policy: { shouldIntervene(arg: { trigger: 'wake' | 'error' | 'silence'; userId: string }): Promise<boolean>; markIntervened(arg: { trigger: 'wake' | 'error' | 'silence'; userId: string }): Promise<void> },
-    private readonly llmCoach: LLMCoachLike,
+    private readonly engine: { handle(input: CoachInput): Promise<CoachInterventionDecision> },
     private readonly sessionManager: { push(sessionId: string, payload: Record<string, unknown>): Promise<void> },
-    private readonly streakTracker: StreakTracker,
-    private readonly metrics?: CoachMetrics,
-    private readonly logger: { warn(...args: unknown[]): void; error(...args: unknown[]): void } = console,
   ) {}
 
   async consumeOnce() {
@@ -57,85 +40,19 @@ export class CoachInputConsumer {
         }
 
         const input = coachInputSchema.parse(data)
-        const classified = await this.classifier.classify(input)
-        if (classified === null) {
+        const decision = await this.engine.handle(input)
+        if (decision.kind === 'skipped') {
           await this.redis.xdel('coach.input', messageId)
           continue
         }
 
-        const trigger = classified.trigger as Trigger
-
-        const allowed = await this.policy.shouldIntervene({
-          trigger,
-          userId: input.user_id,
-        })
-
-        if (!allowed) {
-          await this.redis.xdel('coach.input', messageId)
-          continue
-        }
-
-        let response: CoachResponse
-        let tokenUsage: LLMTokenUsage | undefined
-        let fallback = false
-        const startTimeMs = Date.now()
-
-        // Update streak tracking based on trigger type.
-        // Only error triggers reliably indicate a wrong answer; silence/wake
-        // are ambiguous so we don't update the correct streak for them.
-        if (trigger === 'error') {
-          this.streakTracker.recordError(input.user_id)
-        }
-
-        const streakData: StreakData = {
-          error_streak: this.streakTracker.getErrorStreak(input.user_id),
-          correct_streak: this.streakTracker.getCorrectStreak(input.user_id),
-        }
-
-        try {
-          if (this.llmCoach.generateWithUsage) {
-            const resultWithUsage = await this.llmCoach.generateWithUsage(input, trigger, streakData)
-            response = resultWithUsage.response
-            tokenUsage = resultWithUsage.tokenUsage
-          } else {
-            response = await this.llmCoach.generate(input, trigger, streakData)
-          }
-        } catch (err) {
-          this.logger.warn('LLM coach failed, using fallback', {
-            trigger,
-            error: err instanceof Error ? err.message : String(err),
-          })
-          fallback = true
-          response = getFallback(trigger)
-        }
-
-        this.metrics?.recordCall({
-          trigger,
-          latencyMs: Date.now() - startTimeMs,
-          fallback,
-          tokenUsage,
-        })
-
-        const payload = {
-          event_id: randomUUID(),
-          session_id: input.session_id,
-          user_id: input.user_id,
-          trigger,
-          priority: classified.priority,
-          text: response.text,
-          repeat_phrase: response.repeat_phrase,
-          emotion: response.emotion,
-          should_tts: response.should_tts,
-          ttl_ms: response.ttl_ms,
-          timestamp: Date.now(),
-        }
-
+        const payload = decision.intervention
         const pairs = Object.entries(payload)
           .filter(([, value]) => value !== undefined)
           .flatMap(([key, value]) => [key, String(value)])
 
         await this.redis.xadd('coach.intervention', 'MAXLEN', '~', '10000', '*', ...pairs)
-        await this.policy.markIntervened({ trigger, userId: input.user_id })
+        await decision.commit()
         await this.sessionManager.push(input.session_id, payload)
         await this.redis.xdel('coach.input', messageId)
       }

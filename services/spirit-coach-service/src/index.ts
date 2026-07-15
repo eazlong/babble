@@ -12,6 +12,7 @@ import { ErrorDetector } from './services/error-detector.js'
 import { LLMCoach } from './services/llm-coach.js'
 import { StreakTracker } from './services/streak-tracker.js'
 import { CoachMetrics } from './services/coach-metrics.js'
+import { CoachInterventionEngine } from './services/coach-intervention-engine.js'
 
 const app = Fastify({ logger: true })
 
@@ -26,14 +27,18 @@ const llmCoach = new LLMCoach()
 const streakTracker = new StreakTracker()
 const coachMetrics = new CoachMetrics()
 
-const consumer = new CoachInputConsumer(
-  redis as any,
+const interventionEngine = new CoachInterventionEngine({
   classifier,
   policy,
   llmCoach,
-  sessionManager,
   streakTracker,
-  coachMetrics,
+  metrics: coachMetrics,
+})
+
+const consumer = new CoachInputConsumer(
+  redis as any,
+  interventionEngine,
+  sessionManager,
 )
 
 app.register(cors, { origin: true })
