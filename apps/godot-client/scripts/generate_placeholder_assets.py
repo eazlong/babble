@@ -11,7 +11,7 @@
 运行后会:
 1. 在 assets/textures/  assets/sprites/  assets/audio/ 下生成 PNG/占位文件
 2. 不会覆盖已存在的文件 (如需覆盖请删除旧文件)
-3. 跳过已在仓库里的现有资源 (spark_fly_01~08.png, mushroom_*.png, backgrounds/*.png 等)
+3. 跳过已在仓库里的现有资源 (feifei_fly_01~08.png, mushroom_*.png, backgrounds/*.png 等)
 """
 from pathlib import Path
 import os
@@ -179,8 +179,8 @@ def make_placeholder(path: Path, size: tuple[int, int], color: str, shape: str,
         draw.ellipse([cx - center_r, size[1] // 3 - center_r,
                       cx + center_r, size[1] // 3 + center_r],
                      fill=center_col + (255,) if alpha else center_col)
-    elif shape == "spark":
-        # Spark：金色圆 + 两片翅膀（白色半透明椭圆）
+    elif shape == "feifei":
+        # Feifei：金色圆 + 两片翅膀（白色半透明椭圆）
         cx, cy = size[0] // 2, size[1] // 2
         body_r = min(size) // 3
         draw.ellipse([cx - body_r, cy - body_r, cx + body_r, cy + body_r],
@@ -288,14 +288,14 @@ RESOURCES = [
     ("textures/objects/flower_yellow.png", (80, 100), "#F4A261", "flower", True),
     ("textures/objects/flower_glow.png", (100, 120), "#FFD700", "glow", True),
 
-    # === §3.1 Spark 精灵（必需，已有 idle+fly，缺 happy/hint/glow）===
-    ("sprites/spark/spark_happy_01.png", (120, 120), "#FFD700", "spark", True),
-    ("sprites/spark/spark_happy_02.png", (120, 120), "#FFD700", "spark", True),
-    ("sprites/spark/spark_happy_03.png", (120, 120), "#FFD700", "spark", True),
-    ("sprites/spark/spark_happy_04.png", (120, 120), "#FFD700", "spark", True),
-    ("sprites/spark/spark_hint_01.png", (120, 120), "#FFD700", "spark", True),
-    ("sprites/spark/spark_hint_02.png", (120, 120), "#FFD700", "spark", True),
-    ("sprites/spark/spark_glow.png", (140, 140), "#FFD700", "glow", True),
+    # === §3.1 Feifei 精灵（必需，已有 idle+fly，缺 happy/hint/glow）===
+    ("sprites/feifei/feifei_happy_01.png", (120, 120), "#FFD700", "feifei", True),
+    ("sprites/feifei/feifei_happy_02.png", (120, 120), "#FFD700", "feifei", True),
+    ("sprites/feifei/feifei_happy_03.png", (120, 120), "#FFD700", "feifei", True),
+    ("sprites/feifei/feifei_happy_04.png", (120, 120), "#FFD700", "feifei", True),
+    ("sprites/feifei/feifei_hint_01.png", (120, 120), "#FFD700", "feifei", True),
+    ("sprites/feifei/feifei_hint_02.png", (120, 120), "#FFD700", "feifei", True),
+    ("sprites/feifei/feifei_glow.png", (140, 140), "#FFD700", "glow", True),
 
     # === §3.2 TreeSpirit NPC（第一人称核心，P0）===
     ("sprites/tree_spirit/tree_spirit_body.png", (400, 600), "#4A7C29", "tree", True),
@@ -333,7 +333,7 @@ RESOURCES = [
 
     # === §5.1 粒子纹理 ===
     ("textures/particles/particle_glow.png", (32, 32), "#FFD700", "gradient_radial", True),
-    ("textures/particles/particle_sparkle.png", (16, 16), "#FFFFFF", "star", True),
+    ("textures/particles/particle_feifeile.png", (16, 16), "#FFFFFF", "star", True),
 
     # === §5.2 交互反馈特效 ===
     ("textures/effects/effect_glow_01.png", (100, 100), "#FFD700", "glow", True),
@@ -360,7 +360,7 @@ RESOURCES = [
 
     # === §6.1 对话气泡 ===
     ("textures/ui/bubble_npc.png", (400, 200), "#FFFFFF", "rect", True),
-    ("textures/ui/bubble_spark.png", (350, 180), "#FFF9E6", "rect", True),
+    ("textures/ui/bubble_feifei.png", (350, 180), "#FFF9E6", "rect", True),
     ("textures/ui/bubble_tail.png", (40, 60), "#FFFFFF", "solid", True),
 
     # === §6.2 徽章与奖励 ===
@@ -378,7 +378,7 @@ RESOURCES = [
     ("textures/ui/fp/ui_starbar_fill.png", (380, 30), "#FFD700", "rect", True),
     ("textures/ui/fp/ui_mic_button_idle.png", (80, 80), "#20C997", "circle", True),
     ("textures/ui/fp/ui_mic_button_recording.png", (80, 80), "#E63946", "circle", True),
-    ("textures/ui/fp/ui_spark_bubble_fp.png", (200, 100), "#FFF9E6", "rect", True),
+    ("textures/ui/fp/ui_feifei_bubble_fp.png", (200, 100), "#FFF9E6", "rect", True),
 ]
 
 
@@ -410,7 +410,7 @@ def create_audio_placeholders() -> None:
         ("sfx/bird_chirp_01.ogg", "清脆短鸣 2 声"),
         ("sfx/bird_chirp_02.ogg", "悠长鸣叫 1 声"),
         ("sfx/bird_chirp_03.ogg", "急促连续鸣叫 4 声"),
-        ("sfx/magic_sparkle.ogg", "清脆铃铛 + 星光"),
+        ("sfx/magic_feifeile.ogg", "清脆铃铛 + 星光"),
         ("sfx/badge_unlock.ogg", "5-8s 解锁音效"),
     ]
     readme = audio_dir / "AUDIO_PLACEHOLDERS.txt"
@@ -429,11 +429,11 @@ def create_audio_placeholders() -> None:
 # ---------------------------------------------------------------------------
 # 每个动画：(输出路径, 帧列表(相对路径), fps, 是否循环, 动画名)
 SPRITE_ANIMS = [
-    ("sprites/spark/spark_happy_frames.tres",
-     [f"sprites/spark/spark_happy_0{i}.png" for i in range(1, 5)],
+    ("sprites/feifei/feifei_happy_frames.tres",
+     [f"sprites/feifei/feifei_happy_0{i}.png" for i in range(1, 5)],
      4, False, "default"),
-    ("sprites/spark/spark_hint_frames.tres",
-     ["sprites/spark/spark_hint_01.png", "sprites/spark/spark_hint_02.png"],
+    ("sprites/feifei/feifei_hint_frames.tres",
+     ["sprites/feifei/feifei_hint_01.png", "sprites/feifei/feifei_hint_02.png"],
      2, True, "default"),
     ("sprites/oakley/oakley_idle_frames.tres",
      [f"sprites/oakley/oakley_idle_0{i}.png" for i in range(1, 5)],

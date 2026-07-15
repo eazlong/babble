@@ -54,8 +54,8 @@ sed -i '' 's|tree-big.png|tree_big.png|g' assets/scenes/SpiritForestFP.tscn
 ### textures/objects/（10个新增）
 tree_big.png, stream.png, rock_small.png, rock_medium.png, bush_small.png, bush_large.png, flower_red.png, flower_blue.png, flower_yellow.png, flower_glow.png
 
-### sprites/spark/（7个新增）
-spark_happy_01~04.png, spark_hint_01~02.png, spark_glow.png
+### sprites/feifei/（7个新增）
+feifei_happy_01~04.png, feifei_hint_01~02.png, feifei_glow.png
 
 ### sprites/tree_spirit/（3个新增）
 tree_spirit_body.png (400x600), tree_spirit_eye_white.png (80x40), tree_spirit_pupil.png (20x20)
@@ -67,7 +67,7 @@ oakley_idle_01~04.png, oakley_talk_01~03.png, oakley_happy_01~02.png
 player_idle_01~04.png, player_walk_01~06.png, player_talk_01~03.png, player_hands_idle.png
 
 ### textures/particles/（2个新增）
-particle_glow.png, particle_sparkle.png
+particle_glow.png, particle_feifeile.png
 
 ### textures/effects/（18个新增 + 3个 .tres）
 effect_glow_01~05.png + effect_glow_frames.tres
@@ -77,17 +77,17 @@ effect_stars_1~5.png
 transition_wipe.png, transition_fade.png
 
 ### textures/ui/（12个新增 + 1个 .tres）
-bubble_npc.png, bubble_spark.png, bubble_tail.png
+bubble_npc.png, bubble_feifei.png, bubble_tail.png
 badge_forest.png, badge_glow.png
 badge_unlock_effect_01~06.png + badge_unlock_effect_frames.tres
 
 ### textures/ui/fp/（5个新增 + 1个 .tres）
 ui_starbar_bg.png, ui_starbar_fill.png, ui_starbar_frames.tres
 ui_mic_button_idle.png, ui_mic_button_recording.png
-ui_spark_bubble_fp.png
+ui_feifei_bubble_fp.png
 
 ### sprites/ 动画 .tres（8个新增）
-spark_happy_frames.tres, spark_hint_frames.tres
+feifei_happy_frames.tres, feifei_hint_frames.tres
 oakley_idle_frames.tres, oakley_talk_frames.tres, oakley_happy_frames.tres
 player_idle_frames.tres, player_walk_frames.tres, player_talk_frames.tres
 
@@ -99,8 +99,8 @@ AUDIO_PLACEHOLDERS.txt
 生成的 .tres 不含 `uid` 字段（因为 PNG 尚未被 Godot 导入）。首次打开 Godot 时会自动分配 uid 并更新文件。如果 Godot 报错找不到资源，执行 Reimport All。
 
 每个 .tres 的动画参数按 art_assets.md 规格：
-- spark_happy: 4 FPS, 不循环
-- spark_hint: 2 FPS, 循环
+- feifei_happy: 4 FPS, 不循环
+- feifei_hint: 2 FPS, 循环
 - oakley_idle: 4 FPS, 循环
 - oakley_talk: 6 FPS, 循环
 - oakley_happy: 2 FPS, 不循环
@@ -118,5 +118,5 @@ AUDIO_PLACEHOLDERS.txt
 - `audio/sfx/bird_chirp_01.ogg` - 清脆短鸣
 - `audio/sfx/bird_chirp_02.ogg` - 悠长鸣叫
 - `audio/sfx/bird_chirp_03.ogg` - 急促连续鸣叫
-- `audio/sfx/magic_sparkle.ogg` - 魔法闪烁音效
+- `audio/sfx/magic_feifeile.ogg` - 魔法闪烁音效
 - `audio/sfx/badge_unlock.ogg` - 徽章解锁音效
