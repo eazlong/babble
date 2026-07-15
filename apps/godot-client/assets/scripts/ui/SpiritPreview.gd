@@ -1,6 +1,6 @@
 ## 词灵预览组件
 ##
-## 进入场景时显示 Spark 提示："这里可能住着……"
+## 进入场景时显示 Feifei 提示："这里可能住着……"
 ## 展示当前场景可能遇到的词灵（未解锁的）。
 ## 3 秒后自动消失。
 ##
@@ -9,7 +9,7 @@ extends Control
 @export var preview_duration: float = 3.0
 
 var _bg_panel: Panel
-var _spark_label: Label
+var _feifei_label: Label
 var _spirit_icon: Label
 var _tween: Tween
 
@@ -28,18 +28,18 @@ func _build_ui() -> void:
 	_bg_panel.offset_bottom = 60
 	add_child(_bg_panel)
 
-	# Spark 标签
-	_spark_label = Label.new()
-	_spark_label.set_anchors_preset(Control.PRESET_CENTER)
-	_spark_label.offset_left = -180
-	_spark_label.offset_top = -40
-	_spark_label.offset_right = 180
-	_spark_label.offset_bottom = 40
-	_spark_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_spark_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_spark_label.autowrap_mode = TextServer.AUTOWRAP_WORD
-	_spark_label.add_theme_font_size_override("font_size", 16)
-	add_child(_spark_label)
+	# Feifei 标签
+	_feifei_label = Label.new()
+	_feifei_label.set_anchors_preset(Control.PRESET_CENTER)
+	_feifei_label.offset_left = -180
+	_feifei_label.offset_top = -40
+	_feifei_label.offset_right = 180
+	_feifei_label.offset_bottom = 40
+	_feifei_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_feifei_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_feifei_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	_feifei_label.add_theme_font_size_override("font_size", 16)
+	add_child(_feifei_label)
 
 	# 词灵图标
 	_spirit_icon = Label.new()
@@ -65,7 +65,7 @@ func show_preview(spirit_name: String, spirit_hint_zh: String, spirit_hint_en: S
 	"""
 	var hint = spirit_hint_zh if GameManager.current_lang == "zh" else spirit_hint_en
 
-	_spark_label.text = "✨ Spark:\n" + hint
+	_feifei_label.text = "✨ Feifei:\n" + hint
 	_spirit_icon.text = icon
 
 	visible = true

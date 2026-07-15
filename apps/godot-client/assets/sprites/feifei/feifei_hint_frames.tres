@@ -1,7 +1,7 @@
 [gd_resource type="SpriteFrames" load_steps=3 format=3]
 
-[ext_resource type="Texture2D" path="res://assets/sprites/spark/spark_hint_01.png" id="1"]
-[ext_resource type="Texture2D" path="res://assets/sprites/spark/spark_hint_02.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/feifei_hint_01.png" id="1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/feifei_hint_02.png" id="2"]
 
 [resource]
 animations = [{

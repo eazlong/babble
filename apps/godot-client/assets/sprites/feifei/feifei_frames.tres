@@ -1,0 +1,207 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://lq2gvsfh8vgi"]
+
+[ext_resource type="Texture2D" uid="uid://ce6rmvdan8i3w" path="res://assets/sprites/feifei/feifei_fly_01.png" id="1_fly01"]
+[ext_resource type="Texture2D" uid="uid://lbhsod7hjoxk" path="res://assets/sprites/feifei/feifei_fly_02.png" id="2_fly02"]
+[ext_resource type="Texture2D" uid="uid://de1aeggbciwgm" path="res://assets/sprites/feifei/feifei_fly_03.png" id="3_fly03"]
+[ext_resource type="Texture2D" uid="uid://b71k4kkier7pl" path="res://assets/sprites/feifei/feifei_fly_04.png" id="4_fly04"]
+[ext_resource type="Texture2D" uid="uid://dshvtik27spit" path="res://assets/sprites/feifei/feifei_fly_05.png" id="5_fly05"]
+[ext_resource type="Texture2D" uid="uid://dhpptpmay1wvd" path="res://assets/sprites/feifei/feifei_fly_06.png" id="6_fly06"]
+[ext_resource type="Texture2D" uid="uid://bsw8gsad2fdtn" path="res://assets/sprites/feifei/feifei_fly_07.png" id="7_fly07"]
+[ext_resource type="Texture2D" uid="uid://ci4li7sw5e14k" path="res://assets/sprites/feifei/feifei_fly_08.png" id="8_fly08"]
+[ext_resource type="Texture2D" uid="uid://bk4mlc7phtwuh" path="res://assets/sprites/feifei/feifei_fly_09.png" id="9_fly09"]
+[ext_resource type="Texture2D" uid="uid://cqrksd2a82rkp" path="res://assets/sprites/feifei/feifei_fly_10.png" id="10_fly10"]
+[ext_resource type="Texture2D" uid="uid://bksxknvnhtrl5" path="res://assets/sprites/feifei/feifei_fly_11.png" id="11_fly11"]
+[ext_resource type="Texture2D" uid="uid://doywo3tptri7s" path="res://assets/sprites/feifei/feifei_fly_12.png" id="12_fly12"]
+[ext_resource type="Texture2D" uid="uid://cibhasu5e8mbi" path="res://assets/sprites/feifei/feifei_fly_13.png" id="13_fly13"]
+[ext_resource type="Texture2D" uid="uid://b2vrdgovjxq8g" path="res://assets/sprites/feifei/feifei_fly_14.png" id="14_fly14"]
+[ext_resource type="Texture2D" uid="uid://c7o5d3xnmh58e" path="res://assets/sprites/feifei/feifei_fly_15.png" id="15_fly15"]
+[ext_resource type="Texture2D" uid="uid://de76e24elawjs" path="res://assets/sprites/feifei/feifei_fly_16.png" id="16_fly16"]
+[ext_resource type="Texture2D" uid="uid://l4e5odeuexcp" path="res://assets/sprites/feifei/feifei_fly_17.png" id="17_fly17"]
+[ext_resource type="Texture2D" uid="uid://dpara1j5d0sh" path="res://assets/sprites/feifei/feifei_fly_18.png" id="18_fly18"]
+[ext_resource type="Texture2D" uid="uid://rddq5b3nuvhb" path="res://assets/sprites/feifei/feifei_fly_19.png" id="19_fly19"]
+[ext_resource type="Texture2D" uid="uid://c35q6bu5yq71j" path="res://assets/sprites/feifei/feifei_fly_20.png" id="20_fly20"]
+[ext_resource type="Texture2D" uid="uid://ckcrso8naqi73" path="res://assets/sprites/feifei/feifei_fly_21.png" id="21_fly21"]
+[ext_resource type="Texture2D" uid="uid://c0gubrge120yt" path="res://assets/sprites/feifei/feifei_fly_22.png" id="22_fly22"]
+[ext_resource type="Texture2D" uid="uid://bsfbfiwhlf41t" path="res://assets/sprites/feifei/feifei_fly_23.png" id="23_fly23"]
+[ext_resource type="Texture2D" uid="uid://bjde8vsqercct" path="res://assets/sprites/feifei/feifei_fly_24.png" id="24_fly24"]
+[ext_resource type="Texture2D" uid="uid://bpljq53a8cgin" path="res://assets/sprites/feifei/feifei_fly_25.png" id="25_fly25"]
+[ext_resource type="Texture2D" uid="uid://dixex1d4v537p" path="res://assets/sprites/feifei/feifei_fly_26.png" id="26_fly26"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("15_fly15")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_fly16")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_fly17")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_fly18")
+}, {
+"duration": 1.0,
+"texture": ExtResource("19_fly19")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_fly20")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_fly21")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_fly22")
+}, {
+"duration": 1.0,
+"texture": ExtResource("23_fly23")
+}, {
+"duration": 1.0,
+"texture": ExtResource("24_fly24")
+}, {
+"duration": 1.0,
+"texture": ExtResource("25_fly25")
+}, {
+"duration": 1.0,
+"texture": ExtResource("26_fly26")
+}],
+"loop": true,
+"name": &"default",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_fly06")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_fly07")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_fly08")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_fly09")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_fly10")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_fly11")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_fly12")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_fly13")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_fly14")
+}],
+"loop": false,
+"name": &"happy",
+"speed": 4.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_fly01")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_fly02")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_fly03")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_fly04")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_fly05")
+}],
+"loop": true,
+"name": &"hint",
+"speed": 2.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_fly01")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_fly02")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_fly03")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_fly04")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_fly05")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_fly06")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_fly07")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_fly08")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_fly09")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_fly10")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_fly11")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_fly12")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_fly13")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_fly14")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_fly15")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_fly16")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_fly17")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_fly18")
+}, {
+"duration": 1.0,
+"texture": ExtResource("19_fly19")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_fly20")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_fly21")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_fly22")
+}, {
+"duration": 1.0,
+"texture": ExtResource("23_fly23")
+}, {
+"duration": 1.0,
+"texture": ExtResource("24_fly24")
+}, {
+"duration": 1.0,
+"texture": ExtResource("25_fly25")
+}, {
+"duration": 1.0,
+"texture": ExtResource("26_fly26")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}]
