@@ -17,6 +17,49 @@ CONTEXT = {
 
 
 @pytest.mark.asyncio
+async def test_postprocessor_preserves_already_correct_answer(monkeypatch):
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {
+                        "message": {
+                            "content": json.dumps(
+                                {
+                                    "corrected_text": "书架",
+                                    "correction_applied": False,
+                                    "correction_reason": None,
+                                    "extracted": {"answer": "书架"},
+                                    "confidence": 0.95,
+                                },
+                                ensure_ascii=False,
+                            )
+                        }
+                    }
+                ]
+            },
+        )
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler), base_url="https://llm.test") as client:
+        postprocessor = ASRPostprocessor(client=client)
+
+        result = await postprocessor.process(
+            text="书架",
+            asr_confidence=0.95,
+            language="cn_en",
+            context=CONTEXT,
+        )
+
+    assert result["applied"] is True
+    assert result["corrected_text"] == "书架"
+    assert result["correction_reason"] is None
+    assert result["extracted"] == {"answer": "书架"}
+    assert result["confidence"] == 0.95
+
+
+@pytest.mark.asyncio
 async def test_postprocessor_disabled_does_not_call_llm(monkeypatch):
     post = AsyncMock()
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")

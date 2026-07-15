@@ -40,6 +40,15 @@ async def post_json(context: dict | None = None):
         return await client.post("/api/v1/voice/asr/json", json=payload)
 
 
+async def post_asr_endpoint(endpoint: str, context: dict | None = None):
+    if endpoint == "/api/v1/voice/asr/json":
+        return await post_json(context=context)
+    data = None
+    if context is not None:
+        data = {"context": __import__("json").dumps(context, ensure_ascii=False)}
+    return await post_multipart(endpoint, data=data)
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("path", ["/api/v1/voice/asr", "/asr/recognize"])
 async def test_multipart_asr_returns_postprocess_missing_context(path):
@@ -171,5 +180,67 @@ async def test_json_asr_returns_200_when_postprocess_falls_back():
 
     assert response.status_code == 200
     data = response.json()
+    assert data["text"] == "暑假"
+    assert data["postprocess"] == postprocess_result
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("endpoint", ["/api/v1/voice/asr", "/asr/recognize", "/api/v1/voice/asr/json"])
+async def test_all_asr_endpoints_share_success_contract(endpoint):
+    postprocess_result = {
+        "applied": True,
+        "corrected_text": "书架",
+        "correction_reason": "家具题且候选答案书架与暑假音近。",
+        "extracted": {"answer": "书架"},
+        "confidence": 0.88,
+        "fallback_reason": None,
+        "model": "mock-model",
+        "latency_ms": 12,
+    }
+
+    with (
+        patch("src.api.routes.asr.service_manager.transcribe", new_callable=AsyncMock) as mock_transcribe,
+        patch("src.api.routes.asr.asr_postprocessor.process", new_callable=AsyncMock) as mock_process,
+    ):
+        mock_transcribe.return_value = ASRResult(text="暑假", confidence=0.9, language="cn_en")
+        mock_process.return_value = postprocess_result
+
+        response = await post_asr_endpoint(endpoint, context=FURNITURE_CONTEXT)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert set(data.keys()) == {"text", "confidence", "language", "postprocess"}
+    assert data["text"] == "暑假"
+    assert data["confidence"] == 0.9
+    assert data["language"] == "cn_en"
+    assert data["postprocess"] == postprocess_result
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("endpoint", ["/api/v1/voice/asr", "/asr/recognize", "/api/v1/voice/asr/json"])
+async def test_all_asr_endpoints_share_fallback_contract(endpoint):
+    postprocess_result = {
+        "applied": False,
+        "corrected_text": "暑假",
+        "correction_reason": None,
+        "extracted": {},
+        "confidence": 0.0,
+        "fallback_reason": "timeout",
+        "model": None,
+        "latency_ms": 1500,
+    }
+
+    with (
+        patch("src.api.routes.asr.service_manager.transcribe", new_callable=AsyncMock) as mock_transcribe,
+        patch("src.api.routes.asr.asr_postprocessor.process", new_callable=AsyncMock) as mock_process,
+    ):
+        mock_transcribe.return_value = ASRResult(text="暑假", confidence=0.9, language="cn_en")
+        mock_process.return_value = postprocess_result
+
+        response = await post_asr_endpoint(endpoint, context=FURNITURE_CONTEXT)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert set(data.keys()) == {"text", "confidence", "language", "postprocess"}
     assert data["text"] == "暑假"
     assert data["postprocess"] == postprocess_result
