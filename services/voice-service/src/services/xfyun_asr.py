@@ -1,6 +1,6 @@
 """
-讯飞实时语音转写WebSocket服务
-文档: https://www.xfyun.cn/doc/asr/rtasr/API.html
+讯飞星火大模型语音识别 WebSocket 服务
+文档: https://www.xfyun.cn/doc/spark/spark_mul_cn_iat.html
 """
 
 import asyncio
@@ -13,7 +13,7 @@ import os
 import time
 import urllib.parse
 from dataclasses import dataclass
-from typing import Optional, Callable
+from typing import Optional
 
 import websocket
 
@@ -26,22 +26,19 @@ logger = logging.getLogger(__name__)
 class XfyunASRResult:
     """ASR识别结果"""
     text: str
-    is_final: bool  # 是否最终识别结果
+    is_final: bool
     confidence: float = 0.0
-    language: str = "cn_en"  # 讯飞返回的是混合语言
+    language: str = "cn_en"
 
 
 class XfyunASRService:
     """
-    讯飞实时语音转写WebSocket服务
-    每次对话新建连接，对话粒度短连接
+    讯飞星火大模型语音识别 WebSocket 服务
+    每次对话新建短连接
     """
 
-    # 讯飞API配置
-    HOST = "rtasr.xfyun.cn"
-    PORT = 8080
-    PROTOCOL = "wss"
-    WS_URL = "wss://rtasr.xfyun.cn/v1/ws"
+    HOST = "iat.cn-huabei-1.xf-yun.com"
+    WS_URL = "wss://iat.cn-huabei-1.xf-yun.com/v1"
 
     def __init__(self):
         self.app_id = os.environ.get("XFYUN_APP_ID", "")
@@ -52,13 +49,12 @@ class XfyunASRService:
     async def init(self) -> bool:
         """初始化服务，验证配置"""
         if not all([self.app_id, self.api_key, self.api_secret]):
-            logger.warning("XfyunASRService: Missing credentials")
+            logger.warning("XfyunASRService: Missing credentials (need APP_ID + API_KEY + API_SECRET)")
             self.is_available = False
             return False
 
-        # 测试鉴权URL生成（不实际连接）
         try:
-            url = self._build_auth_url()
+            self._build_auth_url()
             logger.info("XfyunASRService initialized successfully")
             self.is_available = True
             return True
@@ -69,18 +65,13 @@ class XfyunASRService:
 
     def _build_auth_url(self) -> str:
         """
-        生成鉴权URL（HMAC-SHA256签名）
-        讯飞鉴权格式：wss://rtasr.xfyun.cn/v1/ws?authorization=xxx&date=xxx&host=xxx
+        HMAC-SHA256 鉴权 URL
+        签名原文: host: {host}\ndate: {date}\nGET /v1 HTTP/1.1
         """
-        # RFC1123格式时间
         date = time.strftime("%a, %d %b %Y %H:%M:%S %Z", time.gmtime())
 
-        # 构建签名原文
-        signature_origin = f"host: {self.HOST}\n"
-        signature_origin += f"date: {date}\n"
-        signature_origin += f"GET /v1/ws HTTP/1.1"
+        signature_origin = f"host: {self.HOST}\ndate: {date}\nGET /v1 HTTP/1.1"
 
-        # HMAC-SHA256签名
         signature_sha = hmac.new(
             self.api_secret.encode('utf-8'),
             signature_origin.encode('utf-8'),
@@ -88,11 +79,14 @@ class XfyunASRService:
         ).digest()
         signature = base64.b64encode(signature_sha).decode('utf-8')
 
-        # 构建authorization
-        authorization_origin = f'api_key="{self.api_key}", algorithm="hmac-sha256", headers="host date request-line", signature="{signature}"'
+        authorization_origin = (
+            f'api_key="{self.api_key}", '
+            f'algorithm="hmac-sha256", '
+            f'headers="host date request-line", '
+            f'signature="{signature}"'
+        )
         authorization = base64.b64encode(authorization_origin.encode('utf-8')).decode('utf-8')
 
-        # 构建URL参数
         params = {
             "authorization": authorization,
             "date": date,
@@ -109,19 +103,18 @@ class XfyunASRService:
         language: str = "cn_en"
     ) -> XfyunASRResult:
         """
-        同步转录接口（兼容现有Whisper接口）
+        同步转录接口（兼容 Whisper 接口）
 
         Args:
-            audio_bytes: 音频数据（PCM float32 stereo 44100Hz，Godot原始格式）
-            language: 语言模式（cn_en中英混合）
+            audio_bytes: PCM float32 stereo 44100Hz（Godot 原始格式）
+            language: 语言模式
 
         Returns:
-            XfyunASRResult: 识别结果
+            XfyunASRResult
         """
         if not self.is_available:
             raise RuntimeError("XfyunASRService not initialized")
 
-        # 音频格式转换
         try:
             xfyun_audio = AudioConverter.convert_to_xfyun_format(audio_bytes)
             logger.debug(f"Audio converted: {len(audio_bytes)} -> {len(xfyun_audio)} bytes")
@@ -129,11 +122,9 @@ class XfyunASRService:
             logger.error(f"Audio conversion failed: {e}")
             raise
 
-        # 建立WebSocket连接（每次对话新建）
         url = self._build_auth_url()
 
         try:
-            # 使用websocket-client（同步库，在async中需要包装）
             ws = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: websocket.create_connection(url, timeout=10)
@@ -141,94 +132,133 @@ class XfyunASRService:
 
             result_text = []
             try:
-                # 分片发送音频（每片1280字节 = 40ms @ 16kHz mono int16）
-                chunk_size = 1280
-                total_chunks = (len(xfyun_audio) + chunk_size - 1) // chunk_size
+                chunk_size = 1280  # 40ms @ 16kHz mono int16
+                chunk_idx = 0
 
                 for i in range(0, len(xfyun_audio), chunk_size):
-                    chunk = xfyun_audio[i:i+chunk_size]
+                    chunk = xfyun_audio[i:i + chunk_size]
+                    is_last = (i + chunk_size >= len(xfyun_audio))
 
-                    # 最后一片补齐
-                    if len(chunk) < chunk_size:
-                        chunk += b"\x00" * (chunk_size - len(chunk))
+                    if chunk_idx == 0:
+                        audio_status = 0
+                    elif is_last:
+                        audio_status = 2
+                    else:
+                        audio_status = 1
 
-                    # 发送音频数据（二进制帧）
-                    # 讯飞 ASR WebSocket 需要发送 JSON 格式，包含 base64 编码的音频
-                    audio_b64 = base64.b64encode(c).decode('utf-8')
-                    message = json.dumps({
-                        "data": {
-                            "status": 1 if i + chunk_size < len(xfyun_audio) else 2,  # 2=最后一帧
-                            "format": "audio/L16;rate=16000",
-                            "encoding": "raw",
-                            "audio": audio_b64
-                        }
-                    })
+                    audio_b64 = base64.b64encode(chunk).decode('utf-8')
+
+                    # 首帧: header + parameter + payload
+                    # 中间/末帧: header + payload
+                    if chunk_idx == 0:
+                        message = json.dumps({
+                            "header": {
+                                "app_id": self.app_id,
+                                "status": 0,
+                            },
+                            "parameter": {
+                                "iat": {
+                                    "domain": "slm",
+                                    "language": "mul_cn",
+                                    "accent": "mandarin",
+                                    "eos": 6000,
+                                    "result": {
+                                        "encoding": "utf8",
+                                        "compress": "raw",
+                                        "format": "json",
+                                    },
+                                }
+                            },
+                            "payload": {
+                                "audio": {
+                                    "encoding": "raw",
+                                    "sample_rate": 16000,
+                                    "channels": 1,
+                                    "bit_depth": 16,
+                                    "seq": chunk_idx,
+                                    "status": audio_status,
+                                    "audio": audio_b64,
+                                }
+                            }
+                        })
+                        logger.debug(f"First frame sent: chunks_total≈{len(xfyun_audio)//chunk_size + 1}")
+                    else:
+                        message = json.dumps({
+                            "header": {
+                                "app_id": self.app_id,
+                                "status": audio_status,
+                            },
+                            "payload": {
+                                "audio": {
+                                    "encoding": "raw",
+                                    "sample_rate": 16000,
+                                    "status": audio_status,
+                                    "audio": audio_b64,
+                                }
+                            }
+                        })
 
                     await asyncio.get_event_loop().run_in_executor(
                         None,
                         lambda m=message: ws.send(m)
                     )
 
-                    # 等待40ms（模拟实时流）
+                    chunk_idx += 1
                     await asyncio.sleep(0.04)
 
-                    # 非阻塞接收结果
+                    # 非阻塞接收
                     ws.settimeout(0.01)
                     try:
                         response = await asyncio.get_event_loop().run_in_executor(
                             None,
                             lambda: ws.recv()
                         )
-                        result = self._parse_response(response)
-                        if result:
-                            text = self._extract_text(result)
-                            if text:
-                                result_text.append(text)
-                                logger.debug(f"Partial result: {text}")
+                        text = self._extract_text(response)
+                        if text:
+                            result_text.append(text)
+                            logger.debug(f"Partial result: {text}")
                     except websocket.WebSocketTimeoutException:
-                        # 没有收到结果，继续发送
                         pass
 
-                # 发送结束标记
-                end_message = json.dumps({
-                    "data": {
-                        "status": 2,
-                        "format": "audio/L16;rate=16000",
-                        "encoding": "raw",
-                        "audio": ""
-                    }
-                })
-                await asyncio.get_event_loop().run_in_executor(
-                    None,
-                    lambda: ws.send(end_message)
-                )
-
-                # 等待最终确认（最长5s）
+                # 接收所有响应直到服务端 status=2
                 ws.settimeout(5.0)
-                try:
-                    final_response = await asyncio.get_event_loop().run_in_executor(
-                        None,
-                        lambda: ws.recv()
-                    )
-                    logger.debug(f"Final response: {final_response[:100]}")
-                except websocket.WebSocketTimeoutException:
-                    logger.warning("Timeout waiting for final response")
+                for _ in range(50):
+                    try:
+                        response = await asyncio.get_event_loop().run_in_executor(
+                            None,
+                            lambda: ws.recv()
+                        )
+                        resp = json.loads(response) if response else {}
+
+                        header = resp.get("header", {})
+                        code = header.get("code", -1)
+                        if code != 0:
+                            logger.warning(f"Xfyun ASR error: code={code}, message={header.get('message', '')}")
+                            break
+
+                        text = self._extract_text(response)
+                        if text and (not result_text or text != result_text[-1]):
+                            result_text.append(text)
+
+                        if header.get("status") == 2:
+                            break
+                    except websocket.WebSocketTimeoutException:
+                        logger.warning("Timeout waiting for final response")
+                        break
 
             finally:
-                # 关闭连接
                 await asyncio.get_event_loop().run_in_executor(
                     None,
                     lambda: ws.close()
                 )
 
-            # 合并结果
-            final_text = " ".join(result_text) if result_text else ""
-            logger.info(f"Xfyun ASR success: '{final_text[:50]}...' ({len(final_text)} chars)")
+            final_text = "".join(result_text) if result_text else ""
+            logger.info(f"Xfyun ASR success: '{final_text[:50]}' ({len(final_text)} chars)")
 
             return XfyunASRResult(
                 text=final_text,
                 is_final=True,
-                confidence=0.9,  # 讯飞不直接返回置信度，默认值
+                confidence=0.9,
                 language=language
             )
 
@@ -239,30 +269,51 @@ class XfyunASRService:
             logger.error(f"Xfyun ASR failed: {e}")
             raise
 
-    def _parse_response(self, response: str) -> Optional[dict]:
-        """解析讯飞返回的JSON"""
+    def _extract_text(self, response: str) -> str:
+        """
+        从讯飞响应中提取文本
+        响应 payload.result.text 是 base64 编码的 JSON
+        """
         try:
-            data = json.loads(response)
-            return data.get("data")
-        except json.JSONDecodeError:
-            logger.warning(f"Failed to parse response: {response[:100]}")
-            return None
+            if not response:
+                return ""
+            resp = json.loads(response)
+            header = resp.get("header", {})
+            if header.get("code", -1) != 0:
+                return ""
 
-    def _extract_text(self, data: dict) -> str:
-        """从讯飞数据格式中提取文本"""
-        try:
-            # 讯飞返回格式：{"cn":{"st":{"rt":[{"ws":[{"cw":[{"w":"Hello"}]}]}]}}}
-            rt_list = data.get("cn", {}).get("st", {}).get("rt", [])
+            result = resp.get("payload", {}).get("result", {})
+            text_b64 = result.get("text", "")
+            if not text_b64:
+                return ""
+
+            decoded = json.loads(base64.b64decode(text_b64).decode('utf-8'))
+
+            # 讯飞返回结构：可能是 {"rt": [{"ws": [...]}]} 或 {"ws": [...]}
             texts = []
-            for rt in rt_list:
-                for ws in rt.get("ws", []):
+
+            # 尝试 rt 结构
+            rt_list = decoded.get("rt", [])
+            if rt_list:
+                for rt in rt_list:
+                    for ws in rt.get("ws", []):
+                        for cw in ws.get("cw", []):
+                            w = cw.get("w", "")
+                            if w:
+                                texts.append(w)
+            else:
+                # 直接 ws 结构
+                for ws in decoded.get("ws", []):
                     for cw in ws.get("cw", []):
-                        texts.append(cw.get("w", ""))
+                        w = cw.get("w", "")
+                        if w:
+                            texts.append(w)
+
             return "".join(texts)
+
         except Exception as e:
             logger.error(f"Extract text error: {e}")
             return ""
 
 
-# 全局单例
 xfyun_asr_service = XfyunASRService()
