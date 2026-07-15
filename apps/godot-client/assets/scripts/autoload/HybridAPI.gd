@@ -177,12 +177,18 @@ func synthesize_tts(text: String, voice_id: String = "spirit", lang: String = "z
 	if error != OK:
 		push_warning("[HybridAPI] TTS request deferred (HTTPRequest busy): ", error)
 
-func recognize_speech(audio_data: PackedByteArray, lang: String = "en") -> void:
-	print("[HybridAPI] recognize_speech: size=", audio_data.size(), " lang=", lang)
-	var body = JSON.stringify({
+func _build_asr_request_body(audio_data: PackedByteArray, lang: String = "en", context: Dictionary = {}) -> String:
+	var payload := {
 		"audio_data": Marshalls.raw_to_base64(audio_data),
 		"lang": lang
-	})
+	}
+	if not context.is_empty():
+		payload["context"] = context
+	return JSON.stringify(payload)
+
+func recognize_speech(audio_data: PackedByteArray, lang: String = "en", context: Dictionary = {}) -> void:
+	print("[HybridAPI] recognize_speech: size=", audio_data.size(), " lang=", lang)
+	var body := _build_asr_request_body(audio_data, lang, context)
 	print("[HybridAPI] JSON body size: ", body.length())
 	var headers = ["Content-Type: application/json"]
 	var error = http_request.request(API_BASE_URL + "/api/v1/voice/asr/json", headers, HTTPClient.METHOD_POST, body)
@@ -302,8 +308,8 @@ func send_dialogue(user_text: String, npc_id: String, context: Array = []) -> vo
 	if error != OK:
 		api_error.emit("Dialogue request failed: " + str(error))
 
-func process_voice_dialogue(audio_data: PackedByteArray, npc_id: String, lang: String = "zh") -> Dictionary:
-	recognize_speech(audio_data, lang)
+func process_voice_dialogue(audio_data: PackedByteArray, npc_id: String, lang: String = "zh", asr_context: Dictionary = {}) -> Dictionary:
+	recognize_speech(audio_data, lang, asr_context)
 	var asr_result = await asr_received
 
 	if asr_result.has("error"):

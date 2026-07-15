@@ -73,7 +73,12 @@ func _on_voice_ended(audio_data: PackedByteArray) -> void:
 	dialogue_state = "waiting_response"
 	DialogueBox.hide_voice_listening()
 
-	var result = await HybridAPI.process_voice_dialogue(audio_data, current_npc_id, GameManager.current_lang)
+	var result = await HybridAPI.process_voice_dialogue(
+		audio_data,
+		current_npc_id,
+		GameManager.current_lang,
+		_build_asr_context_for_current_turn()
+	)
 
 	# Check for spirit unlocks (LinguaQuest integration)
 	_check_spirit_unlocks(result.get("user_text", ""), current_npc_id)
@@ -139,6 +144,35 @@ func _on_coach_intervention(payload: Dictionary) -> void:
 
 func _on_asr_received(result: Dictionary) -> void:
 	pass
+
+func _build_asr_context_for_current_turn() -> Dictionary:
+	var recent_turns := coach_tracker.get_recent_turns()
+	var npc_question := ""
+	for i in range(recent_turns.size() - 1, -1, -1):
+		var turn: Dictionary = recent_turns[i]
+		if str(turn.get("speaker", "")) == "npc":
+			npc_question = str(turn.get("text", ""))
+			break
+
+	return {
+		"session_id": coach_session_id,
+		"user_id": GameManager.player_name if GameManager.player_name != "" else "anonymous",
+		"npc_id": current_npc_id,
+		"scene_id": GameManager.current_scene,
+		"npc_question": npc_question,
+		"expected_slots": [
+			{
+				"key": "answer",
+				"type": "string",
+				"description": "玩家对 NPC 当前问题的回答",
+			}
+		],
+		"expected_answer_type": "dialogue_answer",
+		"candidate_answers": [],
+		"recent_turns": recent_turns,
+		"player_level": GameManager.player_cefr_level,
+		"language": GameManager.current_lang,
+	}
 
 func _on_dialogue_received(result: Dictionary) -> void:
 	pass

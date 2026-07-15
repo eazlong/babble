@@ -444,7 +444,7 @@ func _on_voice_ended(audio_data: PackedByteArray) -> void:
 	if feifei:
 		feifei.show_hint(_loc("recognizing"), FeifeiShoulder.STATE_HINT, 0.0)
 	asr_request_active = true
-	HybridAPI.recognize_speech(audio_data, _get_asr_language_for_state())
+	HybridAPI.recognize_speech(audio_data, _get_asr_language_for_state(), _build_asr_context_for_state())
 	_watch_asr_timeout()
 
 func _on_asr_received(result: Dictionary) -> void:
@@ -718,6 +718,28 @@ func _get_asr_language_for_state() -> String:
 	if state == PrologueState.AWAIT_SPECIAL_NAME:
 		return GameManager.SPECIAL_LANGUAGE_CODE
 	return GameManager.SOURCE_LANGUAGE_CODE
+
+func _build_asr_context_for_state() -> Dictionary:
+	var expected_language_name := GameManager.SPECIAL_LANGUAGE_NAME if state == PrologueState.AWAIT_SPECIAL_NAME else GameManager.SOURCE_LANGUAGE_NAME
+	return {
+		"session_id": coach_session_id,
+		"user_id": GameManager.player_name if GameManager.player_name != "" else "anonymous",
+		"npc_id": "feifei_beginning",
+		"scene_id": SCENE_ID,
+		"npc_question": _language_hint_text("special_name_retry") if state == PrologueState.AWAIT_SPECIAL_NAME else _language_hint_text("name_retry"),
+		"expected_slots": [
+			{
+				"key": "name",
+				"type": "person_name",
+				"description": "玩家告诉腓腓的%s名" % expected_language_name,
+			}
+		],
+		"expected_answer_type": "player_name",
+		"candidate_answers": [],
+		"recent_turns": coach_tracker.get_recent_turns(),
+		"player_level": GameManager.player_cefr_level,
+		"language": _get_asr_language_for_state(),
+	}
 
 func _language_hint_text(key: String) -> String:
 	var language_name: String = GameManager.SPECIAL_LANGUAGE_NAME if key == "special_name_retry" else GameManager.SOURCE_LANGUAGE_NAME
