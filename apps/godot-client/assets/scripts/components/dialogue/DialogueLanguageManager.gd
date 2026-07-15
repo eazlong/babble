@@ -130,7 +130,7 @@ func _process_voice_input(audio_data: PackedByteArray) -> void:
 			"id": "default",
 			"response": {
 				"npc_text": text,
-				"spark_action": "idle",
+				"feifei_action": "idle",
 				"difficulty_adjustment": "none",
 				"audio_speed": 1.0
 			}

@@ -29,8 +29,8 @@ static func language_to_string(lang: Language) -> String:
 
 # ——— DialogueLine: 预定义对话行 ———
 # {
-#   "id": "spark_greeting_001",
-#   "text": "你好！Hello! 我是Spark。",
+#   "id": "feifei_greeting_001",
+#   "text": "你好！Hello! 我是Feifei。",
 #   "language": "mixed",
 #   "segments": [{"text": "你好！", "language": "zh"}, ...],
 #   "teaching_point": "greeting",
@@ -61,7 +61,7 @@ static func language_to_string(lang: Language) -> String:
 #   "priority": 15,
 #   "response": {
 #     "npc_text": "Excellent! {player_input}! 你说得太棒了！",
-#     "spark_action": "celebrate",
+#     "feifei_action": "celebrate",
 #     "difficulty_adjustment": "none",
 #     "audio_speed": 1.0
 #   },

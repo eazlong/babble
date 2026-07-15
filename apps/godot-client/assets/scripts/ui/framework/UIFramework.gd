@@ -14,7 +14,7 @@ enum LayerIndex {
     SCENE = 0,      # z=0: 场景内容、交互对象、NPC
     HUD = 1,        # z=10: 游戏HUD、任务追踪、计时器
     DIALOGUE = 2,   # z=20: 对话气泡、语音输入、星级评价
-    OVERLAY = 3     # z=30: Spark覆盖、解锁仪式、奖励动画
+    OVERLAY = 3     # z=30: Feifei覆盖、解锁仪式、奖励动画
 }
 
 ## Layer z-index配置

@@ -1,6 +1,6 @@
 ## 大树微光脉冲效果
 ##
-## 当 Spark 引导玩家注视大树时，大树产生微光脉冲吸引注意力
+## 当 Feifei 引导玩家注视大树时，大树产生微光脉冲吸引注意力
 ##
 class_name BigTreeGlow
 extends RefCounted

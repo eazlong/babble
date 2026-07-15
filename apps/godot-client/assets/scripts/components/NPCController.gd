@@ -1,10 +1,10 @@
 extends StaticBody2D
 
-@export var npc_id: String = "spark"
-@export var npc_name_zh: String = "精灵教练 Spark"
-@export var npc_name_en: String = "Spirit Coach Spark"
-@export var greeting_zh: String = "你好！我是 Spark，你的语言学习伙伴！"
-@export var greeting_en: String = "Hello! I'm Spark, your language learning companion!"
+@export var npc_id: String = "feifei"
+@export var npc_name_zh: String = "精灵教练 Feifei"
+@export var npc_name_en: String = "Spirit Coach Feifei"
+@export var greeting_zh: String = "你好！我是 Feifei，你的语言学习伙伴！"
+@export var greeting_en: String = "Hello! I'm Feifei, your language learning companion!"
 
 @onready var sprite: AnimatedSprite2D = $Sprite
 @onready var dialogue_trigger: Area2D = $DialogueTrigger

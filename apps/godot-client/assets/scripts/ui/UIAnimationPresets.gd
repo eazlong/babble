@@ -80,8 +80,8 @@ class StarCollect:
 	const SCALE_DURATION: float = 0.3
 	const ROTATION: float = 720.0            # 旋转两圈
 
-## Spark动画
-class SparkAnim:
+## Feifei动画
+class FeifeiAnim:
 	const FLY_IN_DURATION: float = 0.5
 	const FLY_OUT_DURATION: float = 0.4
 	const IDLE_FLOAT_AMP: float = 6.0      # 浮动幅度(px)

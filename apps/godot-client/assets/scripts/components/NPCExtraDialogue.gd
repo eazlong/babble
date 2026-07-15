@@ -213,25 +213,25 @@ static func get_sunny_dialogues() -> Array[DialogueEntry]:
 			["tomorrow", "sunny", "rainy"], "", ""),
 	]
 
-static func get_spark_dialogues() -> Array[DialogueEntry]:
+static func get_feifei_dialogues() -> Array[DialogueEntry]:
 	return [
-		create_entry("spark_1",
+		create_entry("feifei_1",
 			"森林里有好多神奇的植物！",
 			"There are so many magical plants in the forest!",
 			["forest", "plants", "magical"], "", ""),
-		create_entry("spark_2",
+		create_entry("feifei_2",
 			"你听到鸟叫声了吗？那是词灵鸟在唱歌！",
 			"Do you hear the birds? That's the Word Spirit bird singing!",
 			["bird", "sing", "song"], "", "bird"),
-		create_entry("spark_3",
+		create_entry("feifei_3",
 			"试试跟蘑菇说话，它们有时候会回答哦！",
 			"Try talking to the mushrooms, sometimes they answer!",
 			["mushroom", "talk", "answer"], "", ""),
-		create_entry("spark_4",
+		create_entry("feifei_4",
 			"你看！树叶上写着英文字母！",
 			"Look! The leaves have English letters on them!",
 			["leaf", "letter", "write"], "", ""),
-		create_entry("spark_5",
+		create_entry("feifei_5",
 			"这片森林已经等了你很久很久……",
 			"This forest has been waiting for you for a very long time...",
 			["wait", "long time", "friend"], "", ""),
