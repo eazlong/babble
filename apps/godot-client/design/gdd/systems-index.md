@@ -12,6 +12,7 @@ LinguaQuest RPG 系统设计索引。按设计顺序排列。
 | 5 | Spirit Coach | [spirit-coach.md](spirit-coach.md) | ✅ Approved | 2026-06-26 |
 | 6 | Dialogue Language | [dialogue-language-design.md](dialogue-language-design.md) | ✅ Approved | 2026-07-07 |
 | 7 | Reward System | [reward-system.md](reward-system.md) | 📝 Draft | - |
+| 8 | Word Spirit Library | [word-spirit-library.md](word-spirit-library.md) | 📝 Draft | - |
 
 ### 状态说明
 - 📝 Draft — 初稿，未审查
