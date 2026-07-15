@@ -398,7 +398,7 @@ func _on_voice_ended(audio_data: PackedByteArray) -> void:
 func _on_asr_received(result: Dictionary) -> void:
 	if state != InnIntroState.AWAIT_BOOKSHELF_CALL:
 		return
-	var text := str(result.get("text", "")).strip_edges()
+	var text := _asr_text_for_bookshelf_call(result)
 	if _is_bookshelf_call(text):
 		await _continue_after_bookshelf_call()
 		return
@@ -440,6 +440,15 @@ func _source_language_code() -> String:
 	if manager:
 		return str(manager.SOURCE_LANGUAGE_CODE)
 	return "zh"
+
+func _asr_text_for_bookshelf_call(result: Dictionary) -> String:
+	var hybrid_api: Variant = _hybrid_api()
+	if hybrid_api:
+		var extracted_answer := str(hybrid_api.get_asr_extracted_value(result, "answer", "")).strip_edges()
+		if not extracted_answer.is_empty():
+			return extracted_answer
+		return str(hybrid_api.get_asr_corrected_text(result)).strip_edges()
+	return str(result.get("text", "")).strip_edges()
 
 func _game_manager() -> Variant:
 	return get_node_or_null("/root/GameManager")

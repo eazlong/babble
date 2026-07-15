@@ -154,6 +154,7 @@ func _apply_asr_default_answer_test(asr_result: Dictionary) -> Dictionary:
 	_asr_default_test_answer_index += 1
 	result["actual_text"] = actual_text
 	result["text"] = replacement_text
+	result.erase("postprocess")
 	result["test_override"] = "asr_default_answer"
 	result["test_answer_index"] = answer_index
 	print("[HybridAPI] ASR default-answer test replaced '%s' with '%s'" % [actual_text, replacement_text])
@@ -315,7 +316,7 @@ func process_voice_dialogue(audio_data: PackedByteArray, npc_id: String, lang: S
 	if asr_result.has("error"):
 		return {"error": asr_result.error}
 
-	var user_text = asr_result.get("text", "")
+	var user_text = get_asr_corrected_text(asr_result)
 
 	send_dialogue(user_text, npc_id, DialogueManager.dialogue_history)
 	var dialogue_result = await dialogue_received
@@ -333,6 +334,25 @@ func process_voice_dialogue(audio_data: PackedByteArray, npc_id: String, lang: S
 		"npc_response": npc_response,
 		"audio_data": tts_result.get("audio_data", "")
 	}
+
+func get_asr_corrected_text(asr_result: Dictionary) -> String:
+	var raw_text := str(asr_result.get("text", "")).strip_edges()
+	var postprocess = asr_result.get("postprocess", {})
+	if postprocess is Dictionary:
+		var corrected_text := str(postprocess.get("corrected_text", "")).strip_edges()
+		if not corrected_text.is_empty():
+			return corrected_text
+	return raw_text
+
+func get_asr_extracted_value(asr_result: Dictionary, key: String, fallback: String = "") -> String:
+	var postprocess = asr_result.get("postprocess", {})
+	if postprocess is Dictionary:
+		var extracted = postprocess.get("extracted", {})
+		if extracted is Dictionary and extracted.has(key):
+			var value := str(extracted.get(key, "")).strip_edges()
+			if not value.is_empty():
+				return value
+	return fallback
 
 func _on_request_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
 	if _ping_in_progress:

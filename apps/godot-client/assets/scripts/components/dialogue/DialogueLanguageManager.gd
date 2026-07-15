@@ -115,7 +115,7 @@ func _process_voice_input(audio_data: PackedByteArray) -> void:
 	# 更新状态
 	var detected_lang: String = asr_result.get("detected_language", "unknown")
 	var confidence: float = asr_result.get("confidence", 0.0)
-	var text: String = asr_result.get("text", "")
+	var text: String = HybridAPI.get_asr_corrected_text(asr_result)
 	var is_success: bool = _evaluate_success(text, detected_lang, confidence)
 	_update_state_after_attempt(is_success)
 

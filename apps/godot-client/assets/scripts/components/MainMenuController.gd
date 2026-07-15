@@ -135,7 +135,7 @@ func _on_voice_ended(audio_data: PackedByteArray) -> void:
 
 func _on_asr_received(result: Dictionary) -> void:
 	print("[MainMenu] ASR result: ", result)
-	var text: String = result.get("text", "")
+	var text: String = HybridAPI.get_asr_corrected_text(result)
 	if text.is_empty():
 		print("[MainMenu] ASR text empty, showing language panel")
 		show_language_panel()

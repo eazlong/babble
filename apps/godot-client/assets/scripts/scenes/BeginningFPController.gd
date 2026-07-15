@@ -459,7 +459,10 @@ func _on_asr_received(result: Dictionary) -> void:
 	if result.has("error"):
 		await _handle_voice_attempt_failed("asr_error")
 		return
-	var text: String = str(result.get("text", "")).strip_edges()
+	var text: String = HybridAPI.get_asr_corrected_text(result).strip_edges()
+	var extracted_name: String = HybridAPI.get_asr_extracted_value(result, "name", "").strip_edges()
+	if not extracted_name.is_empty():
+		text = extracted_name
 	if text.is_empty():
 		await _handle_voice_attempt_failed("empty_asr")
 		return

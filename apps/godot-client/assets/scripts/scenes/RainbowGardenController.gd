@@ -254,7 +254,10 @@ func _on_quest_report(result: Dictionary) -> void:
 
 func _on_asr_received(result: Dictionary) -> void:
 	print("[RainbowGarden] ASR result: ", result)
-	var text: String = result.get("text", "")
+	var text: String = HybridAPI.get_asr_corrected_text(result)
+	var extracted_answer := HybridAPI.get_asr_extracted_value(result, "answer", "")
+	if not extracted_answer.is_empty():
+		text = extracted_answer
 	if text.is_empty():
 		print("[RainbowGarden] ASR text empty")
 		if fix_weather_state == TaskState.IN_PROGRESS or \
