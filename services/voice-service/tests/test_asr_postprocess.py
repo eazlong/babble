@@ -26,6 +26,8 @@ async def post_multipart(path: str, data: dict[str, str] | None = None):
             files={"audio": ("test.wav", b"fake-audio-data", "audio/wav")},
             data={"language": "cn_en", **(data or {})},
         )
+
+
 async def post_json(context: dict | None = None):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -143,3 +145,31 @@ async def test_multipart_asr_uses_postprocessor_with_context():
         language="cn_en",
         context=FURNITURE_CONTEXT,
     )
+
+
+@pytest.mark.asyncio
+async def test_json_asr_returns_200_when_postprocess_falls_back():
+    postprocess_result = {
+        "applied": False,
+        "corrected_text": "暑假",
+        "correction_reason": None,
+        "extracted": {},
+        "confidence": 0.0,
+        "fallback_reason": "timeout",
+        "model": None,
+        "latency_ms": 1500,
+    }
+
+    with (
+        patch("src.api.routes.asr.service_manager.transcribe", new_callable=AsyncMock) as mock_transcribe,
+        patch("src.api.routes.asr.asr_postprocessor.process", new_callable=AsyncMock) as mock_process,
+    ):
+        mock_transcribe.return_value = ASRResult(text="暑假", confidence=0.9, language="cn_en")
+        mock_process.return_value = postprocess_result
+
+        response = await post_json(context=FURNITURE_CONTEXT)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["text"] == "暑假"
+    assert data["postprocess"] == postprocess_result

@@ -1,3 +1,4 @@
+import asyncio
 import json
 from unittest.mock import AsyncMock
 
@@ -13,6 +14,102 @@ CONTEXT = {
     "expected_answer_type": "object_name",
     "candidate_answers": ["书架", "椅子", "桌子", "床"],
 }
+
+
+@pytest.mark.asyncio
+async def test_postprocessor_disabled_does_not_call_llm(monkeypatch):
+    post = AsyncMock()
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("ASR_POSTPROCESS_ENABLED", "false")
+    postprocessor = ASRPostprocessor(client=type("Client", (), {"post": post})())
+
+    result = await postprocessor.process(
+        text="暑假",
+        asr_confidence=0.9,
+        language="cn_en",
+        context=CONTEXT,
+    )
+
+    assert result["applied"] is False
+    assert result["corrected_text"] == "暑假"
+    assert result["extracted"] == {}
+    assert result["fallback_reason"] == "disabled"
+    post.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_postprocessor_missing_api_key_does_not_call_llm(monkeypatch):
+    post = AsyncMock()
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("ASR_POSTPROCESS_API_KEY", raising=False)
+    postprocessor = ASRPostprocessor(client=type("Client", (), {"post": post})())
+
+    result = await postprocessor.process(
+        text="暑假",
+        asr_confidence=0.9,
+        language="cn_en",
+        context=CONTEXT,
+    )
+
+    assert result["applied"] is False
+    assert result["corrected_text"] == "暑假"
+    assert result["fallback_reason"] == "missing_api_key"
+    post.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_postprocessor_provider_error_does_not_retry(monkeypatch):
+    calls = 0
+
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(500, json={"error": "provider down"})
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler), base_url="https://llm.test") as client:
+        postprocessor = ASRPostprocessor(client=client)
+
+        result = await postprocessor.process(
+            text="暑假",
+            asr_confidence=0.9,
+            language="cn_en",
+            context=CONTEXT,
+        )
+
+    assert result["applied"] is False
+    assert result["corrected_text"] == "暑假"
+    assert result["fallback_reason"] == "provider_error"
+    assert calls == 1
+
+
+@pytest.mark.asyncio
+async def test_postprocessor_timeout_does_not_retry(monkeypatch):
+    calls = 0
+
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        await asyncio.sleep(0.05)
+        return httpx.Response(200, json={"choices": [{"message": {"content": "{}"}}]})
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("ASR_POSTPROCESS_TIMEOUT_MS", "1")
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler), base_url="https://llm.test") as client:
+        postprocessor = ASRPostprocessor(client=client)
+
+        result = await postprocessor.process(
+            text="暑假",
+            asr_confidence=0.9,
+            language="cn_en",
+            context=CONTEXT,
+        )
+
+    assert result["applied"] is False
+    assert result["corrected_text"] == "暑假"
+    assert result["fallback_reason"] == "timeout"
+    assert result["latency_ms"] == 1
+    assert calls == 1
 
 
 @pytest.mark.asyncio
