@@ -46,7 +46,7 @@ func test_show_message_popup_animation():
 	dialogue_panel.add_child(message_label)
 	dialogue_box.message_label = message_label
 
-	dialogue_box.show_message("Spark", "欢迎来到精灵森林！")
+	dialogue_box.show_message("Feifei", "欢迎来到精灵森林！")
 
 	# 验证弹出动画开始
 	assert_true(dialogue_panel.visible, "DialoguePanel应可见")
