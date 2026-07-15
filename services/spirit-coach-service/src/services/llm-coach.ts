@@ -40,7 +40,7 @@ export class LLMCoach {
       apiKey: apiKey!,
       ...(baseURL ? { baseURL } : {}),
     })
-    this.model = options.model ?? process.env.COACH_LLM_MODEL ?? 'gpt-4o-mini'
+    this.model = options.model ?? process.env.COACH_LLM_MODEL ?? 'gpt-5.5'
     this.timeoutMs = options.timeoutMs ?? 5000
     this.promptBuilder = new PromptBuilder()
   }

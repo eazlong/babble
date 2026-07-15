@@ -235,7 +235,7 @@ describe('LLMCoach', () => {
 
   it('uses COACH_LLM_MODEL env var when set', async () => {
     const original = process.env.COACH_LLM_MODEL
-    process.env.COACH_LLM_MODEL = 'gpt-4o'
+    process.env.COACH_LLM_MODEL = 'gpt-5.5'
 
     try {
       const mockOpenAI = createMockOpenAI({
@@ -250,7 +250,7 @@ describe('LLMCoach', () => {
       await coach.generate(input, 'error')
 
       const callArgs = (mockOpenAI.chat.completions.create as any).mock.calls[0][0]
-      expect(callArgs.model).toBe('gpt-4o')
+      expect(callArgs.model).toBe('gpt-5.5')
     } finally {
       if (original === undefined) {
         delete process.env.COACH_LLM_MODEL

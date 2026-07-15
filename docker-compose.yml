@@ -49,10 +49,10 @@ services:
   spirit-coach-service:
     build: ./services/spirit-coach-service
     ports: ["8305:8305"]
+    env_file:
+      - ./services/spirit-coach-service/.env
+
     environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      COACH_LLM_MODEL: ${COACH_LLM_MODEL:-gpt-4o-mini}
-      COACH_LLM_BASE_URL: ${COACH_LLM_BASE_URL:-}
       REDIS_URL: redis://redis:6379
     depends_on: [redis]
 
