@@ -7,9 +7,11 @@ var tts_player: AudioStreamPlayer
 var bgm_volume: float = 0.8
 var sfx_volume: float = 1.0
 var tts_volume: float = 1.0
+var tts_playback_id: int = 0
 var _tts_expected: bool = false
 
 signal tts_finished(duration: float)
+signal tts_playback_finished(playback_id: int, duration: float)
 
 func _ready() -> void:
 	bgm_player = AudioStreamPlayer.new()
@@ -40,10 +42,17 @@ func play_sfx(stream: AudioStream) -> void:
 
 func play_tts(stream: AudioStream) -> void:
 	_tts_expected = false
+	if tts_player.finished.is_connected(_on_tts_finished):
+		tts_player.finished.disconnect(_on_tts_finished)
 	tts_player.stop()
+	tts_playback_id += 1
 	_tts_expected = true
 	tts_player.stream = stream
+	tts_player.finished.connect(_on_tts_finished)
 	tts_player.play()
+
+func has_newer_tts_playback(starting_id: int) -> bool:
+	return tts_playback_id > starting_id
 
 func _on_tts_finished() -> void:
 	var duration: float = 0.0
@@ -54,6 +63,7 @@ func _on_tts_finished() -> void:
 	_tts_expected = false
 	print("tts finished <<<<<<")
 	tts_finished.emit(duration)
+	tts_playback_finished.emit(tts_playback_id, duration)
 
 func play_audio_from_base64(base64_data: String, format: String = "wav") -> void:
 	var bytes = Marshalls.base64_to_raw(base64_data)

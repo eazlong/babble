@@ -2,6 +2,28 @@ extends Node
 
 const MAX_BUFFER_SIZE: int = 2646000  # ~30 seconds at 44100Hz stereo 16-bit
 const MIN_VOICE_AUDIO: int = 40960  # ~500ms minimum real speech (~44100 * 2ch * 2byte * 0.5s)
+const BLUETOOTH_INPUT_KEYWORDS: Array[String] = [
+	"bluetooth",
+	"airpods",
+	"buds",
+	"freebuds",
+	"hands-free",
+	"handsfree",
+	"headset",
+	"wireless",
+	"beats",
+	"bose",
+	"jabra",
+	"soundcore",
+	"sony",
+	"wh-",
+	"wf-"
+]
+const MICROPHONE_INPUT_KEYWORDS: Array[String] = [
+	"microphone",
+	"mic",
+	"built-in"
+]
 
 var is_recording: bool = false
 var is_listening: bool = false
@@ -90,13 +112,7 @@ func _start_microphone() -> void:
 		push_warning("[VoicePipeline] No audio input devices found!")
 		return
 
-	# Try to find a non-default, non-aggregate device first
-	var selected_device = input_devices[0]
-	for device in input_devices:
-		var lower = device.to_lower()
-		if "microphone" in lower or "mic" in lower or "built-in" in lower:
-			selected_device = device
-			break
+	var selected_device = _select_preferred_input_device(input_devices)
 
 	AudioServer.set_input_device(selected_device)
 	print("[VoicePipeline] Selected input device: ", selected_device)
@@ -110,6 +126,24 @@ func _start_microphone() -> void:
 	mic_player.play()
 
 	print("[VoicePipeline] MicPlayer on bus=", mic_player.bus, " playing=", mic_player.playing)
+
+func _select_preferred_input_device(input_devices: PackedStringArray) -> String:
+	for device in input_devices:
+		if _device_name_has_keyword(device, BLUETOOTH_INPUT_KEYWORDS):
+			return device
+
+	for device in input_devices:
+		if _device_name_has_keyword(device, MICROPHONE_INPUT_KEYWORDS):
+			return device
+
+	return input_devices[0]
+
+func _device_name_has_keyword(device_name: String, keywords: Array[String]) -> bool:
+	var lower_name = device_name.to_lower()
+	for keyword in keywords:
+		if keyword in lower_name:
+			return true
+	return false
 
 func _stop_microphone() -> void:
 	if not mic_player:
