@@ -5,7 +5,7 @@ import time
 from typing import Any, Literal
 
 import httpx
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 
 FallbackReason = Literal[
@@ -41,6 +41,8 @@ class ASRPostprocessContext(BaseModel):
 
 
 class LLMPostprocessOutput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     corrected_text: str
     correction_applied: bool
     correction_reason: str | None
@@ -120,11 +122,12 @@ class ASRPostprocessor:
         except ValidationError:
             return self._fallback(text, "schema_error", latency_ms=self._elapsed_ms(started))
 
+        extracted = self._filter_extracted(output.extracted, parsed_context)
         return ASRPostprocessResult(
             applied=True,
             corrected_text=output.corrected_text,
             correction_reason=output.correction_reason,
-            extracted=output.extracted,
+            extracted=extracted,
             confidence=output.confidence,
             fallback_reason=None,
             model=model,
@@ -169,6 +172,14 @@ class ASRPostprocessor:
             if should_close:
                 await client.aclose()
 
+    def _filter_extracted(
+        self,
+        extracted: dict[str, str | int | float | bool | None],
+        context: ASRPostprocessContext,
+    ) -> dict[str, str | int | float | bool | None]:
+        allowed_keys = {slot.key for slot in context.expected_slots}
+        return {key: value for key, value in extracted.items() if key in allowed_keys}
+
     def _fallback(self, text: str, reason: FallbackReason, latency_ms: int = 0) -> dict[str, Any]:
         return ASRPostprocessResult(
             applied=False,
@@ -188,7 +199,10 @@ class ASRPostprocessor:
         return (
             "You are an ASR post-processor for a children's language-learning RPG. "
             "Correct speech-recognition errors using the provided game context and extract requested slots. "
-            "Be conservative. Return valid JSON only. Extract only expected_slots keys."
+            "Be conservative. Only correct text when the context strongly supports it. "
+            "Extract only the slots listed in expected_slots. Do not invent extra keys. "
+            "If candidate_answers is provided for a closed-set question, prefer values from that list. "
+            "Return valid JSON only."
         )
 
     def _user_prompt(
@@ -208,7 +222,7 @@ class ASRPostprocessor:
                     "corrected_text": "string",
                     "correction_applied": "boolean",
                     "correction_reason": "string|null",
-                    "extracted": "object",
+                    "extracted": "object containing only expected_slots keys",
                     "confidence": "number 0..1",
                 },
             },
