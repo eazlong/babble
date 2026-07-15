@@ -1,0 +1,401 @@
+{
+  "schema_version": 1,
+  "scene_id": "inn_introduction",
+  "flows": [
+    {
+      "flow_id": "inn_introduction.entry",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "inn_intro_entry_arrival",
+          "text": {
+            "en": "Here we are. This is Mirage Inn. It is quiet now, but it is still holding this place together.",
+            "zh": "到了。这里就是蜃影客栈。它现在很安静，但它还在撑住这个地方。"
+          }
+        },
+        {
+          "key": "inn_intro_entry_home",
+          "text": {
+            "en": "From today on, it is your place too.",
+            "zh": "从今天开始，它也是你的地方了。"
+          }
+        },
+        {
+          "key": "inn_intro_entry_three_rooms",
+          "text": {
+            "en": "There are three important rooms here. I will show them to you one by one.",
+            "zh": "这里有三个重要的房间。我会一个一个带你认识。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "inn_introduction.formation_room",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "inn_intro_formation_first",
+          "text": {
+            "en": "The room in the middle is the formation room. We start here, because the inn's biggest problem is inside.",
+            "zh": "中间这间，是阵法房间。我们先看这里，因为客栈现在最大的问题就在里面。"
+          }
+        },
+        {
+          "key": "inn_intro_formation_six_seats",
+          "text": {
+            "en": "There should be six artifacts here.",
+            "zh": "这里本来应该有六件神器。"
+          }
+        },
+        {
+          "key": "inn_intro_formation_three_language",
+          "text": {
+            "en": "One guards sound, one guards words, and one guards sentences.",
+            "zh": "一个守住声音，一个守住词，一个守住句子。"
+          }
+        },
+        {
+          "key": "inn_intro_formation_three_roads",
+          "text": {
+            "en": "The other three guard the roads from this inn to the distant lands.",
+            "zh": "还有三个，守住客栈通向远方的路。"
+          }
+        },
+        {
+          "key": "inn_intro_formation_lost_known",
+          "text": {
+            "en": "But they are lost. I know that already. Now I need you to know it too.",
+            "zh": "可是它们已经遗失了。我早就知道这件事。现在，我也需要你知道。"
+          }
+        },
+        {
+          "key": "inn_intro_formation_not_broken",
+          "text": {
+            "en": "Not to scare you. To show you this: the inn is not broken. It is waiting for us to bring back what is missing.",
+            "zh": "不是为了吓你。是想让你明白：客栈不是坏了，它是在等我们把缺的东西找回来。"
+          }
+        },
+        {
+          "key": "inn_intro_formation_road_remains",
+          "text": {
+            "en": "The artifacts are gone, but the formation is still here. As long as it remains, the road is not cut off.",
+            "zh": "神器不在，阵还在。阵还在，路就没有断。"
+          }
+        },
+        {
+          "key": "inn_intro_formation_first_light",
+          "text": {
+            "en": "Look. The formation still remembers where each artifact belongs. We will bring them back, one by one.",
+            "zh": "你看，阵还记得每件神器的位置。我们会一件一件，把它们找回来。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "inn_introduction.player_room",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "inn_intro_player_room_left",
+          "text": {
+            "en": "Now come this way. The room on the left is your room.",
+            "zh": "现在来这边。左边这间，是你的房间。"
+          }
+        },
+        {
+          "key": "inn_intro_player_room_knows_you",
+          "text": {
+            "en": "The inn recognizes its owner. You do not need to push the door. It will let you in.",
+            "zh": "客栈认得主人。你不用推门，它会自己让你进去。"
+          }
+        },
+        {
+          "key": "inn_intro_player_room_two_things",
+          "text": {
+            "en": "There are two important things here: the bookshelf and the wardrobe.",
+            "zh": "这里有两样重要的东西：书架，还有衣橱。"
+          }
+        },
+        {
+          "key": "inn_intro_bookshelf_not_storage",
+          "text": {
+            "en": "The bookshelf is not just for books. Behind it is the Word Spirit Library.",
+            "zh": "书架不只是放书的地方。它后面连着词灵书阁。"
+          }
+        },
+        {
+          "key": "inn_intro_word_spirit_rule",
+          "text": {
+            "en": "When you learn a new word, it can become a word spirit and live there.",
+            "zh": "你学会的新词，会在那里变成词灵，住进书阁里。"
+          }
+        },
+        {
+          "key": "inn_intro_word_spirit_memory",
+          "text": {
+            "en": "Each word spirit remembers its spelling and its sound.",
+            "zh": "每个词灵，都记得自己的拼写，也记得自己的声音。"
+          }
+        },
+        {
+          "key": "inn_intro_word_spirit_practice",
+          "text": {
+            "en": "Visit them often. If you can call a word clearly, the word spirit will become clearer too.",
+            "zh": "常去看看它们。你能清楚地叫出一个词，词灵也会变得更清楚。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "inn_introduction.bookshelf_voice_prompt",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "inn_intro_bookshelf_try_call",
+          "text": {
+            "en": "Now try calling it. Just say: bookshelf.",
+            "zh": "现在，试着叫它。只要说：书架。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "inn_introduction.bookshelf_opened",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "inn_intro_bookshelf_heard",
+          "speaker": "bookshelf",
+          "voice": "object",
+          "text": {
+            "en": "I heard you.",
+            "zh": "我听见了。"
+          }
+        },
+        {
+          "key": "inn_intro_bookshelf_voice_known",
+          "text": {
+            "en": "Good. It knows your voice now.",
+            "zh": "很好。它现在认得你的声音了。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "inn_introduction.word_spirit_library",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "inn_intro_library_arrive",
+          "text": {
+            "en": "This is the Word Spirit Library.",
+            "zh": "这里就是词灵书阁。"
+          }
+        },
+        {
+          "key": "inn_intro_library_grows",
+          "text": {
+            "en": "It is small now. When you know more words, it will become much livelier.",
+            "zh": "它现在还很小。等你认识的词越来越多，这里也会越来越热闹。"
+          }
+        },
+        {
+          "key": "inn_intro_first_spirit_asks",
+          "speaker": "word_spirit",
+          "voice": "word_spirit",
+          "text": {
+            "en": "Can you call my name?",
+            "zh": "你会叫我的名字吗？"
+          }
+        },
+        {
+          "key": "inn_intro_first_spirit_unsteady",
+          "text": {
+            "en": "This is your first word spirit. It is not steady yet. Help it stand clearly.",
+            "zh": "这是你的第一个词灵。它还不太稳，需要你帮它站清楚。"
+          }
+        },
+        {
+          "key": "inn_intro_first_spirit_repeat",
+          "text": {
+            "en": "Listen to its sound. Then say the word: {word_text}.",
+            "zh": "听它的声音，然后说出这个词：{word_text}。"
+          }
+        },
+        {
+          "key": "inn_intro_first_spirit_clearer",
+          "speaker": "word_spirit",
+          "voice": "word_spirit",
+          "text": {
+            "en": "I am clearer now!",
+            "zh": "我变清楚一点了！"
+          }
+        },
+        {
+          "key": "inn_intro_first_spirit_spell",
+          "text": {
+            "en": "Good. Now help it hold its letters in place. Spell the word: {word_text}.",
+            "zh": "很好。现在帮它把字母站稳。拼出这个词：{word_text}。"
+          }
+        },
+        {
+          "key": "inn_intro_first_spirit_name_stands",
+          "speaker": "word_spirit",
+          "voice": "word_spirit",
+          "text": {
+            "en": "My name is standing steady.",
+            "zh": "我的名字站稳了。"
+          }
+        },
+        {
+          "key": "inn_intro_library_remember",
+          "text": {
+            "en": "Remember this place. The words you learn will return here.",
+            "zh": "记住这个地方。你学会的词，都会回到这里。"
+          }
+        },
+        {
+          "key": "inn_intro_library_keys",
+          "text": {
+            "en": "They are not homework. They are friends you know, and keys to the roads ahead.",
+            "zh": "它们不是作业。它们是你认识的朋友，也是打开远方道路的钥匙。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "inn_introduction.wardrobe_preview",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "inn_intro_wardrobe_other_side",
+          "text": {
+            "en": "On the other side is the wardrobe.",
+            "zh": "另一边是衣橱。"
+          }
+        },
+        {
+          "key": "inn_intro_wardrobe_rewards",
+          "text": {
+            "en": "New outfits and new looks you earn will wait for you here.",
+            "zh": "你得到的新衣服、新装扮，都会在这里等你。"
+          }
+        },
+        {
+          "key": "inn_intro_wardrobe_empty_space",
+          "text": {
+            "en": "It is a little empty now. That is fine. Empty space is for future rewards.",
+            "zh": "它现在还空着一点。没关系，空位是留给以后奖励的。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "inn_introduction.guest_room_preview",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "inn_intro_guest_room_right",
+          "text": {
+            "en": "The room on the right is the guest room.",
+            "zh": "右边这间，是客房。"
+          }
+        },
+        {
+          "key": "inn_intro_guest_room_guests",
+          "text": {
+            "en": "When the inn recovers, guests will come and stay here.",
+            "zh": "客栈恢复以后，会有客人来这里住下。"
+          }
+        },
+        {
+          "key": "inn_intro_guest_room_conversation",
+          "text": {
+            "en": "They will bring stories, requests, and real conversations for you to practice.",
+            "zh": "他们会带来故事、委托，也会带来真正可以练习的会话。"
+          }
+        },
+        {
+          "key": "inn_intro_guest_room_distant_voice",
+          "speaker": "distant_guest",
+          "voice": "guest",
+          "text": {
+            "en": "Hello...?",
+            "zh": "Hello……？"
+          }
+        },
+        {
+          "key": "inn_intro_guest_room_road_not_cut",
+          "text": {
+            "en": "Did you hear that? The road is not completely cut off.",
+            "zh": "听见了吗？路还没有完全断。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "inn_introduction.summary",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "inn_intro_summary_clear",
+          "text": {
+            "en": "Now we know what each room does.",
+            "zh": "现在，我们知道每个房间是做什么的了。"
+          }
+        },
+        {
+          "key": "inn_intro_summary_formation",
+          "text": {
+            "en": "The formation room helps us find the six artifacts.",
+            "zh": "阵法房间，帮我们找回六件神器。"
+          }
+        },
+        {
+          "key": "inn_intro_summary_player_room",
+          "text": {
+            "en": "Your room helps you care for word spirits and keep your rewards.",
+            "zh": "你的房间，帮你照顾词灵，也保存你的奖励。"
+          }
+        },
+        {
+          "key": "inn_intro_summary_guest_room",
+          "text": {
+            "en": "The guest room is waiting for travelers to return.",
+            "zh": "客房，等着远方的客人回来。"
+          }
+        },
+        {
+          "key": "inn_intro_summary_one_thing",
+          "text": {
+            "en": "You do not need to remember everything at once. Today, remember one thing.",
+            "zh": "你不用一下子记住全部。今天，你只要记住一件事。"
+          }
+        },
+        {
+          "key": "inn_intro_summary_call_words",
+          "text": {
+            "en": "When you learn a word, call it clearly. The word spirit will hear you, and the inn will hear you too.",
+            "zh": "当你学会一个词，就清楚地叫出它。词灵会听见，客栈也会听见。"
+          }
+        },
+        {
+          "key": "inn_intro_summary_first_light",
+          "text": {
+            "en": "Good. The first light is already awake. We start there.",
+            "zh": "好了。第一点光已经醒了。我们从它开始。"
+          }
+        }
+      ]
+    }
+  ]
+}

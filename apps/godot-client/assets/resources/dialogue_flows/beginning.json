@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "scene_id": "beginning",
+  "flows": [
+    {
+      "flow_id": "beginning.wake_greeting",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "feifei_greeting",
+          "text": {
+            "en": "Hello, thank goodness you're awake, outsider. I'm feifei. I found you in the Chaos Mist and brought you here. What's your name?",
+            "zh": "你好啊，太好了，你醒了啊，外来人。我是腓腓。我发现你倒在了混沌迷雾里了，所以把你带到这里来。对了，你叫什么名字呀？"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "beginning.name_prompts",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "feifei_silence_hint",
+          "text": {
+            "en": "Try saying Hello to feifei!",
+            "zh": "试着用英语对 feifei(腓腓) 说 Hello 吧！"
+          }
+        },
+        {
+          "key": "feifei_ask_name",
+          "text": {
+            "en": "Great! Welcome to the world of Shan Hai Jing! I'm your companion spirit, feifei. What's your name?",
+            "zh": "太棒了！欢迎来到山海经的世界！我是你的伴生精灵 feifei(腓腓)。你叫什么名字呢？"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "beginning.ask_special_name",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "feifei_ask_special_name",
+          "text": {
+            "en": "Good, {player_source_name} is a good name. But people around Mist Island speak in a special language: {special_language_name}. You need a {special_language_name} name too. What {special_language_name} name would you like? Or I can choose one for you.",
+            "zh": "好的，{player_source_name} 是个好名字。不过迷雾岛周围的人们都说一种特殊的语言，叫{special_language_name}。你需要有一个{special_language_name}名字。你可以告诉我你想要的{special_language_name}名字吗？或者我帮你取一个。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "beginning.name_celebrate",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "feifei_name_celebrate",
+          "text": {
+            "en": "{player_display_name} sounds wonderful. You must be wondering where this is.",
+            "zh": "{player_display_name}，听起来很棒。我想你应该很好奇这是什么地方。"
+          }
+        },
+        {
+          "key": "feifei_okay_response",
+          "text": {
+            "en": "Glad to hear that! Let me tell you where we are.",
+            "zh": "让我告诉你我们在哪里。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "beginning.world_reveal_intro",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "world_intro_mist_island",
+          "text": {
+            "en": "This place is called Mist Island. Long ago, it was connected to the outside world. Then the Chaos Mist appeared. It covered the surrounding lands and cut off communication between everyone.",
+            "zh": "这里叫做——迷雾岛。很久以前，这里和外面的世界连接在一起。可是不知道什么时候开始，这些混沌迷雾出现了，它覆盖了周围的大陆，也阻断了大家之间的交流。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "beginning.distant_continents",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "world_intro_six_continents",
+          "text": {
+            "en": "Look, the distant continents are covered by mist. Outside Mist Island, there are six continents. Legend says the power that protects this world comes from six artifacts. But all of them disappeared, and the power guarding Mist Island is growing weaker.",
+            "zh": "你看，远方的大陆都被迷雾覆盖了。在迷雾岛外面，还有六块大陆。传说中，保护这个世界的力量来自六件神器。可是不知道为什么，神器全部消失了……现在，守护迷雾岛的力量也越来越弱。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "beginning.inn_reveal",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "inn_intro",
+          "text": {
+            "en": "Do you see the inn ahead? It is called Mirage Inn. It is the reason this place has no mist. Inside it is a formation powered by the six artifacts, but the artifacts are lost, and the formation is slowly losing its power. Let's go to Mirage Inn. I'll take you there.",
+            "zh": "看到前面的客栈了吗？那里叫——蜃影客栈，它就是这里没有迷雾的原因。它内部有一个阵法，阵法能量来源于六个神器，只是神器都遗失了。阵法也逐渐失去它的力量。我们去蜃影客栈看看吧，我带你去。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "beginning.inn_follow_feifei",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "inn_follow_feifei",
+          "text": {
+            "en": "Stay close. Let's go take a look at what's inside the inn.",
+            "zh": "跟紧我。我们去看看客栈内部的有什么吧。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "beginning.inn_transition",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "inn_transition",
+          "text": {
+            "en": "Well done! Come on!",
+            "zh": "干得漂亮！进来吧！"
+          }
+        }
+      ]
+    }
+  ]
+}
