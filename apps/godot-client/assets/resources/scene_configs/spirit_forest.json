@@ -1,146 +1,56 @@
 {
-  "scene_id": "spirit_forest",
-  "scene_name": "精灵森林",
-  "chapter": 1,
+  "scene_id": "beginning",
+  "scene_name": "序章：迷雾苏醒",
+  "chapter": 0,
   "order": 1,
-  "scene_path": "res://assets/scenes/SpiritForest.tscn",
-  "total_stars": 11,
+  "scene_path": "res://assets/scenes/BeginningFP.tscn",
+  "total_stars": 4,
   "resources": {
     "textures": [
-      "res://assets/textures/forest_bg.png",
-      "res://assets/textures/forest_fg.png"
+      "res://assets/textures/backgrounds/forest_sky.png",
+      "res://assets/textures/backgrounds/forest_trees_far.png",
+      "res://assets/textures/backgrounds/forest_fg.png",
+      "res://assets/textures/backgrounds/forest_ground.png"
     ],
-    "audio": [
-      "res://assets/audio/bgm/forest_ambient.ogg",
-      "res://assets/audio/sfx/bird_chirp.ogg"
-    ],
+    "audio": [],
     "shaders": [
-      "spirit_glow",
       "ambient_particle"
     ]
   },
   "transition_effect": {
     "shader": "transition_wipe",
-    "duration": 0.3,
+    "duration": 0.5,
     "params": {
       "wipe_direction": "left_to_right",
       "diffusion_radius": 0.5
     }
   },
   "music_config": {
-    "bgm_path": "res://assets/audio/bgm/forest_ambient.ogg",
-    "volume": 0.6,
+    "bgm_path": "",
+    "volume": 0.45,
     "loop": true
   },
   "primary_npc": {
-    "npc_id": "spark",
-    "position": "center",
-    "animation": "idle"
+    "npc_id": "xiao_fei_mao",
+    "position": "shoulder",
+    "animation": "fly"
   },
   "entry_events": [
     {
-      "type": "play_bgm",
-      "bgm_path": "res://assets/audio/bgm/forest_ambient.ogg"
+      "type": "fade_from_dream",
+      "duration": 1.5
     },
     {
-      "type": "spawn_particle",
-      "particle_type": "ambient_float_forest",
-      "position": [100, 200]
+      "type": "spawn_mist",
+      "particle_type": "chaos_mist",
+      "position": [960, 540]
     }
   ],
-  "steps": {
-    "spark_intro": {
-      "dialogue": {
-        "spark_greeting": { "en": "Hi! I'm Spark!", "zh": "嗨！我是 Spark！" },
-        "spark_ask_name": { "en": "What's your name?", "zh": "你叫什么名字呢？" },
-        "spark_name_celebrate": { "en": "Nice to meet you, %s!", "zh": "很高兴认识你，%s！" }
-      },
-      "star_reward": 2,
-      "spark_anim": "fly_in"
-    },
-    "discover_big_tree": {
-      "dialogue": {
-        "spark_look_tree": { "en": "Look! Do you see that big tree?", "zh": "看！你看到那棵大树了吗？" },
-        "spark_go_hint": { "en": "Let's go closer! Tap the tree or say 'go'!", "zh": "我们走近点！点击大树或者说'go'！" }
-      },
-      "camera_target_x": -400,
-      "pan_duration": 0.8
-    },
-    "oakley_dialogue": {
-      "rounds": [
-        {
-          "key": "oakley_greeting",
-          "en": "Hello, young mage!",
-          "zh": "你好，小魔法师！",
-          "type": "greet",
-          "star_reward": 1,
-          "wait_for_response": true
-        },
-        {
-          "key": "oakley_intro",
-          "en": "I'm Oakley, guardian of this forest.",
-          "zh": "我是 Oakley，这片森林的守护者。",
-          "type": "narration"
-        },
-        {
-          "key": "oakley_request",
-          "en": "My flowers are thirsty... Can you help?",
-          "zh": "我的花儿渴了……你能帮忙吗？",
-          "type": "request"
-        }
-      ],
-      "wake_duration": 1.5
-    },
-    "watering_can_pickup": {
-      "dialogue": {
-        "oakley_give_can": { "en": "Take this magic watering can.", "zh": "拿着这个魔法水壶。" },
-        "tap_watering_can": { "en": "Tap the watering can!", "zh": "点击水壶！" },
-        "spark_got_can": { "en": "Great! Let's learn how to use it!", "zh": "太棒了！我们来学学怎么用吧！" }
-      },
-      "descend_duration": 1.0,
-      "fly_to_hand_duration": 0.5
-    },
-    "watering_tutorial": {
-      "target_sentence": "water the red flower",
-      "target_color": "red",
-      "star_reward": 3,
-      "max_attempts": 3,
-      "slow_reading_delay_ms": 300,
-      "dialogue": {
-        "spark_demo_sentence": { "en": "Watch! Say 'water the red flower'.", "zh": "看！说 'water the red flower'。" },
-        "spark_try_with_me": { "en": "Now you try! Say it with me:", "zh": "现在你来试试！跟我一起说：" },
-        "spark_well_done": { "en": "Well done!", "zh": "做得好！" },
-        "spark_almost": { "en": "Almost! Try again.", "zh": "差不多了！再试一次。" },
-        "spark_keyword_hint": { "en": "Try saying: 'red flower'", "zh": "试着说：'red flower'" }
-      }
-    },
-    "watering_practice": {
-      "target_sentence": "water the white flower",
-      "target_color": "white",
-      "star_reward": 5,
-      "max_attempts": 3,
-      "dialogue": {
-        "spark_practice": { "en": "Now water the white flower by yourself!", "zh": "现在你自己给白花浇水！" },
-        "spark_practice_success": { "en": "You learned the magic words! Oakley will be happy!", "zh": "你学会了魔法咒语！Oakley 会很高兴的！" }
-      }
-    },
-    "mission_complete_exit": {
-      "dialogue": {
-        "spark_tell_oakley": { "en": "Let's tell Oakley the good news!", "zh": "我们去告诉 Oakley 这个好消息！" },
-        "oakley_wonderful": { "en": "Wonderful! You have the gift of magic!", "zh": "太棒了！你有魔法天赋！" },
-        "oakley_follow_me": { "en": "My garden is this way... follow me!", "zh": "我的花园在这边……跟我来！" },
-        "spark_follow": { "en": "Let's follow! Tap the arrow!", "zh": "跟上！点击箭头！" }
-      },
-      "target_scene": "res://assets/scenes/RainbowGarden.tscn",
-      "fade_duration": 0.5
-    }
-  },
+  "dialogue_flow_file": "res://assets/resources/dialogue_flows/beginning.json",
   "star_economy": {
     "name_collection": 2,
-    "greet_oakley": 1,
-    "tutorial_success": 3,
-    "practice_success": 5,
-    "total": 11
+    "quest_acceptance": 2,
+    "total": 4
   },
   "unlock_condition": {},
   "revisit_allowed": true

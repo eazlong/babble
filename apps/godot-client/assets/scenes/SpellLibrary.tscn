@@ -2,42 +2,42 @@
 
 [ext_resource type="Script" uid="uid://c8frsxljiqqlp" path="res://assets/scripts/components/CoachOverlay.gd" id="coach_overlay"]
 [ext_resource type="Script" uid="uid://d9x2k7m5qp8rn" path="res://assets/scripts/scenes/SpellLibraryController.gd" id="scene_ctrl"]
-[ext_resource type="Texture2D" uid="uid://dmttaep8kl4kj" path="res://assets/resources/sprites/spark/57_480x270.png" id="spark_0"]
-[ext_resource type="Texture2D" uid="uid://b5qwsd7w8m3a4" path="res://assets/resources/sprites/spark/58_480x270.png" id="spark_1"]
-[ext_resource type="Texture2D" uid="uid://ct5ifu6ybt33d" path="res://assets/resources/sprites/spark/59_480x270.png" id="spark_2"]
-[ext_resource type="Texture2D" uid="uid://dv01mfdohyrdi" path="res://assets/resources/sprites/spark/60_480x270.png" id="spark_3"]
-[ext_resource type="Texture2D" uid="uid://b3icndn0k8g42" path="res://assets/resources/sprites/spark/61_480x270.png" id="spark_4"]
-[ext_resource type="Texture2D" uid="uid://cvum2t5x801th" path="res://assets/resources/sprites/spark/62_480x270.png" id="spark_5"]
-[ext_resource type="Texture2D" uid="uid://pxbjt0mdfhyh" path="res://assets/resources/sprites/spark/63_480x270.png" id="spark_6"]
-[ext_resource type="Texture2D" uid="uid://cr0kg0qkyiy5o" path="res://assets/resources/sprites/spark/64_480x270.png" id="spark_7"]
-[ext_resource type="Texture2D" uid="uid://cscran6sftqi7" path="res://assets/resources/sprites/spark/spark_idle.png" id="spark_idle"]
+[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/57_480x270.png" id="feifei_0"]
+[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/58_480x270.png" id="feifei_1"]
+[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/59_480x270.png" id="feifei_2"]
+[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/60_480x270.png" id="feifei_3"]
+[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/61_480x270.png" id="feifei_4"]
+[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/62_480x270.png" id="feifei_5"]
+[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/63_480x270.png" id="feifei_6"]
+[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/64_480x270.png" id="feifei_7"]
+[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/feifei_idle.png" id="feifei_idle"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_t6dbj"]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("spark_0")
+"texture": ExtResource("feifei_0")
 }, {
 "duration": 1.0,
-"texture": ExtResource("spark_1")
+"texture": ExtResource("feifei_1")
 }, {
 "duration": 1.0,
-"texture": ExtResource("spark_2")
+"texture": ExtResource("feifei_2")
 }, {
 "duration": 1.0,
-"texture": ExtResource("spark_3")
+"texture": ExtResource("feifei_3")
 }, {
 "duration": 1.0,
-"texture": ExtResource("spark_4")
+"texture": ExtResource("feifei_4")
 }, {
 "duration": 1.0,
-"texture": ExtResource("spark_5")
+"texture": ExtResource("feifei_5")
 }, {
 "duration": 1.0,
-"texture": ExtResource("spark_6")
+"texture": ExtResource("feifei_6")
 }, {
 "duration": 1.0,
-"texture": ExtResource("spark_7")
+"texture": ExtResource("feifei_7")
 }],
 "loop": true,
 "name": &"fly",
@@ -45,7 +45,7 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("spark_idle")
+"texture": ExtResource("feifei_idle")
 }],
 "loop": true,
 "name": &"idle",

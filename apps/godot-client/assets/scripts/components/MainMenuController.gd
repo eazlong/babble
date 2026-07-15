@@ -70,9 +70,9 @@ func _process(delta: float) -> void:
 			show_language_panel()
 
 func _on_fly_in_completed() -> void:
-	var welcome_text: String = "喵~ 你好！我是小飞猫，你的伴生精灵！你叫什么名字呢？"
+	var welcome_text: String = "喵~ 你好！我是 feifei(腓腓)，你的伴生精灵！你叫什么名字呢？"
 	if GameManager.current_lang == "en":
-		welcome_text = "Meow~ Hello! I'm Xiao Fei Mao, your companion spirit! What's your name?"
+		welcome_text = "Meow~ Hello! I'm feifei, your companion spirit! What's your name?"
 
 	coach_overlay.show_hint(welcome_text, "idle")
 	HybridAPI.synthesize_tts(welcome_text, "spirit", GameManager.current_lang)
@@ -196,11 +196,11 @@ func _on_lang_en_button_pressed() -> void:
 	enter_game_scene()
 
 func enter_game_scene() -> void:
-	# 序章流程：直接进入 SpiritForest（已改造为序章场景）
-	get_tree().change_scene_to_file("res://assets/scenes/SpiritForest.tscn")
+	# 序章流程：直接进入 BeginningFP（SpiritForest 第一人称改造版）
+	get_tree().change_scene_to_file("res://assets/scenes/BeginningFP.tscn")
 
 func _on_spirit_forest_pressed() -> void:
-	get_tree().change_scene_to_file("res://assets/scenes/SpiritForest.tscn")
+	get_tree().change_scene_to_file("res://assets/scenes/BeginningFP.tscn")
 
 func _on_spell_library_pressed() -> void:
 	# 暂时禁用，后续替换为长安西市

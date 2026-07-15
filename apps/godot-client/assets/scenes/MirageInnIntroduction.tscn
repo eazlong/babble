@@ -1,0 +1,159 @@
+[gd_scene format=3 uid="uid://m3ovclbgm2ke"]
+
+[ext_resource type="Script" uid="uid://8of2kfy3fits" path="res://assets/scripts/scenes/MirageInnIntroductionController.gd" id="1_controller"]
+[ext_resource type="Texture2D" path="res://assets/textures/backgrounds/mirage_inn_hall_bg.png" id="2_6th42"]
+[ext_resource type="Script" path="res://assets/scripts/components/FeifeiShoulder.gd" id="2_feifei"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/feifei/feifei_fly_frames.tres" id="3_frames"]
+
+[node name="MirageInnIntroduction" type="Node2D" unique_id=906173929]
+script = ExtResource("1_controller")
+
+[node name="ParallaxBackground" type="ParallaxBackground" parent="." unique_id=924753990]
+
+[node name="InnHallBackground" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1366166303]
+z_index = -100
+motion_scale = Vector2(0.1, 0.1)
+motion_mirroring = Vector2(1920, 0)
+
+[node name="Hall" type="Sprite2D" parent="ParallaxBackground/InnHallBackground" unique_id=43513119]
+texture = ExtResource("2_6th42")
+centered = false
+
+[node name="FarTreeLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1011304631]
+z_index = -60
+motion_scale = Vector2(0.35, 0.35)
+motion_mirroring = Vector2(1920, 0)
+
+[node name="TreesFar" type="Sprite2D" parent="ParallaxBackground/FarTreeLayer" unique_id=2091856055]
+position = Vector2(0, 744)
+scale = Vector2(0.8629445, 0.38268793)
+centered = false
+
+[node name="MidTreeLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=344716866]
+z_index = -40
+motion_scale = Vector2(0.55, 0.55)
+motion_mirroring = Vector2(1920, 0)
+
+[node name="TreesMid" type="Sprite2D" parent="ParallaxBackground/MidTreeLayer" unique_id=2056027179]
+position = Vector2(680.00006, 240)
+scale = Vector2(0.7401497, 0.81178945)
+centered = false
+
+[node name="GroundLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=2142025001]
+z_index = -20
+motion_scale = Vector2(0.8, 0.8)
+motion_mirroring = Vector2(1920, 0)
+
+[node name="Ground" type="Sprite2D" parent="ParallaxBackground/GroundLayer" unique_id=63355508]
+position = Vector2(-3.410605e-13, 936)
+scale = Vector2(1.13, 0.4)
+centered = false
+
+[node name="HUDLayer" type="CanvasLayer" parent="." unique_id=904199957]
+layer = 10
+
+[node name="QuestTracker" type="Control" parent="HUDLayer" unique_id=1839670066]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 38.0
+offset_top = 46.0
+offset_right = 448.0
+offset_bottom = 130.0
+
+[node name="Background" type="ColorRect" parent="HUDLayer/QuestTracker" unique_id=533660464]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.08, 0.1, 0.62)
+
+[node name="QuestLabel" type="Label" parent="HUDLayer/QuestTracker" unique_id=487370183]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 8.0
+offset_right = -14.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "任务：进入蜃影客栈"
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="MicButton" type="Control" parent="HUDLayer" unique_id=232720854]
+visible = false
+layout_mode = 3
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -48.0
+offset_top = -142.0
+offset_right = 48.0
+offset_bottom = -46.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="Button" type="ColorRect" parent="HUDLayer/MicButton" unique_id=352777122]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.2, 0.72, 0.46, 1)
+
+[node name="MicLabel" type="Label" parent="HUDLayer/MicButton" unique_id=1516301935]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "说"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FeifeiLayer" type="CanvasLayer" parent="." unique_id=820909006]
+layer = 20
+
+[node name="FeifeiShoulder" type="Control" parent="FeifeiLayer" unique_id=523254043]
+layout_mode = 3
+anchors_preset = 0
+offset_left = -100.0
+offset_top = 300.0
+offset_right = 100.0
+offset_bottom = 400.0
+script = ExtResource("2_feifei")
+
+[node name="FeifeiSprite" type="AnimatedSprite2D" parent="FeifeiLayer/FeifeiShoulder" unique_id=1852170606]
+position = Vector2(1827.9999, 628.00006)
+scale = Vector2(1.2402276, 1.3289903)
+sprite_frames = ExtResource("3_frames")
+
+[node name="BubblePanel" type="Panel" parent="FeifeiLayer/FeifeiShoulder" unique_id=915153257]
+visible = false
+layout_mode = 0
+offset_left = 1628.0
+offset_top = 710.0
+offset_right = 1828.0
+offset_bottom = 810.0
+
+[node name="BubbleLabel" type="RichTextLabel" parent="FeifeiLayer/FeifeiShoulder/BubblePanel" unique_id=1861773957]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+
+[node name="OverlayLayer" type="CanvasLayer" parent="." unique_id=835753050]
+layer = 30

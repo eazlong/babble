@@ -27,7 +27,13 @@
 
 extends Node2D
 
-const Config = preload("res://assets/scripts/components/scene_config/spirit_forest_config.gd")
+const Config = preload("res://assets/scripts/components/scene_config/beginning_config.gd")
+const DialogueFlowLoaderScript = preload("res://assets/scripts/core/dialogue_flow_loader.gd")
+const CoachContextTrackerScript = preload("res://assets/scripts/components/coach/CoachContextTracker.gd")
+const DISTANT_CONTINENTS_TEXTURE: Texture2D = preload("res://assets/textures/backgrounds/beginning_mist_continents.png")
+const MIRAGE_INN_RUINS_TEXTURE: Texture2D = preload("res://assets/textures/objects/beginning_mirage_inn_ruins.png")
+const MIC_IDLE_TEXTURE: Texture2D = preload("res://assets/textures/ui/fp/ui_mic_button_idle.png")
+const MIC_RECORDING_TEXTURE: Texture2D = preload("res://assets/textures/ui/fp/ui_mic_button_recording.png")
 
 enum PrologueState {
 	DREAM_WAKE,
@@ -45,10 +51,17 @@ const FALLBACK_PLAYER_AGE: int = 8
 const HELLO_HINT_DELAY: float = 5.0
 const WAKE_FADE_DURATION: float = 2.6
 const WAKE_FEIFEI_HEAD_START: float = 0.55
+const TTS_PLAYBACK_TIMEOUT: float = 60.0
+const TTS_MIC_BUFFER_MIN: float = 0.25
+const ASR_TIMEOUT: float = 12.0
+const COACH_INTERVENTION_THRESHOLD: int = 3
+const COACH_SILENCE_MS: int = 15000
+const COACH_RESPONSE_TIMEOUT: float = 8.0
 
 @onready var feifei: FeifeiShoulder = $FeifeiLayer/FeifeiShoulder
 @onready var quest_tracker: Control = $HUDLayer/QuestTracker
 @onready var mic_button: Control = $HUDLayer/MicButton
+@onready var mic_button_icon: TextureRect = $HUDLayer/MicButton/Button
 @onready var magic_compass: Control = $HUDLayer/MagicCompass
 @onready var mid_layer: Node2D = $MidLayer
 @onready var main_camera: Camera2D = $CameraSystem/MainCamera
@@ -61,6 +74,12 @@ var last_player_input: String = ""
 var player_source_name: String = ""
 var player_display_name: String = ""
 var completion_started: bool = false
+var dialogue_flow_loader: Variant = DialogueFlowLoaderScript.new()
+var coach_tracker: Variant = CoachContextTrackerScript.new()
+var asr_request_active: bool = false
+var voice_failure_count: int = 0
+var coach_session_id: String = ""
+var coach_intervention_pending: bool = false
 
 var fog_overlay: ColorRect
 var wake_vignette: ColorRect
@@ -74,13 +93,20 @@ signal task_completed(task_name: String)
 
 func _ready() -> void:
 	GameManager.current_scene = "BeginningFP"
+	_use_live_voice_service()
+	_load_dialogue_flows()
 	_create_prologue_visuals()
 	_connect_runtime_signals()
+	_start_coach_session()
 	_set_quest_text(_loc("quest_wake"))
 	_set_compass_label("…")
 	if mic_button:
 		mic_button.visible = false
 	_start_prologue()
+
+func _exit_tree() -> void:
+	if CoachClient:
+		CoachClient.disconnect_socket()
 
 func _process(delta: float) -> void:
 	_animate_mist(delta)
@@ -99,9 +125,7 @@ func _process(delta: float) -> void:
 		record_duration = 0.0
 		if state in [PrologueState.AWAIT_SOURCE_NAME, PrologueState.AWAIT_SPECIAL_NAME] and silence_timer > HELLO_HINT_DELAY:
 			silence_timer = 0.0
-			if feifei:
-				var hint_key := "special_name_retry" if state == PrologueState.AWAIT_SPECIAL_NAME else "name_retry"
-				feifei.show_hint(_language_hint_text(hint_key), FeifeiShoulder.STATE_HINT, 0.0)
+			await _handle_voice_attempt_failed("silence")
 
 func _create_prologue_visuals() -> void:
 	fog_overlay = ColorRect.new()
@@ -130,27 +154,11 @@ func _create_prologue_visuals() -> void:
 	distant_continents.visible = false
 	mid_layer.add_child(distant_continents)
 
-	for i in range(6):
-		var continent := Polygon2D.new()
-		continent.name = "Continent%d" % (i + 1)
-		var x := -540.0 + i * 215.0
-		var y := 20.0 + sin(float(i)) * 28.0
-		continent.polygon = PackedVector2Array([
-			Vector2(x - 72.0, y + 34.0),
-			Vector2(x - 32.0, y - 28.0),
-			Vector2(x + 46.0, y - 40.0),
-			Vector2(x + 86.0, y + 26.0),
-			Vector2(x + 8.0, y + 54.0),
-		])
-		continent.color = Color(0.20, 0.27, 0.27, 0.58)
-		distant_continents.add_child(continent)
-
-	var continent_mist := ColorRect.new()
-	continent_mist.name = "ContinentMistVeil"
-	continent_mist.position = Vector2(-660, -78)
-	continent_mist.size = Vector2(1320, 190)
-	continent_mist.color = Color(0.74, 0.82, 0.82, 0.52)
-	distant_continents.add_child(continent_mist)
+	var continent_sprite := Sprite2D.new()
+	continent_sprite.name = "ContinentTexture"
+	continent_sprite.texture = DISTANT_CONTINENTS_TEXTURE
+	continent_sprite.centered = true
+	distant_continents.add_child(continent_sprite)
 
 	tea_shed = Node2D.new()
 	tea_shed.name = "MirageInnRuins"
@@ -158,32 +166,19 @@ func _create_prologue_visuals() -> void:
 	tea_shed.visible = false
 	mid_layer.add_child(tea_shed)
 
-	var shed_roof := Polygon2D.new()
-	shed_roof.name = "Roof"
-	shed_roof.polygon = PackedVector2Array([
-		Vector2(-150, -50), Vector2(150, -50), Vector2(105, -115), Vector2(-105, -115)
-	])
-	shed_roof.color = Color(0.34, 0.16, 0.08, 0.96)
-	tea_shed.add_child(shed_roof)
-
-	var shed_body := ColorRect.new()
-	shed_body.name = "TeaShedBody"
-	shed_body.position = Vector2(-125, -50)
-	shed_body.size = Vector2(250, 125)
-	shed_body.color = Color(0.54, 0.36, 0.19, 0.92)
-	tea_shed.add_child(shed_body)
-
-	var inn_label := Label.new()
-	inn_label.name = "InnLabel"
-	inn_label.text = "蜃影客栈"
-	inn_label.position = Vector2(-62, -22)
-	inn_label.add_theme_font_size_override("font_size", 28)
-	inn_label.add_theme_color_override("font_color", Color(0.95, 0.86, 0.62))
-	tea_shed.add_child(inn_label)
+	var inn_sprite := Sprite2D.new()
+	inn_sprite.name = "RuinsTexture"
+	inn_sprite.texture = MIRAGE_INN_RUINS_TEXTURE
+	inn_sprite.centered = true
+	tea_shed.add_child(inn_sprite)
 
 func _connect_runtime_signals() -> void:
 	if not HybridAPI.asr_received.is_connected(_on_asr_received):
 		HybridAPI.asr_received.connect(_on_asr_received)
+	if not HybridAPI.api_error.is_connected(_on_api_error):
+		HybridAPI.api_error.connect(_on_api_error)
+	if not CoachClient.intervention_received.is_connected(_on_coach_intervention):
+		CoachClient.intervention_received.connect(_on_coach_intervention)
 	if not HybridAPI.quest_status_received.is_connected(_on_quest_status):
 		HybridAPI.quest_status_received.connect(_on_quest_status)
 	if not HybridAPI.quest_report_received.is_connected(_on_quest_report):
@@ -202,8 +197,7 @@ func _start_prologue() -> void:
 	await get_tree().create_timer(WAKE_FEIFEI_HEAD_START).timeout
 	await _play_wake_from_dream()
 
-	var greeting := Config.get_dialogue("feifei_greeting", GameManager.SOURCE_LANGUAGE_CODE) % GameManager.SOURCE_LANGUAGE_NAME
-	await _say_text(greeting, 0.0)
+	await _speak_flow("beginning.wake_greeting", 0.0)
 	state = PrologueState.AWAIT_SOURCE_NAME
 	_set_quest_text(_loc("quest_source_name") % GameManager.SOURCE_LANGUAGE_NAME)
 	_set_compass_label(GameManager.SOURCE_LANGUAGE_NAME)
@@ -250,8 +244,10 @@ func _animate_mist(delta: float) -> void:
 func _on_player_response(text: String) -> void:
 	last_player_input = text.strip_edges()
 	if last_player_input.is_empty():
-		await _repeat_current_prompt()
+		await _handle_voice_attempt_failed("empty_asr")
 		return
+	voice_failure_count = 0
+	coach_tracker.add_turn("player", last_player_input)
 
 	match state:
 		PrologueState.AWAIT_SOURCE_NAME:
@@ -269,13 +265,15 @@ func _handle_source_name(text: String) -> void:
 	if feifei:
 		feifei.play_happy()
 		await feifei.settle_to_shoulder()
-	var ask_special_name := Config.get_dialogue("feifei_ask_special_name", GameManager.SOURCE_LANGUAGE_CODE) % [
-		player_source_name,
-		GameManager.SPECIAL_LANGUAGE_NAME,
-		GameManager.SPECIAL_LANGUAGE_NAME,
-		GameManager.SPECIAL_LANGUAGE_NAME,
-	]
-	await _say_text(ask_special_name, 0.0)
+
+	if not _should_request_special_name(player_source_name):
+		await _accept_display_name(player_source_name, text)
+		return
+
+	await _speak_flow("beginning.ask_special_name", 0.0, {
+		"player_source_name": player_source_name,
+		"special_language_name": GameManager.SPECIAL_LANGUAGE_NAME,
+	})
 	state = PrologueState.AWAIT_SPECIAL_NAME
 	_set_quest_text(_loc("quest_special_name") % GameManager.SPECIAL_LANGUAGE_NAME)
 	_set_compass_label(GameManager.SPECIAL_LANGUAGE_NAME)
@@ -284,28 +282,34 @@ func _handle_source_name(text: String) -> void:
 func _handle_special_name(text: String) -> void:
 	_stop_voice_listening()
 	player_display_name = _extract_special_name(text)
+	await _accept_display_name(player_display_name, text)
+
+func _accept_display_name(display_name: String, assessment_text: String) -> void:
+	player_display_name = display_name
 	GameManager.set_player_info(player_display_name, FALLBACK_PLAYER_AGE)
 	GameManager.lxp_score += Config.STAR_NAME_COLLECTION
 	GameManager.save_progress()
-	var scores := await HybridAPI.assess_player_input(text, "prologue_name", SCENE_ID)
-	HybridAPI.report_quest_complete("prologue_name", SCENE_ID, scores, text)
+
+	#var scores: Dictionary = await HybridAPI.assess_player_input(assessment_text, "prologue_name", SCENE_ID)
+	#HybridAPI.report_quest_complete("prologue_name", SCENE_ID, scores, assessment_text)
 
 	if feifei:
 		feifei.play_happy()
-	var celebrate := Config.get_dialogue("feifei_name_celebrate", GameManager.SOURCE_LANGUAGE_CODE) % player_display_name
-	await _say_text(celebrate, 0.0)
+	await _speak_flow("beginning.name_celebrate", 0.0, {
+		"player_display_name": player_display_name,
+	})
 	await _reveal_world()
 
 func _reveal_world() -> void:
 	state = PrologueState.WORLD_REVEAL
 	_set_quest_text(_loc("quest_world"))
 	_set_compass_label("!")
-	await _speak("world_intro_mist_island", 5.5)
+	await _speak_flow("beginning.world_reveal_intro", 5.5)
 	state = PrologueState.DISTANT_CONTINENTS
 	_set_quest_text(_loc("quest_continents"))
 	_set_compass_label("迷雾")
 	await _reveal_distant_continents()
-	await _speak("world_intro_six_continents", 6.5)
+	await _speak_flow("beginning.distant_continents", 6.5)
 	await _reveal_mirage_inn()
 
 func _reveal_mirage_inn() -> void:
@@ -314,7 +318,7 @@ func _reveal_mirage_inn() -> void:
 	_set_compass_label("客栈")
 	await _pan_to_mirage_inn()
 	_reveal_tea_shed()
-	await _speak("inn_intro", 7.0)
+	await _speak_flow("beginning.inn_reveal", 7.0)
 	state = PrologueState.ENTERING_INN
 	_set_quest_text(_loc("quest_enter_inn"))
 	_set_compass_label("进入")
@@ -327,15 +331,15 @@ func _complete_prologue() -> void:
 	completion_started = true
 	state = PrologueState.COMPLETED
 	_set_quest_text(_loc("quest_complete"))
-	_set_compass_label("长安")
+	_set_compass_label("客栈")
 	if feifei:
 		feifei.play_happy()
-	await _speak("inn_transition", 3.0)
+	await _speak_flow("beginning.inn_transition", 3.0)
 
 	if not GameManager.unlocked_areas.has("BeginningFP"):
 		GameManager.unlocked_areas.append("BeginningFP")
-	if not GameManager.unlocked_areas.has("ChangAnMarket"):
-		GameManager.unlocked_areas.append("ChangAnMarket")
+	if not GameManager.unlocked_areas.has("MirageInnIntroduction"):
+		GameManager.unlocked_areas.append("MirageInnIntroduction")
 	if not GameManager.completed_dialogues.has("beginning_prologue_complete"):
 		GameManager.completed_dialogues.append("beginning_prologue_complete")
 	GameManager.save_progress()
@@ -385,7 +389,7 @@ func _follow_feifei_into_inn() -> void:
 		tween.tween_property(feifei.feifei_sprite, "position", Vector2(1180, 610), 1.4).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
 		tween.tween_property(feifei.feifei_sprite, "scale", Vector2(0.45, 0.45), 1.4).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
 		await tween.finished
-	await _speak("inn_follow_feifei", 2.0)
+	await _speak_flow("beginning.inn_follow_feifei", 2.0)
 
 func _start_voice_listening() -> void:
 	if voice_listening:
@@ -395,6 +399,8 @@ func _start_voice_listening() -> void:
 	record_duration = 0.0
 	if mic_button:
 		mic_button.visible = true
+	if mic_button_icon:
+		mic_button_icon.texture = MIC_IDLE_TEXTURE
 	VoicePipeline.start_listening()
 
 func _stop_voice_listening() -> void:
@@ -405,6 +411,8 @@ func _stop_voice_listening() -> void:
 	record_duration = 0.0
 	if mic_button:
 		mic_button.visible = false
+	if mic_button_icon:
+		mic_button_icon.texture = MIC_IDLE_TEXTURE
 	VoicePipeline.stop_listening()
 
 func _continue_voice_listening() -> void:
@@ -425,6 +433,8 @@ func _repeat_current_prompt() -> void:
 	await _continue_voice_listening()
 
 func _on_voice_started() -> void:
+	if mic_button_icon:
+		mic_button_icon.texture = MIC_RECORDING_TEXTURE
 	print("[BeginningFP] Voice started")
 
 func _on_voice_ended(audio_data: PackedByteArray) -> void:
@@ -433,16 +443,132 @@ func _on_voice_ended(audio_data: PackedByteArray) -> void:
 	_stop_voice_listening()
 	if feifei:
 		feifei.show_hint(_loc("recognizing"), FeifeiShoulder.STATE_HINT, 0.0)
+	asr_request_active = true
 	HybridAPI.recognize_speech(audio_data, _get_asr_language_for_state())
+	_watch_asr_timeout()
 
 func _on_asr_received(result: Dictionary) -> void:
+	if not asr_request_active:
+		return
+	asr_request_active = false
 	if state not in [
 		PrologueState.AWAIT_SOURCE_NAME,
 		PrologueState.AWAIT_SPECIAL_NAME,
 	]:
 		return
-	var text: String = result.get("text", "")
+	if result.has("error"):
+		await _handle_voice_attempt_failed("asr_error")
+		return
+	var text: String = str(result.get("text", "")).strip_edges()
+	if text.is_empty():
+		await _handle_voice_attempt_failed("empty_asr")
+		return
 	await _on_player_response(text)
+
+func _on_api_error(_message: String) -> void:
+	if not asr_request_active:
+		return
+	asr_request_active = false
+	await _handle_voice_attempt_failed("api_error")
+
+func _watch_asr_timeout() -> void:
+	await get_tree().create_timer(ASR_TIMEOUT).timeout
+	if not asr_request_active:
+		return
+	asr_request_active = false
+	push_warning("[BeginningFP] Voice service ASR timed out.")
+	await _handle_voice_attempt_failed("asr_timeout")
+
+func _use_live_voice_service() -> void:
+	if HybridAPI.asr_default_answer_test_enabled:
+		HybridAPI.set_asr_default_answer_test_enabled(false)
+
+func _handle_voice_attempt_failed(reason: String) -> void:
+	if state not in [
+		PrologueState.AWAIT_SOURCE_NAME,
+		PrologueState.AWAIT_SPECIAL_NAME,
+	]:
+		return
+
+	voice_failure_count += 1
+	if voice_failure_count >= COACH_INTERVENTION_THRESHOLD:
+		voice_failure_count = 0
+		await _request_coach_intervention(reason)
+		return
+
+	await _repeat_current_prompt()
+
+func _request_coach_intervention(reason: String) -> void:
+	if coach_intervention_pending:
+		return
+	coach_intervention_pending = true
+	if feifei:
+		feifei.show_hint(_loc("coach_waiting"), FeifeiShoulder.STATE_HINT, 0.0)
+
+	_publish_coach_silence_timeout(reason)
+	_watch_coach_response_timeout()
+	await get_tree().create_timer(0.45).timeout
+	_start_voice_listening()
+
+func _publish_coach_silence_timeout(reason: String) -> void:
+	if coach_session_id.is_empty():
+		_start_coach_session()
+	coach_tracker.add_turn("player", _coach_failure_turn_text(reason))
+	HybridAPI.publish_coach_silence_timeout(
+		coach_session_id,
+		"feifei_beginning",
+		COACH_SILENCE_MS,
+		GameManager.player_cefr_level,
+		coach_tracker.get_recent_turns()
+	)
+
+func _on_coach_intervention(payload: Dictionary) -> void:
+	if not coach_intervention_pending:
+		return
+	if str(payload.get("session_id", "")) != coach_session_id:
+		return
+	coach_intervention_pending = false
+
+	var text := str(payload.get("text", "")).strip_edges()
+	if text.is_empty():
+		text = _loc("coach_fallback")
+	if feifei:
+		feifei.show_hint(text, FeifeiShoulder.STATE_HINT, 0.0)
+	coach_tracker.add_turn("npc", text)
+
+	if bool(payload.get("should_tts", false)):
+		var phrase := str(payload.get("repeat_phrase", text))
+		HybridAPI.synthesize_tts(phrase, "spirit", GameManager.SOURCE_LANGUAGE_CODE)
+
+func _watch_coach_response_timeout() -> void:
+	await get_tree().create_timer(COACH_RESPONSE_TIMEOUT).timeout
+	if not coach_intervention_pending:
+		return
+	coach_intervention_pending = false
+	if feifei:
+		feifei.show_hint(_loc("coach_fallback"), FeifeiShoulder.STATE_HINT, 0.0)
+
+func _start_coach_session() -> void:
+	if not coach_session_id.is_empty():
+		return
+	coach_session_id = "beginning-" + str(Time.get_unix_time_from_system())
+	coach_tracker.clear()
+	CoachClient.connect_for_session(coach_session_id)
+
+func _coach_failure_turn_text(reason: String) -> String:
+	match reason:
+		"silence":
+			return "[no_voice_detected] Player did not speak during the prologue name prompt."
+		"empty_asr":
+			return "[empty_asr] Voice service returned no recognized text during the prologue name prompt."
+		"api_error":
+			return "[api_error] Voice service failed during the prologue name prompt."
+		"asr_timeout":
+			return "[asr_timeout] Voice service timed out during the prologue name prompt."
+		"asr_error":
+			return "[asr_error] Voice service returned an error during the prologue name prompt."
+		_:
+			return "[voice_retry] Player needs help during the prologue name prompt."
 
 func _on_quest_status(_result: Dictionary) -> void:
 	pass
@@ -454,31 +580,64 @@ func _on_quest_report(result: Dictionary) -> void:
 			GameManager.lxp_score += lxp
 			GameManager.save_progress()
 
-func _speak(key: String, fallback_seconds: float = 2.0) -> void:
-	await _say_text(Config.get_dialogue(key, GameManager.SOURCE_LANGUAGE_CODE), fallback_seconds)
+func _load_dialogue_flows() -> void:
+	if not dialogue_flow_loader.load_dialogue_flows():
+		push_warning("[BeginningFP] Dialogue flow config loaded with errors.")
 
-func _say_text(text: String, fallback_seconds: float = 2.0) -> void:
+func _speak_flow(flow_id: String, fallback_seconds: float = 2.0, params: Dictionary = {}) -> void:
+	var lines: Array[Dictionary] = dialogue_flow_loader.get_lines(flow_id, GameManager.SOURCE_LANGUAGE_CODE, params)
+	for line in lines:
+		await _say_dialogue_line(line, fallback_seconds)
+
+func _say_dialogue_line(line: Dictionary, fallback_seconds: float = 2.0) -> void:
+	var text: String = str(line.get("text", ""))
+	var voice: String = str(line.get("voice", "spirit"))
+	await _say_text(text, fallback_seconds, voice)
+
+func _say_text(text: String, fallback_seconds: float = 2.0, voice: String = "spirit") -> void:
 	if text.is_empty():
 		return
 	if feifei:
 		feifei.show_hint(text, FeifeiShoulder.STATE_HINT, 0.0)
-	HybridAPI.synthesize_tts(text, "spirit", GameManager.SOURCE_LANGUAGE_CODE)
-	if fallback_seconds > 0.0:
-		await get_tree().create_timer(fallback_seconds).timeout
-	else:
-		await _await_tts()
+	coach_tracker.add_turn("npc", text)
+	var completed := await _synthesize_and_wait_for_tts(text, voice)
+	if not completed:
+		push_warning("[BeginningFP] TTS playback wait timed out; using fallback pacing.")
+		if fallback_seconds > 0.0:
+			await get_tree().create_timer(fallback_seconds).timeout
 
-func _await_tts(timeout: float = 8.0) -> bool:
-	var state_box := {"done": false}
-	var cb := func(_duration: float): state_box["done"] = true
-	AudioManager.tts_finished.connect(cb)
+func _synthesize_and_wait_for_tts(text: String, voice: String = "spirit", timeout: float = TTS_PLAYBACK_TIMEOUT) -> bool:
+	var starting_playback_id: int = AudioManager.tts_playback_id
+	var state_box := {
+		"received": false,
+		"finished": false,
+		"duration": 0.0,
+	}
+	var tts_received_cb := func(_result: Dictionary): state_box["received"] = true
+	var tts_finished_cb := func(playback_id: int, duration: float):
+		if playback_id > starting_playback_id:
+			state_box["finished"] = true
+			state_box["duration"] = duration
+
+	HybridAPI.tts_received.connect(tts_received_cb)
+	AudioManager.tts_playback_finished.connect(tts_finished_cb)
+	HybridAPI.synthesize_tts(text, voice, GameManager.SOURCE_LANGUAGE_CODE)
+
 	var elapsed := 0.0
-	while not state_box["done"] and elapsed < timeout:
+	while not state_box["finished"] and elapsed < timeout:
 		await get_tree().create_timer(0.1).timeout
 		elapsed += 0.1
-	if AudioManager.tts_finished.is_connected(cb):
-		AudioManager.tts_finished.disconnect(cb)
-	return state_box["done"]
+
+	if HybridAPI.tts_received.is_connected(tts_received_cb):
+		HybridAPI.tts_received.disconnect(tts_received_cb)
+	if AudioManager.tts_playback_finished.is_connected(tts_finished_cb):
+		AudioManager.tts_playback_finished.disconnect(tts_finished_cb)
+
+	if state_box["finished"]:
+		var duration: float = state_box["duration"]
+		await get_tree().create_timer(maxf(TTS_MIC_BUFFER_MIN, duration * 0.05)).timeout
+
+	return state_box["finished"]
 
 func _extract_name(text: String) -> String:
 	var trimmed := text.strip_edges()
@@ -495,6 +654,44 @@ func _extract_special_name(text: String) -> String:
 	if extracted.is_empty():
 		return GameManager.DEFAULT_SPECIAL_LANGUAGE_PLAYER_NAME
 	return extracted
+
+func _should_request_special_name(name_text: String) -> bool:
+	if GameManager.SOURCE_LANGUAGE_CODE == "zh" and GameManager.SPECIAL_LANGUAGE_CODE == "en":
+		return not _is_english_name_candidate(name_text)
+	return false
+
+func _is_english_name_candidate(name_text: String) -> bool:
+	var trimmed := name_text.strip_edges()
+	if trimmed.is_empty() or _contains_cjk(trimmed):
+		return false
+
+	var has_letter := false
+	for index in range(trimmed.length()):
+		var codepoint := trimmed.unicode_at(index)
+		if _is_ascii_letter(codepoint):
+			has_letter = true
+			continue
+		if codepoint in [32, 39, 45, 46]:
+			continue
+		return false
+	return has_letter
+
+func _contains_cjk(text: String) -> bool:
+	for index in range(text.length()):
+		var codepoint := text.unicode_at(index)
+		if (
+			(codepoint >= 0x3400 and codepoint <= 0x4DBF)
+			or (codepoint >= 0x4E00 and codepoint <= 0x9FFF)
+			or (codepoint >= 0xF900 and codepoint <= 0xFAFF)
+		):
+			return true
+	return false
+
+func _is_ascii_letter(codepoint: int) -> bool:
+	return (
+		(codepoint >= 65 and codepoint <= 90)
+		or (codepoint >= 97 and codepoint <= 122)
+	)
 
 func _contains_any(text: String, needles: Array[String]) -> bool:
 	var lower := text.to_lower()
@@ -536,10 +733,12 @@ func _loc(key: String) -> String:
 		"quest_continents": {"zh": "任务：望向远方被迷雾覆盖的大陆", "en": "Quest: Look at the mist-covered continents"},
 		"quest_inn": {"zh": "任务：看向蜃影客栈", "en": "Quest: Look toward Mirage Inn"},
 		"quest_enter_inn": {"zh": "任务：跟随腓腓进入蜃影客栈", "en": "Quest: Follow feifei into Mirage Inn"},
-		"quest_complete": {"zh": "序章完成：前往长安西市", "en": "Prologue complete: Go to Chang'an Market"},
+		"quest_complete": {"zh": "序章完成：进入蜃影客栈", "en": "Prologue complete: Enter Mirage Inn"},
 		"name_retry": {"zh": "告诉腓腓你的%s名就可以。", "en": "Tell feifei your %s name."},
 		"special_name_retry": {"zh": "告诉腓腓你的%s名，或者说“你帮我取一个”。", "en": "Tell feifei your %s name, or ask feifei to choose one."},
 		"recognizing": {"zh": "正在识别你的声音...", "en": "Listening to your voice..."},
+		"coach_waiting": {"zh": "别着急，腓腓来帮你。", "en": "No rush. Feifei will help."},
+		"coach_fallback": {"zh": "我们慢慢来。你可以靠近一点，对着麦克风说出你的名字。", "en": "Let's take it slowly. Move a little closer and say your name into the microphone."},
 	}
 	if strings.has(key):
 		return strings[key].get("zh" if is_zh else "en", "")

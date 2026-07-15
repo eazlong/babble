@@ -1,33 +1,33 @@
-[gd_scene format=3 uid="uid://c86xre2b75bjx"]
+[gd_scene format=3 uid="uid://dxtqeva5wto0i"]
 
-[ext_resource type="Texture2D" uid="uid://cbaw0206d7xa1" path="res://assets/sprites/spark/spark_idle.png" id="18_qibpq"]
+[ext_resource type="Texture2D"  path="res://assets/sprites/feifei/feifei_idle.png" id="18_qibpq"]
 [ext_resource type="Texture2D" uid="uid://doex2qcwdfl6q" path="res://assets/textures/objects/tree_big.png" id="21_7as8w"]
 [ext_resource type="Texture2D" uid="uid://dc5v3r2jya7e4" path="res://assets/textures/objects/mushroom_glow.png" id="21_myj53"]
+[ext_resource type="Script" path="res://assets/scripts/components/SceneTransitionArrow.gd" id="arrow_ctrl"]
 [ext_resource type="Texture2D" uid="uid://cvvm6mlh4a47l" path="res://assets/textures/backgrounds/forest_ground.png" id="bg_ground"]
 [ext_resource type="Texture2D" uid="uid://bdng00rygsxpf" path="res://assets/textures/backgrounds/forest_sky.png" id="bg_sky"]
 [ext_resource type="Texture2D" uid="uid://b3jrfoie2ups" path="res://assets/textures/backgrounds/forest_trees_far.png" id="bg_trees_far"]
 [ext_resource type="Texture2D" uid="uid://by2vlligknnxn" path="res://assets/textures/backgrounds/forest_trees_mid.png" id="bg_trees_mid"]
 [ext_resource type="Script" uid="uid://he8al45fkcd2" path="res://assets/scripts/components/TreasureChest.gd" id="chest_ctrl"]
 [ext_resource type="Script" uid="uid://c8frsxljiqqlp" path="res://assets/scripts/components/CoachOverlay.gd" id="coach_overlay"]
+[ext_resource type="Script" uid="uid://csyam3m47vrm8" path="res://assets/scripts/components/dialogue/DialogueLanguageManager.gd" id="dlg_lang_mgr"]
 [ext_resource type="Script" uid="uid://bab1m04jmghpq" path="res://assets/scripts/components/EasterEggTrigger.gd" id="easter_egg"]
 [ext_resource type="Script" uid="uid://d12o4o7t4mchg" path="res://assets/scripts/components/MagicFlower.gd" id="flower_ctrl"]
 [ext_resource type="Script" uid="uid://buy7xmvqcrpbc" path="res://assets/scripts/components/InteractiveObject.gd" id="interactive_obj"]
 [ext_resource type="Script" uid="uid://cn7dj4kaex1qv" path="res://assets/scripts/components/PlayerController.gd" id="player_ctrl"]
 [ext_resource type="SpriteFrames" path="res://assets/resources/player_sprite_frames.tres" id="player_frames"]
 [ext_resource type="Script" uid="uid://c8s4k3vh4cyf3" path="res://assets/scripts/scenes/SpiritForestController.gd" id="scene_ctrl"]
-[ext_resource type="Texture2D" uid="uid://dmttaep8kl4kj" path="res://assets/resources/sprites/spark/57_480x270.png" id="spark_0"]
-[ext_resource type="Texture2D" uid="uid://b5qwsd7w8m3a4" path="res://assets/resources/sprites/spark/58_480x270.png" id="spark_1"]
-[ext_resource type="Texture2D" uid="uid://ct5ifu6ybt33d" path="res://assets/resources/sprites/spark/59_480x270.png" id="spark_2"]
-[ext_resource type="Texture2D" uid="uid://dv01mfdohyrdi" path="res://assets/resources/sprites/spark/60_480x270.png" id="spark_3"]
-[ext_resource type="Texture2D" uid="uid://b3icndn0k8g42" path="res://assets/resources/sprites/spark/61_480x270.png" id="spark_4"]
-[ext_resource type="Texture2D" uid="uid://cvum2t5x801th" path="res://assets/resources/sprites/spark/62_480x270.png" id="spark_5"]
-[ext_resource type="Texture2D" uid="uid://pxbjt0mdfhyh" path="res://assets/resources/sprites/spark/63_480x270.png" id="spark_6"]
-[ext_resource type="Texture2D" uid="uid://cr0kg0qkyiy5o" path="res://assets/resources/sprites/spark/64_480x270.png" id="spark_7"]
-[ext_resource type="Texture2D" uid="uid://cscran6sftqi7" path="res://assets/resources/sprites/spark/spark_idle.png" id="spark_idle"]
-[ext_resource type="Script" path="res://assets/scripts/ui/SpiritPreview.gd" id="spirit_preview"]
+[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/57_480x270.png" id="feifei_0"]
+[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/58_480x270.png" id="feifei_1"]
+[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/59_480x270.png" id="feifei_2"]
+[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/60_480x270.png" id="feifei_3"]
+[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/61_480x270.png" id="feifei_4"]
+[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/62_480x270.png" id="feifei_5"]
+[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/63_480x270.png" id="feifei_6"]
+[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/64_480x270.png" id="feifei_7"]
+[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/feifei_idle.png" id="feifei_idle"]
+[ext_resource type="Script" uid="uid://b60kedydwbynr" path="res://assets/scripts/ui/SpiritPreview.gd" id="spirit_preview"]
 [ext_resource type="Script" path="res://assets/scripts/components/WateringCan.gd" id="watering_can_ctrl"]
-[ext_resource type="Script" path="res://assets/scripts/components/SceneTransitionArrow.gd" id="arrow_ctrl"]
-[ext_resource type="Script" path="res://assets/scripts/components/dialogue/DialogueLanguageManager.gd" id="dlg_lang_mgr"]
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_hug7n"]
 load_path = "res://.godot/imported/forest_mountains.png-0fab83787603458feb9f5e7010643ed1.ctex"
@@ -36,28 +36,28 @@ load_path = "res://.godot/imported/forest_mountains.png-0fab83787603458feb9f5e70
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("spark_0")
+"texture": ExtResource("feifei_0")
 }, {
 "duration": 1.0,
-"texture": ExtResource("spark_1")
+"texture": ExtResource("feifei_1")
 }, {
 "duration": 1.0,
-"texture": ExtResource("spark_2")
+"texture": ExtResource("feifei_2")
 }, {
 "duration": 1.0,
-"texture": ExtResource("spark_3")
+"texture": ExtResource("feifei_3")
 }, {
 "duration": 1.0,
-"texture": ExtResource("spark_4")
+"texture": ExtResource("feifei_4")
 }, {
 "duration": 1.0,
-"texture": ExtResource("spark_5")
+"texture": ExtResource("feifei_5")
 }, {
 "duration": 1.0,
-"texture": ExtResource("spark_6")
+"texture": ExtResource("feifei_6")
 }, {
 "duration": 1.0,
-"texture": ExtResource("spark_7")
+"texture": ExtResource("feifei_7")
 }],
 "loop": true,
 "name": &"fly",
@@ -65,7 +65,7 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("spark_idle")
+"texture": ExtResource("feifei_idle")
 }],
 "loop": true,
 "name": &"idle",
@@ -288,6 +288,31 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "Go to Library"
 
+[node name="TransitionArrow" type="Control" parent="OverlayLayer" unique_id=733962669]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("arrow_ctrl")
+
+[node name="ArrowButton" type="Button" parent="OverlayLayer/TransitionArrow" unique_id=101713267]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -120.0
+offset_top = -40.0
+offset_right = -40.0
+offset_bottom = 40.0
+grow_horizontal = 0
+grow_vertical = 2
+text = "→"
+
 [node name="TransitionLayer" type="CanvasLayer" parent="." unique_id=96899549]
 layer = 50
 
@@ -312,21 +337,21 @@ offset_bottom = 55.0
 text = "Player"
 horizontal_alignment = 1
 
-[node name="SparkNPC" type="StaticBody2D" parent="." unique_id=1986662794]
+[node name="FeifeiNPC" type="StaticBody2D" parent="." unique_id=1986662794]
 z_index = 10
 position = Vector2(400, 720)
 
-[node name="Sprite" type="Sprite2D" parent="SparkNPC" unique_id=2081212989]
+[node name="Sprite" type="Sprite2D" parent="FeifeiNPC" unique_id=2081212989]
 position = Vector2(-1256, -1156.0001)
 scale = Vector2(0.103515565, 0.104492225)
 texture = ExtResource("18_qibpq")
 
-[node name="Label" type="Label" parent="SparkNPC" unique_id=1262604264]
+[node name="Label" type="Label" parent="FeifeiNPC" unique_id=1262604264]
 offset_left = -35.0
 offset_top = 25.0
 offset_right = 35.0
 offset_bottom = 45.0
-text = "Spark"
+text = "feifei(腓腓)"
 horizontal_alignment = 1
 
 [node name="OakleyNPC" type="StaticBody2D" parent="." unique_id=85327767]
@@ -410,6 +435,26 @@ offset_bottom = 25.0
 text = "Yellow"
 horizontal_alignment = 1
 
+[node name="WhiteFlower" type="StaticBody2D" parent="MagicFlowers" unique_id=1958593682]
+position = Vector2(1550, 650)
+script = ExtResource("flower_ctrl")
+flower_color = "white"
+
+[node name="Sprite" type="ColorRect" parent="MagicFlowers/WhiteFlower" unique_id=167716634]
+offset_left = -22.0
+offset_top = -37.0
+offset_right = 22.0
+offset_bottom = 7.0
+color = Color(0.95, 0.95, 0.95, 1)
+
+[node name="Label" type="Label" parent="MagicFlowers/WhiteFlower" unique_id=204329261]
+offset_left = -20.0
+offset_top = 5.0
+offset_right = 20.0
+offset_bottom = 25.0
+text = "White"
+horizontal_alignment = 1
+
 [node name="TreasureChest" type="StaticBody2D" parent="." unique_id=1412284743]
 z_index = 10
 position = Vector2(1550, 720)
@@ -442,7 +487,7 @@ z_index = 10
 position = Vector2(600, 680)
 script = ExtResource("interactive_obj")
 object_id = "glowing_mushroom"
-interaction_keywords = ["glow", "shine", "light"]
+interaction_keywords = Array[String](["glow", "shine", "light"])
 response_text_zh = "蘑菇发出了温暖的光芒！"
 response_text_en = "The mushroom glows with warm light!"
 visual_effect = "glow"
@@ -464,7 +509,7 @@ horizontal_alignment = 1
 position = Vector2(200, 750)
 script = ExtResource("interactive_obj")
 object_id = "stream"
-interaction_keywords = ["water", "river", "stream"]
+interaction_keywords = Array[String](["water", "river", "stream"])
 response_text_zh = "小溪欢快地流淌着！"
 response_text_en = "The stream flows cheerfully!"
 visual_effect = "color_shift"
@@ -488,7 +533,7 @@ horizontal_alignment = 1
 position = Vector2(150, 650)
 script = ExtResource("interactive_obj")
 object_id = "big_tree"
-interaction_keywords = ["tree", "bird", "fly"]
+interaction_keywords = Array[String](["tree", "bird", "fly"])
 response_text_zh = "树叶沙沙响，小鸟飞走了！"
 response_text_en = "The leaves rustle, and a bird flies away!"
 visual_effect = "bounce"
@@ -510,7 +555,7 @@ horizontal_alignment = 1
 position = Vector2(700, 690)
 script = ExtResource("interactive_obj")
 object_id = "colorful_mushroom"
-interaction_keywords = ["mushroom", "colorful"]
+interaction_keywords = Array[String](["mushroom", "colorful"])
 response_text_zh = "蘑菇变换了颜色！"
 response_text_en = "The mushroom changed color!"
 visual_effect = "color_shift"
@@ -542,31 +587,31 @@ anchor_bottom = 0.1
 grow_horizontal = 2
 script = ExtResource("spirit_preview")
 
-[node name="AnchorPoints" type="Node2D" parent="."]
+[node name="AnchorPoints" type="Node2D" parent="." unique_id=1873206045]
 
-[node name="SparkShoulder" type="Marker2D" parent="AnchorPoints"]
+[node name="FeifeiShoulder" type="Marker2D" parent="AnchorPoints" unique_id=1083000651]
 position = Vector2(300, 600)
 
-[node name="SparkCenter" type="Marker2D" parent="AnchorPoints"]
+[node name="FeifeiCenter" type="Marker2D" parent="AnchorPoints" unique_id=1973311562]
 position = Vector2(0, 400)
 
-[node name="SparkPointLeft" type="Marker2D" parent="AnchorPoints"]
+[node name="FeifeiPointLeft" type="Marker2D" parent="AnchorPoints" unique_id=520562665]
 position = Vector2(200, 500)
 
-[node name="WateringCan" type="StaticBody2D" parent="."]
+[node name="WateringCan" type="StaticBody2D" parent="." unique_id=1468434675]
+visible = false
 z_index = 15
 position = Vector2(-400, 200)
-visible = false
 script = ExtResource("watering_can_ctrl")
 
-[node name="Sprite" type="ColorRect" parent="WateringCan"]
+[node name="Sprite" type="ColorRect" parent="WateringCan" unique_id=269396264]
 offset_left = -18.0
 offset_top = -22.0
 offset_right = 18.0
 offset_bottom = 22.0
 color = Color(0.3, 0.6, 0.9, 1)
 
-[node name="Label" type="Label" parent="WateringCan"]
+[node name="Label" type="Label" parent="WateringCan" unique_id=1749849634]
 offset_left = -25.0
 offset_top = 25.0
 offset_right = 25.0
@@ -574,57 +619,12 @@ offset_bottom = 45.0
 text = "Can"
 horizontal_alignment = 1
 
-[node name="InteractionArea" type="Area2D" parent="WateringCan"]
+[node name="InteractionArea" type="Area2D" parent="WateringCan" unique_id=1114764807]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="WateringCan/InteractionArea"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="WateringCan/InteractionArea" unique_id=1658202734]
 shape = SubResource("CircleShape2D_83")
 
-[node name="WhiteFlower" type="StaticBody2D" parent="MagicFlowers"]
-position = Vector2(1550, 650)
-script = ExtResource("flower_ctrl")
-flower_color = "white"
-
-[node name="Sprite" type="ColorRect" parent="MagicFlowers/WhiteFlower"]
-offset_left = -22.0
-offset_top = -37.0
-offset_right = 22.0
-offset_bottom = 7.0
-color = Color(0.95, 0.95, 0.95, 1)
-
-[node name="Label" type="Label" parent="MagicFlowers/WhiteFlower"]
-offset_left = -20.0
-offset_top = 5.0
-offset_right = 20.0
-offset_bottom = 25.0
-text = "White"
-horizontal_alignment = 1
-
-[node name="TransitionArrow" type="Control" parent="OverlayLayer"]
-visible = false
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("arrow_ctrl")
-
-[node name="ArrowButton" type="Button" parent="OverlayLayer/TransitionArrow"]
-layout_mode = 1
-anchors_preset = 6
-anchor_left = 1.0
-anchor_top = 0.5
-anchor_right = 1.0
-anchor_bottom = 0.5
-offset_left = -120.0
-offset_top = -40.0
-offset_right = -40.0
-offset_bottom = 40.0
-grow_horizontal = 0
-grow_vertical = 2
-text = "→"
-
-[node name="DialogueLanguageManager" type="Node" parent="."]
+[node name="DialogueLanguageManager" type="Node" parent="." unique_id=940362788]
 script = ExtResource("dlg_lang_mgr")
 
 [connection signal="pressed" from="OverlayLayer/NavigationUI/LibraryButton" to="." method="_on_library_button_pressed"]
