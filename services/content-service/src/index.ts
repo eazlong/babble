@@ -1,12 +1,14 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import { registerSceneRoutes } from './routes/scenes.js'
+import { registerLearningSessionRoutes } from './routes/learning-sessions.js'
 
 const app = Fastify({ logger: true })
 
 app.register(cors, { origin: true })
 
 app.register(registerSceneRoutes)
+app.register(registerLearningSessionRoutes)
 
 app.get('/health', async () => ({
   status: 'ok',
