@@ -7,6 +7,19 @@ const SOURCE_LANGUAGE_NAME: String = "中文"
 const SPECIAL_LANGUAGE_CODE: String = "en"
 const SPECIAL_LANGUAGE_NAME: String = "英语"
 const DEFAULT_SPECIAL_LANGUAGE_PLAYER_NAME: String = "Carl"
+const DEFAULT_SAVE_SLOT: int = 1
+const TEST_MODE_SKIP_AUTO_LOAD_SETTING: String = "game/test_mode_skip_auto_load_save"
+const SCENE_PATHS: Dictionary = {
+	"MainMenu": "res://assets/scenes/MainMenu.tscn",
+	"BeginningFP": "res://assets/scenes/BeginningFP.tscn",
+	"beginning": "res://assets/scenes/BeginningFP.tscn",
+	"MirageInnIntroduction": "res://assets/scenes/MirageInnIntroduction.tscn",
+	"ChangAnMarket": "res://assets/scenes/ChangAnMarket.tscn",
+	"SpellLibrary": "res://assets/scenes/SpellLibrary.tscn",
+	"spell_library": "res://assets/scenes/SpellLibrary.tscn",
+	"RainbowGarden": "res://assets/scenes/RainbowGarden.tscn",
+	"rainbow_garden": "res://assets/scenes/RainbowGarden.tscn",
+}
 
 # 玩家数据
 var player_name: String = ""
@@ -14,6 +27,7 @@ var player_age: int = 0
 var player_cefr_level: String = "A1"  # A1, A2, B1, B2 — used by coach service
 var current_lang: String = SOURCE_LANGUAGE_CODE
 var current_scene: String = "MainMenu"
+var save_loaded: bool = false
 
 # 游戏进度
 var unlocked_areas: Array[String] = ["BeginningFP"]
@@ -37,19 +51,74 @@ func _ready() -> void:
 	# Connect to SaveSystem autoload singleton for async data restoration
 	var save_system = get_node("/root/SaveSystem")
 	save_system.load_completed.connect(_on_save_loaded)
+	if _should_skip_auto_load_save():
+		print("[GameManager] Test mode enabled: skipping auto save load.")
+		return
 	load_progress()
 
+func _should_skip_auto_load_save() -> bool:
+	return bool(ProjectSettings.get_setting(TEST_MODE_SKIP_AUTO_LOAD_SETTING, false))
+
+func is_test_mode_skip_auto_load_save() -> bool:
+	return _should_skip_auto_load_save()
+
 func _on_save_loaded(slot_id: int, data: Dictionary) -> void:
-	"""Restore spirit data after SaveSystem async load completes"""
+	"""Restore save data after SaveSystem async load completes."""
+	if slot_id != DEFAULT_SAVE_SLOT:
+		return
+	_restore_from_save_data(data)
+
+func _restore_from_save_data(data: Dictionary) -> void:
+	player_name = str(data.get("player_name", player_name))
+	player_age = int(data.get("player_age", player_age))
+	player_cefr_level = str(data.get("player_cefr_level", player_cefr_level))
+	current_lang = str(data.get("current_lang", current_lang))
+	current_scene = str(data.get("current_scene_id", data.get("current_scene", current_scene)))
+	lxp_score = int(data.get("lxp_score", lxp_score))
+
+	var areas_data: Array = data.get("unlocked_areas", data.get("unlocked_scenes", ["BeginningFP"]))
+	unlocked_areas.clear()
+	for area in areas_data:
+		var area_id := str(area)
+		if not unlocked_areas.has(area_id):
+			unlocked_areas.append(area_id)
+	if unlocked_areas.is_empty():
+		unlocked_areas.append("BeginningFP")
+
+	var dialogues_data: Array = data.get("completed_dialogues", data.get("completed_scenes", []))
+	completed_dialogues.clear()
+	for dialogue in dialogues_data:
+		var dialogue_id := str(dialogue)
+		if not completed_dialogues.has(dialogue_id):
+			completed_dialogues.append(dialogue_id)
+
+	var vocab_data: Array = data.get("vocabulary_learned", [])
+	vocabulary_learned.clear()
+	for vocab in vocab_data:
+		var vocab_id := str(vocab)
+		if not vocabulary_learned.has(vocab_id):
+			vocabulary_learned.append(vocab_id)
+
 	var spirit_data = data.get("unlocked_spirits", [])
 	unlocked_spirits.clear()
 	for sid in spirit_data:
-		unlocked_spirits.append(sid)
+		var spirit_id := str(sid)
+		if not unlocked_spirits.has(spirit_id):
+			unlocked_spirits.append(spirit_id)
 
 	var usage_data = data.get("spirit_usage_counts", {})
 	spirit_usage_counts.clear()
 	for sid in usage_data.keys():
-		spirit_usage_counts[sid] = usage_data[sid]
+		spirit_usage_counts[str(sid)] = int(usage_data[sid])
+
+	if has_node("/root/MagicEchoManager"):
+		var magic_echo_manager = get_node("/root/MagicEchoManager")
+		if magic_echo_manager.has_method("import_state"):
+			magic_echo_manager.call("import_state", data.get("magic_echo", {}))
+		if magic_echo_manager.has_method("reconcile_local_recordings"):
+			magic_echo_manager.call("reconcile_local_recordings")
+
+	save_loaded = true
 
 	# Notify SpiritCollectionManager (if initialized)
 	if has_node("/root/SpiritCollectionManager"):
@@ -71,8 +140,31 @@ func set_language(lang: String) -> void:
 	language_changed.emit(lang)
 	save_progress()
 
+func set_checkpoint(scene_id: String, save_now: bool = true) -> void:
+	current_scene = scene_id
+	if not unlocked_areas.has(scene_id):
+		unlocked_areas.append(scene_id)
+	if save_now:
+		save_progress()
+
 func save_progress() -> void:
 	var save_data = {
+		"version": 1,
+		"timestamp": Time.get_datetime_string_from_system(true) + "Z",
+		"play_time_seconds": 0,
+		"current_scene_id": current_scene,
+		"current_scene": current_scene,
+		"unlocked_scenes": unlocked_areas,
+		"completed_scenes": completed_dialogues,
+		"npc_states": {},
+		"has_completed_tutorial": completed_dialogues.has("beginning_prologue_complete"),
+		"tutorial_step": 5 if completed_dialogues.has("beginning_prologue_complete") else 0,
+		"current_dialogue_node": null,
+		"active_dialogue_tree_id": null,
+		"input_permission_state": {
+			"has_mic_permission": AudioServer.get_bus_index("Record") != -1,
+		},
+		"settings_overrides": {},
 		"player_name": player_name,
 		"player_age": player_age,
 		"player_cefr_level": player_cefr_level,
@@ -82,14 +174,35 @@ func save_progress() -> void:
 		"completed_dialogues": completed_dialogues,
 		"vocabulary_learned": vocabulary_learned,
 		"unlocked_spirits": unlocked_spirits,
-		"spirit_usage_counts": spirit_usage_counts
+		"spirit_usage_counts": spirit_usage_counts,
+		"magic_echo": _magic_echo_save_data()
 	}
 	var save_system = get_node("/root/SaveSystem")
-	save_system.save(1, save_data)
+	save_system.save(DEFAULT_SAVE_SLOT, save_data)
+
+func _magic_echo_save_data() -> Dictionary:
+	var magic_echo_manager: Node = get_node_or_null("/root/MagicEchoManager")
+	if magic_echo_manager == null or not magic_echo_manager.has_method("export_state"):
+		return {}
+	var state: Variant = magic_echo_manager.call("export_state")
+	if state is Dictionary:
+		return state.duplicate(true)
+	return {}
 
 func load_progress() -> bool:
-	# Note: SaveSystem.load() is async and emits load_completed signal
-	# For synchronous loading in _ready(), we'll keep a fallback for now
+	var save_system = get_node("/root/SaveSystem")
+	var slot_path: String = save_system.get_save_path(DEFAULT_SAVE_SLOT)
+	if FileAccess.file_exists(slot_path):
+		var slot_file := FileAccess.open(slot_path, FileAccess.READ)
+		if slot_file:
+			var slot_json := slot_file.get_as_text()
+			slot_file.close()
+			var slot_data = JSON.parse_string(slot_json)
+			if slot_data is Dictionary:
+				_restore_from_save_data(slot_data)
+				return true
+
+	# Legacy fallback for old development saves.
 	if FileAccess.file_exists("user://save.json"):
 		var file = FileAccess.open("user://save.json", FileAccess.READ)
 		if file:
@@ -97,26 +210,16 @@ func load_progress() -> bool:
 			file.close()
 			var data = JSON.parse_string(json_string)
 			if data and data is Dictionary:
-				player_name = data.get("player_name", "")
-				player_age = data.get("player_age", 0)
-				player_cefr_level = data.get("player_cefr_level", "A1")
-				current_lang = data.get("current_lang", SOURCE_LANGUAGE_CODE)
-				# Convert arrays to typed Array[String]
-				var areas_data = data.get("unlocked_areas", ["BeginningFP"])
-				unlocked_areas.clear()
-				for area in areas_data:
-					unlocked_areas.append(area)
-				lxp_score = data.get("lxp_score", 0)
-				var dialogues_data = data.get("completed_dialogues", [])
-				completed_dialogues.clear()
-				for dialogue in dialogues_data:
-					completed_dialogues.append(dialogue)
-				var vocab_data = data.get("vocabulary_learned", [])
-				vocabulary_learned.clear()
-				for vocab in vocab_data:
-					vocabulary_learned.append(vocab)
+				_restore_from_save_data(data)
 				return true
 	return false
+
+func get_scene_path(scene_id: String = "") -> String:
+	var resolved_id: String = current_scene if scene_id.is_empty() else scene_id
+	return str(SCENE_PATHS.get(resolved_id, ""))
+
+func should_resume_to_scene(boot_scene_id: String) -> bool:
+	return save_loaded and current_scene != "" and current_scene != boot_scene_id and get_scene_path(current_scene) != ""
 
 func reset() -> void:
 	player_name = ""

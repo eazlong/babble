@@ -27,6 +27,7 @@ driver/enable_input=true
 
 UIFramework="*res://assets/scripts/ui/framework/ui_framework.gd"
 SaveSystem="*res://assets/scripts/core/save_system.gd"
+MagicEchoManager="*res://assets/scripts/autoload/MagicEchoManager.gd"
 GameManager="*res://assets/scripts/autoload/GameManager.gd"
 SceneManagementSystem="*res://assets/scripts/core/scene_management_system.gd"
 HybridAPI="*res://assets/scripts/autoload/HybridAPI.gd"
@@ -52,6 +53,10 @@ window/stretch/aspect="expand"
 [gui]
 
 theme/custom="res://assets/resources/fonts/ChineseTheme.tres"
+
+[game]
+
+test_mode_skip_auto_load_save=true
 
 [hybrid_api]
 

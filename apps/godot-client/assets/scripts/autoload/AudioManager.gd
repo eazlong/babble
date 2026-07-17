@@ -9,6 +9,10 @@ var sfx_volume: float = 1.0
 var tts_volume: float = 1.0
 var tts_playback_id: int = 0
 var _tts_expected: bool = false
+var _duck_depth: int = 0
+var _pre_duck_bgm_volume: float = 0.8
+var _pre_duck_sfx_volume: float = 1.0
+var _pre_duck_tts_volume: float = 1.0
 
 signal tts_finished(duration: float)
 signal tts_playback_finished(playback_id: int, duration: float)
@@ -149,3 +153,22 @@ func set_sfx_volume(volume: float) -> void:
 func set_tts_volume(volume: float) -> void:
 	tts_volume = volume
 	tts_player.volume_db = linear_to_db(volume)
+
+func begin_recording_duck() -> void:
+	if _duck_depth == 0:
+		_pre_duck_bgm_volume = bgm_volume
+		_pre_duck_sfx_volume = sfx_volume
+		_pre_duck_tts_volume = tts_volume
+		set_bgm_volume(bgm_volume * 0.25)
+		set_sfx_volume(sfx_volume * 0.25)
+		set_tts_volume(0.0)
+	_duck_depth += 1
+
+func end_recording_duck() -> void:
+	if _duck_depth <= 0:
+		return
+	_duck_depth -= 1
+	if _duck_depth == 0:
+		set_bgm_volume(_pre_duck_bgm_volume)
+		set_sfx_volume(_pre_duck_sfx_volume)
+		set_tts_volume(_pre_duck_tts_volume)
