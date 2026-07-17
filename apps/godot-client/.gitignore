@@ -36,3 +36,6 @@ logs/
 # Export directories
 android/
 ios/
+# Dev artifacts
+tmp/
+*.uid
