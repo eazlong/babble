@@ -30,6 +30,7 @@ extends Node2D
 const Config = preload("res://assets/scripts/components/scene_config/beginning_config.gd")
 const DialogueFlowLoaderScript = preload("res://assets/scripts/core/dialogue_flow_loader.gd")
 const CoachContextTrackerScript = preload("res://assets/scripts/components/coach/CoachContextTracker.gd")
+const VoiceFailureInterventionScript = preload("res://assets/scripts/components/voice/VoiceFailureIntervention.gd")
 const DISTANT_CONTINENTS_TEXTURE: Texture2D = preload("res://assets/textures/backgrounds/beginning_mist_continents.png")
 const MIRAGE_INN_RUINS_TEXTURE: Texture2D = preload("res://assets/textures/objects/beginning_mirage_inn_ruins.png")
 const MIC_IDLE_TEXTURE: Texture2D = preload("res://assets/textures/ui/fp/ui_mic_button_idle.png")
@@ -54,7 +55,6 @@ const WAKE_FEIFEI_HEAD_START: float = 0.55
 const TTS_PLAYBACK_TIMEOUT: float = 60.0
 const TTS_MIC_BUFFER_MIN: float = 0.25
 const ASR_TIMEOUT: float = 12.0
-const COACH_INTERVENTION_THRESHOLD: int = 3
 const COACH_SILENCE_MS: int = 15000
 const COACH_RESPONSE_TIMEOUT: float = 8.0
 
@@ -76,10 +76,8 @@ var player_display_name: String = ""
 var completion_started: bool = false
 var dialogue_flow_loader: Variant = DialogueFlowLoaderScript.new()
 var coach_tracker: Variant = CoachContextTrackerScript.new()
+var voice_failure_intervention: VoiceFailureIntervention
 var asr_request_active: bool = false
-var voice_failure_count: int = 0
-var coach_session_id: String = ""
-var coach_intervention_pending: bool = false
 
 var fog_overlay: ColorRect
 var wake_vignette: ColorRect
@@ -93,11 +91,10 @@ signal task_completed(task_name: String)
 
 func _ready() -> void:
 	GameManager.current_scene = "BeginningFP"
-	_use_live_voice_service()
 	_load_dialogue_flows()
 	_create_prologue_visuals()
+	_setup_voice_failure_intervention()
 	_connect_runtime_signals()
-	_start_coach_session()
 	_set_quest_text(_loc("quest_wake"))
 	_set_compass_label("…")
 	if mic_button:
@@ -177,8 +174,6 @@ func _connect_runtime_signals() -> void:
 		HybridAPI.asr_received.connect(_on_asr_received)
 	if not HybridAPI.api_error.is_connected(_on_api_error):
 		HybridAPI.api_error.connect(_on_api_error)
-	if not CoachClient.intervention_received.is_connected(_on_coach_intervention):
-		CoachClient.intervention_received.connect(_on_coach_intervention)
 	if not HybridAPI.quest_status_received.is_connected(_on_quest_status):
 		HybridAPI.quest_status_received.connect(_on_quest_status)
 	if not HybridAPI.quest_report_received.is_connected(_on_quest_report):
@@ -246,8 +241,8 @@ func _on_player_response(text: String) -> void:
 	if last_player_input.is_empty():
 		await _handle_voice_attempt_failed("empty_asr")
 		return
-	voice_failure_count = 0
-	coach_tracker.add_turn("player", last_player_input)
+	voice_failure_intervention.reset_failures()
+	voice_failure_intervention.add_turn("player", last_player_input)
 
 	match state:
 		PrologueState.AWAIT_SOURCE_NAME:
@@ -422,12 +417,9 @@ func _continue_voice_listening() -> void:
 
 func _repeat_current_prompt() -> void:
 	match state:
-		PrologueState.AWAIT_SOURCE_NAME:
+		PrologueState.AWAIT_SOURCE_NAME, PrologueState.AWAIT_SPECIAL_NAME:
 			if feifei:
-				feifei.show_hint(_language_hint_text("name_retry"), FeifeiShoulder.STATE_HINT, 0.0)
-		PrologueState.AWAIT_SPECIAL_NAME:
-			if feifei:
-				feifei.show_hint(_language_hint_text("special_name_retry"), FeifeiShoulder.STATE_HINT, 0.0)
+				feifei.show_hint(_get_asr_retry_hint_for_state(), FeifeiShoulder.STATE_HINT, 0.0)
 		_:
 			pass
 	await _continue_voice_listening()
@@ -459,6 +451,9 @@ func _on_asr_received(result: Dictionary) -> void:
 	if result.has("error"):
 		await _handle_voice_attempt_failed("asr_error")
 		return
+	if not HybridAPI.get_asr_intent_matched(result, true):
+		await _handle_asr_intent_not_matched(result)
+		return
 	var text: String = HybridAPI.get_asr_corrected_text(result).strip_edges()
 	var extracted_name: String = HybridAPI.get_asr_extracted_value(result, "name", "").strip_edges()
 	if not extracted_name.is_empty():
@@ -467,6 +462,14 @@ func _on_asr_received(result: Dictionary) -> void:
 		await _handle_voice_attempt_failed("empty_asr")
 		return
 	await _on_player_response(text)
+
+func _handle_asr_intent_not_matched(result: Dictionary) -> void:
+	var fallback: String = _get_asr_retry_hint_for_state()
+	var npc_line := HybridAPI.get_asr_guidance_npc_line(result, fallback)
+	if npc_line.is_empty():
+		npc_line = fallback
+	await _say_text(npc_line, 1.5, "spirit")
+	await _continue_voice_listening()
 
 func _on_api_error(_message: String) -> void:
 	if not asr_request_active:
@@ -482,10 +485,6 @@ func _watch_asr_timeout() -> void:
 	push_warning("[BeginningFP] Voice service ASR timed out.")
 	await _handle_voice_attempt_failed("asr_timeout")
 
-func _use_live_voice_service() -> void:
-	if HybridAPI.asr_default_answer_test_enabled:
-		HybridAPI.set_asr_default_answer_test_enabled(false)
-
 func _handle_voice_attempt_failed(reason: String) -> void:
 	if state not in [
 		PrologueState.AWAIT_SOURCE_NAME,
@@ -493,70 +492,12 @@ func _handle_voice_attempt_failed(reason: String) -> void:
 	]:
 		return
 
-	voice_failure_count += 1
-	if voice_failure_count >= COACH_INTERVENTION_THRESHOLD:
-		voice_failure_count = 0
-		await _request_coach_intervention(reason)
+	if voice_failure_intervention.register_failure(reason):
+		await get_tree().create_timer(0.45).timeout
+		_start_voice_listening()
 		return
 
 	await _repeat_current_prompt()
-
-func _request_coach_intervention(reason: String) -> void:
-	if coach_intervention_pending:
-		return
-	coach_intervention_pending = true
-	if feifei:
-		feifei.show_hint(_loc("coach_waiting"), FeifeiShoulder.STATE_HINT, 0.0)
-
-	_publish_coach_silence_timeout(reason)
-	_watch_coach_response_timeout()
-	await get_tree().create_timer(0.45).timeout
-	_start_voice_listening()
-
-func _publish_coach_silence_timeout(reason: String) -> void:
-	if coach_session_id.is_empty():
-		_start_coach_session()
-	coach_tracker.add_turn("player", _coach_failure_turn_text(reason))
-	HybridAPI.publish_coach_silence_timeout(
-		coach_session_id,
-		"feifei_beginning",
-		COACH_SILENCE_MS,
-		GameManager.player_cefr_level,
-		coach_tracker.get_recent_turns()
-	)
-
-func _on_coach_intervention(payload: Dictionary) -> void:
-	if not coach_intervention_pending:
-		return
-	if str(payload.get("session_id", "")) != coach_session_id:
-		return
-	coach_intervention_pending = false
-
-	var text := str(payload.get("text", "")).strip_edges()
-	if text.is_empty():
-		text = _loc("coach_fallback")
-	if feifei:
-		feifei.show_hint(text, FeifeiShoulder.STATE_HINT, 0.0)
-	coach_tracker.add_turn("npc", text)
-
-	if bool(payload.get("should_tts", false)):
-		var phrase := str(payload.get("repeat_phrase", text))
-		HybridAPI.synthesize_tts(phrase, "spirit", GameManager.SOURCE_LANGUAGE_CODE)
-
-func _watch_coach_response_timeout() -> void:
-	await get_tree().create_timer(COACH_RESPONSE_TIMEOUT).timeout
-	if not coach_intervention_pending:
-		return
-	coach_intervention_pending = false
-	if feifei:
-		feifei.show_hint(_loc("coach_fallback"), FeifeiShoulder.STATE_HINT, 0.0)
-
-func _start_coach_session() -> void:
-	if not coach_session_id.is_empty():
-		return
-	coach_session_id = "beginning-" + str(Time.get_unix_time_from_system())
-	coach_tracker.clear()
-	CoachClient.connect_for_session(coach_session_id)
 
 func _coach_failure_turn_text(reason: String) -> String:
 	match reason:
@@ -572,6 +513,24 @@ func _coach_failure_turn_text(reason: String) -> String:
 			return "[asr_error] Voice service returned an error during the prologue name prompt."
 		_:
 			return "[voice_retry] Player needs help during the prologue name prompt."
+
+func _setup_voice_failure_intervention() -> void:
+	voice_failure_intervention = VoiceFailureInterventionScript.new()
+	voice_failure_intervention.name = "VoiceFailureIntervention"
+	add_child(voice_failure_intervention)
+	voice_failure_intervention.set_feifei(feifei)
+	voice_failure_intervention.set_tracker(coach_tracker)
+	voice_failure_intervention.set_failure_text_resolver(Callable(self, "_coach_failure_turn_text"))
+	voice_failure_intervention.set_tts_language_resolver(Callable(self, "_get_asr_language_for_state"))
+	voice_failure_intervention.configure({
+		"scene_id": SCENE_ID,
+		"npc_id": "feifei_beginning",
+		"waiting_text": _loc("coach_waiting"),
+		"fallback_text": _loc("coach_fallback"),
+		"silence_ms": COACH_SILENCE_MS,
+		"response_timeout": COACH_RESPONSE_TIMEOUT,
+	})
+	voice_failure_intervention.start_session("beginning")
 
 func _on_quest_status(_result: Dictionary) -> void:
 	pass
@@ -602,7 +561,7 @@ func _say_text(text: String, fallback_seconds: float = 2.0, voice: String = "spi
 		return
 	if feifei:
 		feifei.show_hint(text, FeifeiShoulder.STATE_HINT, 0.0)
-	coach_tracker.add_turn("npc", text)
+	voice_failure_intervention.add_turn("npc", text)
 	var completed := await _synthesize_and_wait_for_tts(text, voice)
 	if not completed:
 		push_warning("[BeginningFP] TTS playback wait timed out; using fallback pacing.")
@@ -725,7 +684,7 @@ func _get_asr_language_for_state() -> String:
 func _build_asr_context_for_state() -> Dictionary:
 	var expected_language_name := GameManager.SPECIAL_LANGUAGE_NAME if state == PrologueState.AWAIT_SPECIAL_NAME else GameManager.SOURCE_LANGUAGE_NAME
 	return {
-		"session_id": coach_session_id,
+		"session_id": voice_failure_intervention.get_session_id(),
 		"user_id": GameManager.player_name if GameManager.player_name != "" else "anonymous",
 		"npc_id": "feifei_beginning",
 		"scene_id": SCENE_ID,
@@ -738,11 +697,28 @@ func _build_asr_context_for_state() -> Dictionary:
 			}
 		],
 		"expected_answer_type": "player_name",
+		"target_intent": _get_asr_target_intent_for_state(),
+		"intent_description": _get_asr_intent_description_for_state(),
 		"candidate_answers": [],
-		"recent_turns": coach_tracker.get_recent_turns(),
+		"recent_turns": voice_failure_intervention.get_recent_turns(),
 		"player_level": GameManager.player_cefr_level,
 		"language": _get_asr_language_for_state(),
 	}
+
+func _get_asr_retry_hint_for_state() -> String:
+	if state == PrologueState.AWAIT_SPECIAL_NAME:
+		return _language_hint_text("special_name_retry")
+	return _language_hint_text("name_retry")
+
+func _get_asr_target_intent_for_state() -> String:
+	if state == PrologueState.AWAIT_SPECIAL_NAME:
+		return "provide_special_language_name_or_request_default"
+	return "provide_source_name"
+
+func _get_asr_intent_description_for_state() -> String:
+	if state == PrologueState.AWAIT_SPECIAL_NAME:
+		return "The player should tell Feifei their special-language name, or explicitly ask Feifei to choose one for them. If neither happens, intent_matched must be false and guidance.npc_line should guide them to say a special-language name or ask Feifei to choose."
+	return "The player should tell Feifei their source-language name. If the player does not provide a name, intent_matched must be false and guidance.npc_line should ask them to say their name."
 
 func _language_hint_text(key: String) -> String:
 	var language_name: String = GameManager.SPECIAL_LANGUAGE_NAME if key == "special_name_retry" else GameManager.SOURCE_LANGUAGE_NAME

@@ -55,7 +55,7 @@ theme/custom="res://assets/resources/fonts/ChineseTheme.tres"
 
 [hybrid_api]
 
-asr_default_answer_test_enabled=true
+asr_default_answer_test_enabled=false
 asr_default_answers=PackedStringArray("Carl", "yes I can", "hello", "big", "small", "red", "stand up", "open the book", "read aloud", "I like magic books", "I feel happy", "thank you Luna", "sunny", "rainy", "cloudy", "cat in the tree", "dog under the bridge", "bird in the bush", "plant red", "water blue", "grow yellow")
 
 [input]

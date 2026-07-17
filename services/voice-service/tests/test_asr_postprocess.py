@@ -1,4 +1,6 @@
 import base64
+import json
+import logging
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -67,6 +69,8 @@ async def test_multipart_asr_returns_postprocess_missing_context(path):
         "corrected_text": "暑假",
         "correction_reason": None,
         "extracted": {},
+        "intent_matched": True,
+        "guidance": {"npc_line": None},
         "confidence": 0.0,
         "fallback_reason": "missing_context",
         "model": None,
@@ -92,6 +96,8 @@ async def test_json_asr_uses_postprocessor_with_context():
         "corrected_text": "书架",
         "correction_reason": "家具题且候选答案书架与暑假音近。",
         "extracted": {"answer": "书架"},
+        "intent_matched": True,
+        "guidance": {"npc_line": None},
         "confidence": 0.88,
         "fallback_reason": None,
         "model": "mock-model",
@@ -126,6 +132,8 @@ async def test_multipart_asr_uses_postprocessor_with_context():
         "corrected_text": "书架",
         "correction_reason": "家具题且候选答案书架与暑假音近。",
         "extracted": {"answer": "书架"},
+        "intent_matched": True,
+        "guidance": {"npc_line": None},
         "confidence": 0.88,
         "fallback_reason": None,
         "model": "mock-model",
@@ -157,12 +165,77 @@ async def test_multipart_asr_uses_postprocessor_with_context():
 
 
 @pytest.mark.asyncio
+async def test_multipart_asr_logs_postprocess_context(caplog):
+    postprocess_result = {
+        "applied": False,
+        "corrected_text": "暑假",
+        "correction_reason": None,
+        "extracted": {},
+        "intent_matched": True,
+        "guidance": {"npc_line": None},
+        "confidence": 0.0,
+        "fallback_reason": "missing_context",
+        "model": None,
+        "latency_ms": 0,
+    }
+
+    with (
+        patch("src.api.routes.asr.service_manager.transcribe", new_callable=AsyncMock) as mock_transcribe,
+        patch("src.api.routes.asr.asr_postprocessor.process", new_callable=AsyncMock) as mock_process,
+    ):
+        mock_transcribe.return_value = ASRResult(text="暑假", confidence=0.9, language="cn_en")
+        mock_process.return_value = postprocess_result
+
+        with caplog.at_level(logging.INFO, logger="src.api.routes.asr"):
+            response = await post_multipart("/api/v1/voice/asr")
+
+    assert response.status_code == 200
+    assert "[ASR-POSTPROCESS] request endpoint=/api/v1/voice/asr" in caplog.text
+    assert "context_present=False" in caplog.text
+    assert "[ASR-POSTPROCESS] response text='暑假' applied=False fallback_reason=missing_context" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_json_asr_logs_postprocess_success(caplog):
+    postprocess_result = {
+        "applied": True,
+        "corrected_text": "书架",
+        "correction_reason": "家具题且候选答案书架与暑假音近。",
+        "extracted": {"answer": "书架"},
+        "intent_matched": True,
+        "guidance": {"npc_line": None},
+        "confidence": 0.88,
+        "fallback_reason": None,
+        "model": "mock-model",
+        "latency_ms": 12,
+    }
+
+    with (
+        patch("src.api.routes.asr.service_manager.transcribe", new_callable=AsyncMock) as mock_transcribe,
+        patch("src.api.routes.asr.asr_postprocessor.process", new_callable=AsyncMock) as mock_process,
+    ):
+        mock_transcribe.return_value = ASRResult(text="暑假", confidence=0.9, language="cn_en")
+        mock_process.return_value = postprocess_result
+
+        with caplog.at_level(logging.INFO, logger="src.api.routes.asr"):
+            response = await post_json(context=FURNITURE_CONTEXT)
+
+    assert response.status_code == 200
+    assert "[ASR-POSTPROCESS] request endpoint=/api/v1/voice/asr/json" in caplog.text
+    assert "context_present=True" in caplog.text
+    assert "context_keys=['candidate_answers', 'expected_answer_type', 'expected_slots', 'npc_question']" in caplog.text
+    assert "[ASR-POSTPROCESS] response text='暑假' applied=True fallback_reason=None" in caplog.text
+
+
+@pytest.mark.asyncio
 async def test_json_asr_returns_200_when_postprocess_falls_back():
     postprocess_result = {
         "applied": False,
         "corrected_text": "暑假",
         "correction_reason": None,
         "extracted": {},
+        "intent_matched": True,
+        "guidance": {"npc_line": None},
         "confidence": 0.0,
         "fallback_reason": "timeout",
         "model": None,
@@ -192,6 +265,8 @@ async def test_all_asr_endpoints_share_success_contract(endpoint):
         "corrected_text": "书架",
         "correction_reason": "家具题且候选答案书架与暑假音近。",
         "extracted": {"answer": "书架"},
+        "intent_matched": True,
+        "guidance": {"npc_line": None},
         "confidence": 0.88,
         "fallback_reason": None,
         "model": "mock-model",
@@ -224,6 +299,8 @@ async def test_all_asr_endpoints_share_fallback_contract(endpoint):
         "corrected_text": "暑假",
         "correction_reason": None,
         "extracted": {},
+        "intent_matched": True,
+        "guidance": {"npc_line": None},
         "confidence": 0.0,
         "fallback_reason": "timeout",
         "model": None,

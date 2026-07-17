@@ -160,6 +160,35 @@ func _apply_asr_default_answer_test(asr_result: Dictionary) -> Dictionary:
 	print("[HybridAPI] ASR default-answer test replaced '%s' with '%s'" % [actual_text, replacement_text])
 	return result
 
+func _build_asr_default_answer_test_result(lang: String = "en", context: Dictionary = {}) -> Dictionary:
+	# 优先使用上下文指定的候选项，而非全局轮播列表
+	var answers_from_context: Array = context.get("candidate_answers", [])
+	if not answers_from_context.is_empty() and answers_from_context[0] is String:
+		var answer := str(answers_from_context[0])
+		var result := {
+			"text": answer,
+			"confidence": 1.0,
+			"detected_language": lang,
+			"processing_time_ms": 0,
+			"test_override": "asr_default_answer_candidate",
+			"context": context.duplicate(true) if not context.is_empty() else {},
+		}
+		print("[HybridAPI] ASR default-answer test from context candidate: '%s'" % answer)
+		return result
+
+	var result := _apply_asr_default_answer_test({
+		"text": "",
+		"confidence": 1.0,
+		"detected_language": lang,
+		"processing_time_ms": 0,
+	})
+	if not context.is_empty() and not result.has("context"):
+		result["context"] = context
+	return result
+
+func _emit_asr_received(result: Dictionary) -> void:
+	asr_received.emit(result)
+
 func ping_services() -> void:
 	_ping_in_progress = true
 	var error = http_request.request(API_BASE_URL + "/ping", [], HTTPClient.METHOD_GET)
@@ -189,6 +218,12 @@ func _build_asr_request_body(audio_data: PackedByteArray, lang: String = "en", c
 
 func recognize_speech(audio_data: PackedByteArray, lang: String = "en", context: Dictionary = {}) -> void:
 	print("[HybridAPI] recognize_speech: size=", audio_data.size(), " lang=", lang)
+	if asr_default_answer_test_enabled:
+		var result := _build_asr_default_answer_test_result(lang, context)
+		print("[HybridAPI] ASR default-answer test emitted: ", result)
+		call_deferred("_emit_asr_received", result)
+		return
+
 	var body := _build_asr_request_body(audio_data, lang, context)
 	print("[HybridAPI] JSON body size: ", body.length())
 	var headers = ["Content-Type: application/json"]
@@ -199,6 +234,13 @@ func recognize_speech(audio_data: PackedByteArray, lang: String = "en", context:
 ## 并行ASR识别：同时调用英文+中文ASR，比较置信度选择结果
 ## 返回 {text, confidence, detected_language, processing_time_ms}
 func recognize_speech_parallel(base64_audio: String, timeout_ms: int = 1500) -> Dictionary:
+	if asr_default_answer_test_enabled:
+		return _build_asr_default_answer_test_result("auto", {
+			"parallel": true,
+			"timeout_ms": timeout_ms,
+			"audio_size": base64_audio.length(),
+		})
+
 	_parallel_asr_timeout_ms = timeout_ms
 	_parallel_asr_pending = true
 	_parallel_asr_result = {}
@@ -352,6 +394,22 @@ func get_asr_extracted_value(asr_result: Dictionary, key: String, fallback: Stri
 			var value := str(extracted.get(key, "")).strip_edges()
 			if not value.is_empty():
 				return value
+	return fallback
+
+func get_asr_intent_matched(asr_result: Dictionary, fallback: bool = true) -> bool:
+	var postprocess = asr_result.get("postprocess", {})
+	if postprocess is Dictionary and postprocess.has("intent_matched"):
+		return bool(postprocess.get("intent_matched", fallback))
+	return fallback
+
+func get_asr_guidance_npc_line(asr_result: Dictionary, fallback: String = "") -> String:
+	var postprocess = asr_result.get("postprocess", {})
+	if postprocess is Dictionary:
+		var guidance = postprocess.get("guidance", {})
+		if guidance is Dictionary:
+			var npc_line := str(guidance.get("npc_line", "")).strip_edges()
+			if not npc_line.is_empty():
+				return npc_line
 	return fallback
 
 func _on_request_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:

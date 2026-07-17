@@ -5,6 +5,7 @@
 extends Node2D
 
 const DialogueFlowLoaderScript = preload("res://assets/scripts/core/dialogue_flow_loader.gd")
+const VoiceFailureInterventionScript = preload("res://assets/scripts/components/voice/VoiceFailureIntervention.gd")
 
 enum InnIntroState {
 	ENTRY,
@@ -22,6 +23,8 @@ const TTS_PLAYBACK_TIMEOUT: float = 60.0
 const TTS_MIC_BUFFER_MIN: float = 0.25
 const MAX_RECORD_DURATION: float = 8.0
 const SILENCE_HINT_DELAY: float = 5.0
+const COACH_SILENCE_MS: int = 15000
+const COACH_RESPONSE_TIMEOUT: float = 8.0
 const TARGET_SCENE_PATH: String = "res://assets/scenes/ChangAnMarket.tscn"
 const VIEW_SIZE: Vector2 = Vector2(1920, 1080)
 
@@ -44,6 +47,7 @@ const GUEST_ROOM_DISTANT_LIGHT = preload("res://assets/textures/objects/inn/gues
 
 var state: InnIntroState = InnIntroState.ENTRY
 var dialogue_flow_loader: Variant = DialogueFlowLoaderScript.new()
+var voice_failure_intervention: VoiceFailureIntervention
 var voice_listening: bool = false
 var silence_timer: float = 0.0
 var record_duration: float = 0.0
@@ -67,6 +71,7 @@ func _ready() -> void:
 		manager.current_scene = "MirageInnIntroduction"
 	_load_dialogue_flows()
 	_build_visuals()
+	_setup_voice_failure_intervention()
 	_connect_runtime_signals()
 	if mic_button:
 		mic_button.visible = false
@@ -92,8 +97,7 @@ func _process(delta: float) -> void:
 		record_duration = 0.0
 		if silence_timer > SILENCE_HINT_DELAY:
 			silence_timer = 0.0
-			if feifei:
-				feifei.show_hint(_loc("bookshelf_retry"), FeifeiShoulder.STATE_HINT, 0.0)
+			await _handle_voice_attempt_failed("silence")
 
 func _start_intro() -> void:
 	await get_tree().create_timer(0.35).timeout
@@ -319,6 +323,7 @@ func _say_text(text: String, fallback_seconds: float = 2.0, voice: String = "spi
 		return
 	if feifei:
 		feifei.show_hint(text, FeifeiShoulder.STATE_HINT, 0.0)
+	voice_failure_intervention.add_turn("npc", text)
 	var completed := await _synthesize_and_wait_for_tts(text, voice)
 	if not completed and fallback_seconds > 0.0:
 		push_warning("[MirageInnIntroduction] TTS playback wait timed out; using fallback pacing.")
@@ -393,14 +398,29 @@ func _on_voice_ended(audio_data: PackedByteArray) -> void:
 		feifei.show_hint(_loc("recognizing"), FeifeiShoulder.STATE_HINT, 0.0)
 	var hybrid_api: Variant = _hybrid_api()
 	if hybrid_api:
-		hybrid_api.recognize_speech(audio_data, _source_language_code())
+		hybrid_api.recognize_speech(audio_data, _source_language_code(), _build_bookshelf_asr_context())
 
 func _on_asr_received(result: Dictionary) -> void:
 	if state != InnIntroState.AWAIT_BOOKSHELF_CALL:
 		return
+	if result.has("error"):
+		await _handle_voice_attempt_failed("asr_error")
+		return
 	var text := _asr_text_for_bookshelf_call(result)
 	if _is_bookshelf_call(text):
+		voice_failure_intervention.reset_failures()
+		voice_failure_intervention.add_turn("player", text)
 		await _continue_after_bookshelf_call()
+		return
+
+	await _handle_voice_attempt_failed("wrong_answer")
+
+func _handle_voice_attempt_failed(reason: String) -> void:
+	if state != InnIntroState.AWAIT_BOOKSHELF_CALL:
+		return
+	if voice_failure_intervention.register_failure(reason):
+		await get_tree().create_timer(0.45).timeout
+		_start_voice_listening()
 		return
 
 	if feifei:
@@ -430,6 +450,8 @@ func _loc(key: String) -> String:
 		"quest_complete": {"zh": "客栈介绍完成：前往长安西市", "en": "Inn introduction complete: Go to Chang'an Market"},
 		"bookshelf_retry": {"zh": "对着书架说“书架”，它就会听见你。", "en": "Say \"bookshelf\" to the bookshelf, and it will hear you."},
 		"recognizing": {"zh": "正在识别你的声音...", "en": "Listening to your voice..."},
+		"coach_waiting": {"zh": "别着急，腓腓来帮你。", "en": "No rush. Feifei will help."},
+		"coach_fallback": {"zh": "我们慢慢来。请看着书架，清楚地说：“书架”。", "en": "Let's slow down. Look at the bookshelf and clearly say: \"bookshelf\"."},
 	}
 	if strings.has(key):
 		return strings[key].get("zh" if is_zh else "en", "")
@@ -449,6 +471,67 @@ func _asr_text_for_bookshelf_call(result: Dictionary) -> String:
 			return extracted_answer
 		return str(hybrid_api.get_asr_corrected_text(result)).strip_edges()
 	return str(result.get("text", "")).strip_edges()
+
+func _setup_voice_failure_intervention() -> void:
+	voice_failure_intervention = VoiceFailureInterventionScript.new()
+	voice_failure_intervention.name = "VoiceFailureIntervention"
+	add_child(voice_failure_intervention)
+	voice_failure_intervention.set_feifei(feifei)
+	voice_failure_intervention.set_failure_text_resolver(Callable(self, "_bookshelf_failure_turn_text"))
+	voice_failure_intervention.set_tts_language_resolver(Callable(self, "_source_language_code"))
+	voice_failure_intervention.configure({
+		"scene_id": "mirage_inn_introduction",
+		"npc_id": "feifei_mirage_inn",
+		"waiting_text": _loc("coach_waiting"),
+		"fallback_text": _loc("coach_fallback"),
+		"silence_ms": COACH_SILENCE_MS,
+		"response_timeout": COACH_RESPONSE_TIMEOUT,
+	})
+	voice_failure_intervention.start_session("mirage-inn-intro")
+
+func _bookshelf_failure_turn_text(reason: String) -> String:
+	match reason:
+		"silence":
+			return "[no_voice_detected] Player did not speak during the bookshelf voice prompt."
+		"asr_error":
+			return "[asr_error] Voice service returned an error during the bookshelf voice prompt."
+		"wrong_answer":
+			return "[wrong_answer] Player should say bookshelf/书架 but said something else."
+		_:
+			return "[voice_retry] Player needs help saying bookshelf/书架."
+
+func _build_bookshelf_asr_context() -> Dictionary:
+	return {
+		"session_id": voice_failure_intervention.get_session_id(),
+		"user_id": _player_name(),
+		"npc_id": "feifei_mirage_inn",
+		"scene_id": "mirage_inn_introduction",
+		"npc_question": _loc("bookshelf_retry"),
+		"expected_slots": [
+			{
+				"key": "answer",
+				"type": "keyword",
+				"description": "玩家对书架说出的唤醒词：书架/bookshelf",
+			}
+		],
+		"expected_answer_type": "keyword",
+		"candidate_answers": ["书架", "bookshelf", "book shelf"],
+		"recent_turns": voice_failure_intervention.get_recent_turns(),
+		"player_level": _player_level(),
+		"language": _source_language_code(),
+	}
+
+func _player_name() -> String:
+	var manager: Variant = _game_manager()
+	if manager and str(manager.player_name) != "":
+		return str(manager.player_name)
+	return "anonymous"
+
+func _player_level() -> String:
+	var manager: Variant = _game_manager()
+	if manager:
+		return str(manager.player_cefr_level)
+	return "pre_a1"
 
 func _game_manager() -> Variant:
 	return get_node_or_null("/root/GameManager")

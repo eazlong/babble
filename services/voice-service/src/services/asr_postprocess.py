@@ -1,11 +1,14 @@
-import asyncio
 import json
+import logging
 import os
 import time
 from typing import Any, Literal
 
-import httpx
+import openai
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+
+logger = logging.getLogger(__name__)
 
 
 FallbackReason = Literal[
@@ -29,6 +32,8 @@ class ASRPostprocessContext(BaseModel):
     npc_question: str | None = None
     expected_slots: list[ExpectedSlot] = Field(default_factory=list)
     expected_answer_type: str | None = None
+    target_intent: str | None = None
+    intent_description: str | None = None
     candidate_answers: list[str] = Field(default_factory=list)
     recent_turns: list[dict[str, str]] = Field(default_factory=list)
     session_id: str | None = None
@@ -40,6 +45,10 @@ class ASRPostprocessContext(BaseModel):
     language: str | None = None
 
 
+class ASRGuidanceOutput(BaseModel):
+    npc_line: str | None = None
+
+
 class LLMPostprocessOutput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -47,6 +56,8 @@ class LLMPostprocessOutput(BaseModel):
     correction_applied: bool
     correction_reason: str | None
     extracted: dict[str, str | int | float | bool | None] = Field(default_factory=dict)
+    intent_matched: bool = True
+    guidance: ASRGuidanceOutput = Field(default_factory=ASRGuidanceOutput)
     confidence: float = Field(ge=0.0, le=1.0)
 
 
@@ -55,6 +66,8 @@ class ASRPostprocessResult(BaseModel):
     corrected_text: str
     correction_reason: str | None
     extracted: dict[str, str | int | float | bool | None]
+    intent_matched: bool
+    guidance: ASRGuidanceOutput
     confidence: float
     fallback_reason: FallbackReason | None
     model: str | None
@@ -62,7 +75,7 @@ class ASRPostprocessResult(BaseModel):
 
 
 class ASRPostprocessor:
-    def __init__(self, client: httpx.AsyncClient | None = None):
+    def __init__(self, client: openai.AsyncOpenAI | None = None):
         self.client = client
 
     async def process(
@@ -91,25 +104,65 @@ class ASRPostprocessor:
         if not api_key:
             return self._fallback(text, "missing_api_key")
 
-        model = os.environ.get("ASR_POSTPROCESS_MODEL", "gpt-5.5")
-        timeout_ms = int(os.environ.get("ASR_POSTPROCESS_TIMEOUT_MS", "1500"))
+        base_url = (
+            os.environ.get("ASR_POSTPROCESS_BASE_URL")
+            or os.environ.get("COACH_LLM_BASE_URL")
+            or os.environ.get("OPENAI_BASE_URL")
+            or "https://api.openai.com/v1"
+        )
+        model = (
+            os.environ.get("ASR_POSTPROCESS_MODEL")
+            or os.environ.get("COACH_LLM_MODEL")
+            or "gpt-5.5"
+        )
+        timeout_ms = int(os.environ.get("ASR_POSTPROCESS_TIMEOUT_MS", "30000"))
         started = time.monotonic()
 
         try:
-            llm_payload = await asyncio.wait_for(
-                self._call_llm(
-                    api_key=api_key,
-                    model=model,
-                    text=text,
-                    asr_confidence=asr_confidence,
-                    language=language,
-                    context=parsed_context,
-                ),
-                timeout=timeout_ms / 1000,
+            llm_payload = await self._call_llm(
+                api_key=api_key,
+                base_url=base_url,
+                model=model,
+                text=text,
+                asr_confidence=asr_confidence,
+                language=language,
+                context=parsed_context,
+                timeout_ms=timeout_ms,
             )
-        except TimeoutError:
+        except openai.APITimeoutError:
+            logger.warning(
+                "[ASR-POSTPROCESS] provider timeout base_url=%s model=%s timeout_ms=%s",
+                base_url,
+                model,
+                timeout_ms,
+            )
             return self._fallback(text, "timeout", latency_ms=timeout_ms)
-        except (httpx.HTTPError, RuntimeError):
+        except openai.APIStatusError as exc:
+            message = getattr(exc, "message", str(exc))[:500]
+            logger.warning(
+                "[ASR-POSTPROCESS] provider api_status_error base_url=%s model=%s status_code=%s message=%r",
+                base_url,
+                model,
+                getattr(exc, "status_code", None),
+                message,
+            )
+            return self._fallback(text, "provider_error", latency_ms=self._elapsed_ms(started))
+        except openai.APIError as exc:
+            message = getattr(exc, "message", str(exc))[:500]
+            logger.warning(
+                "[ASR-POSTPROCESS] provider api_error base_url=%s model=%s error_type=%s message=%r",
+                base_url,
+                model,
+                exc.__class__.__name__,
+                message,
+            )
+            return self._fallback(text, "provider_error", latency_ms=self._elapsed_ms(started))
+        except RuntimeError as exc:
+            logger.warning(
+                "[ASR-POSTPROCESS] provider runtime_error model=%s error=%s",
+                model,
+                str(exc),
+            )
             return self._fallback(text, "provider_error", latency_ms=self._elapsed_ms(started))
 
         try:
@@ -128,6 +181,8 @@ class ASRPostprocessor:
             corrected_text=output.corrected_text,
             correction_reason=output.correction_reason,
             extracted=extracted,
+            intent_matched=output.intent_matched,
+            guidance=output.guidance,
             confidence=output.confidence,
             fallback_reason=None,
             model=model,
@@ -138,39 +193,38 @@ class ASRPostprocessor:
         self,
         *,
         api_key: str,
+        base_url: str,
         model: str,
         text: str,
         asr_confidence: float,
         language: str,
         context: ASRPostprocessContext,
+        timeout_ms: int,
     ) -> str:
-        base_url = os.environ.get("ASR_POSTPROCESS_BASE_URL") or os.environ.get("OPENAI_BASE_URL") or "https://api.openai.com/v1"
-        client = self.client or httpx.AsyncClient()
+        client = self.client or openai.AsyncOpenAI(
+            api_key=api_key,
+            base_url=base_url,
+            timeout=timeout_ms / 1000,
+        )
         should_close = self.client is None
         try:
-            response = await client.post(
-                f"{base_url.rstrip('/')}/chat/completions",
-                headers={"Authorization": f"Bearer {api_key}"},
-                json={
-                    "model": model,
-                    "messages": [
-                        {"role": "system", "content": self._system_prompt()},
-                        {"role": "user", "content": self._user_prompt(text, asr_confidence, language, context)},
-                    ],
-                    "response_format": {"type": "json_object"},
-                    "temperature": 0.1,
-                    "max_tokens": 300,
-                },
+            completion = await client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": self._system_prompt()},
+                    {"role": "user", "content": self._user_prompt(text, asr_confidence, language, context)},
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.1,
+                max_tokens=300,
             )
-            response.raise_for_status()
-            data = response.json()
-            content = data.get("choices", [{}])[0].get("message", {}).get("content")
+            content = completion.choices[0].message.content if completion.choices else None
             if not isinstance(content, str) or not content:
                 raise RuntimeError("Empty LLM response")
             return content
         finally:
             if should_close:
-                await client.aclose()
+                await client.close()
 
     def _filter_extracted(
         self,
@@ -186,6 +240,8 @@ class ASRPostprocessor:
             corrected_text=text,
             correction_reason=None,
             extracted={},
+            intent_matched=True,
+            guidance=ASRGuidanceOutput(),
             confidence=0.0,
             fallback_reason=reason,
             model=None,
@@ -202,7 +258,10 @@ class ASRPostprocessor:
             "Be conservative. Only correct text when the context strongly supports it. "
             "Extract only the slots listed in expected_slots. Do not invent extra keys. "
             "If candidate_answers is provided for a closed-set question, prefer values from that list. "
-            "Return valid JSON only."
+            "Decide whether the player's answer satisfies target_intent and intent_description. "
+            "If it does not, set intent_matched=false and provide one short, warm NPC guidance line. "
+            "The guidance line must be child-friendly, actionable, and safe for the NPC to speak directly. "
+            "Do not invent slot values when intent is not matched. Return valid JSON only."
         )
 
     def _user_prompt(
@@ -223,6 +282,8 @@ class ASRPostprocessor:
                     "correction_applied": "boolean",
                     "correction_reason": "string|null",
                     "extracted": "object containing only expected_slots keys",
+                    "intent_matched": "boolean",
+                    "guidance": {"npc_line": "string|null"},
                     "confidence": "number 0..1",
                 },
             },
