@@ -1,0 +1,164 @@
+{
+  "scene_id": "chang_an_market_lesson_01",
+  "scene_name": "西市晨钟：初入长安",
+  "chapter": 1,
+  "order": 1,
+  "scene_path": "res://assets/scenes/ChangAnMarket.tscn",
+  "dialogue_flow_file": "res://assets/resources/dialogue_flows/chang_an_market_lesson_01.json",
+  "target_words": [
+    "meet",
+    "new",
+    "morning",
+    "classmate",
+    "her",
+    "name",
+    "sit",
+    "afternoon",
+    "his"
+  ],
+  "lxp_reward": 30,
+  "completion_dialogue_id": "chang_an_market_lesson_01_complete",
+  "next_unlock": "ChangAnMarket_BaizeThread",
+  "steps": [
+    {
+      "id": "good_morning",
+      "type": "voice",
+      "quest_key": "quest_good_morning",
+      "flow_id": "west_market_01.good_morning",
+      "success_flow_id": "west_market_01.good_morning_success",
+      "retry_flow_id": "west_market_01.good_morning_retry",
+      "reward_words": ["morning"],
+      "asr": {
+        "clear_phrases": ["good morning"],
+        "acceptable_phrases": ["morning"],
+        "required_keywords": ["morning"],
+        "optional_keywords": ["good"]
+      }
+    },
+    {
+      "id": "name_register",
+      "type": "voice",
+      "quest_key": "quest_name_register",
+      "flow_id": "west_market_01.name_register",
+      "success_flow_id": "west_market_01.name_register_success",
+      "retry_flow_id": "west_market_01.name_register_retry",
+      "reward_words": ["new", "name"],
+      "asr": {
+        "clear_phrases": ["my name is", "i am"],
+        "acceptable_phrases": ["name"],
+        "required_keywords": ["name"],
+        "optional_keywords": ["new"]
+      }
+    },
+    {
+      "id": "sit_here",
+      "type": "click",
+      "quest_key": "quest_sit_here",
+      "flow_id": "west_market_01.sit_here",
+      "success_flow_id": "west_market_01.sit_here_success",
+      "retry_flow_id": "west_market_01.sit_here_retry",
+      "reward_words": ["sit"]
+    },
+    {
+      "id": "meet_a_ling",
+      "type": "voice",
+      "quest_key": "quest_meet_a_ling",
+      "flow_id": "west_market_01.meet_a_ling",
+      "success_flow_id": "west_market_01.meet_a_ling_success",
+      "retry_flow_id": "west_market_01.meet_a_ling_retry",
+      "reward_words": ["meet", "her", "classmate"],
+      "asr": {
+        "clear_phrases": ["her name is a ling", "her name is aling", "nice to meet you"],
+        "acceptable_phrases": ["her name", "meet you"],
+        "required_keywords": ["her", "name"],
+        "optional_keywords": ["meet", "classmate"],
+        "confused_keywords": ["his"]
+      }
+    },
+    {
+      "id": "meet_haoran",
+      "type": "voice",
+      "quest_key": "quest_meet_haoran",
+      "flow_id": "west_market_01.meet_haoran",
+      "success_flow_id": "west_market_01.meet_haoran_success",
+      "retry_flow_id": "west_market_01.meet_haoran_retry",
+      "reward_words": ["his"],
+      "asr": {
+        "clear_phrases": ["his name is haoran", "his name is hao ran"],
+        "acceptable_phrases": ["his name"],
+        "required_keywords": ["his", "name"],
+        "optional_keywords": ["meet", "classmate"],
+        "confused_keywords": ["her"]
+      }
+    },
+    {
+      "id": "classmate_bond",
+      "type": "voice",
+      "quest_key": "quest_classmate_bond",
+      "flow_id": "west_market_01.classmate_bond",
+      "success_flow_id": "west_market_01.classmate_bond_success",
+      "retry_flow_id": "west_market_01.classmate_bond_retry",
+      "reward_words": ["classmate"],
+      "asr": {
+        "clear_phrases": ["i meet new classmates", "new classmates"],
+        "acceptable_phrases": ["classmate", "classmates"],
+        "required_keywords": ["classmate"],
+        "optional_keywords": ["meet", "new"]
+      }
+    },
+    {
+      "id": "baize_recognition",
+      "type": "auto",
+      "quest_key": "quest_baize",
+      "flow_id": "west_market_01.baize_recognition",
+      "reward_words": []
+    },
+    {
+      "id": "afternoon_review",
+      "type": "voice",
+      "quest_key": "quest_afternoon_review",
+      "flow_id": "west_market_01.afternoon_review",
+      "success_flow_id": "west_market_01.afternoon_review_success",
+      "retry_flow_id": "west_market_01.afternoon_review_retry",
+      "reward_words": ["afternoon"],
+      "asr": {
+        "clear_phrases": ["good afternoon", "her name is a ling", "his name is haoran"],
+        "acceptable_phrases": ["afternoon", "her name", "his name"],
+        "required_keywords": ["afternoon"],
+        "optional_keywords": ["her", "his", "name"]
+      }
+    },
+    {
+      "id": "review_a_ling",
+      "type": "voice",
+      "quest_key": "quest_review_a_ling",
+      "flow_id": "west_market_01.review_a_ling",
+      "success_flow_id": "west_market_01.review_a_ling_success",
+      "retry_flow_id": "west_market_01.meet_a_ling_retry",
+      "reward_words": [],
+      "asr": {
+        "clear_phrases": ["her name is a ling", "her name is aling"],
+        "acceptable_phrases": ["her name"],
+        "required_keywords": ["her", "name"],
+        "optional_keywords": ["a ling", "aling"],
+        "confused_keywords": ["his"]
+      }
+    },
+    {
+      "id": "review_haoran",
+      "type": "voice",
+      "quest_key": "quest_review_haoran",
+      "flow_id": "west_market_01.review_haoran",
+      "success_flow_id": "west_market_01.review_haoran_success",
+      "retry_flow_id": "west_market_01.meet_haoran_retry",
+      "reward_words": [],
+      "asr": {
+        "clear_phrases": ["his name is haoran", "his name is hao ran"],
+        "acceptable_phrases": ["his name"],
+        "required_keywords": ["his", "name"],
+        "optional_keywords": ["haoran", "hao ran"],
+        "confused_keywords": ["her"]
+      }
+    }
+  ]
+}
