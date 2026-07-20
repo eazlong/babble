@@ -30,9 +30,9 @@ def context_keys(context: dict[str, Any] | None) -> list[str]:
 
 async def build_asr_response(result, context: dict[str, Any] | None, endpoint: str):
     logger.info(
-        "[ASR-POSTPROCESS] request endpoint=%s text=%r language=%s confidence=%.4f context_present=%s context_keys=%s",
+        "[ASR-POSTPROCESS] request endpoint=%s text_len=%s language=%s confidence=%.4f context_present=%s context_keys=%s",
         endpoint,
-        result.text,
+        len(result.text),
         result.language,
         result.confidence,
         bool(context),
@@ -45,13 +45,16 @@ async def build_asr_response(result, context: dict[str, Any] | None, endpoint: s
         context=context,
     )
     logger.info(
-        "[ASR-POSTPROCESS] response text=%r applied=%s fallback_reason=%s corrected_text=%r extracted_keys=%s intent_matched=%s latency_ms=%s model=%s",
-        result.text,
+        "[ASR-POSTPROCESS] response text_len=%s applied=%s fallback_reason=%s corrected_text_len=%s correction_reason_present=%s extracted_keys=%s intent_matched=%s guidance_present=%s confidence=%s latency_ms=%s model=%s",
+        len(result.text),
         postprocess.get("applied"),
         postprocess.get("fallback_reason"),
-        postprocess.get("corrected_text"),
+        len(postprocess.get("corrected_text") or ""),
+        bool(postprocess.get("correction_reason")),
         context_keys(postprocess.get("extracted", {})),
         postprocess.get("intent_matched"),
+        bool((postprocess.get("guidance") or {}).get("npc_line")),
+        postprocess.get("confidence"),
         postprocess.get("latency_ms"),
         postprocess.get("model"),
     )

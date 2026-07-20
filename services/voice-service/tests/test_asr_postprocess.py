@@ -192,7 +192,7 @@ async def test_multipart_asr_logs_postprocess_context(caplog):
     assert response.status_code == 200
     assert "[ASR-POSTPROCESS] request endpoint=/api/v1/voice/asr" in caplog.text
     assert "context_present=False" in caplog.text
-    assert "[ASR-POSTPROCESS] response text='暑假' applied=False fallback_reason=missing_context" in caplog.text
+    assert "[ASR-POSTPROCESS] response text_len=2 applied=False fallback_reason=missing_context" in caplog.text
 
 
 @pytest.mark.asyncio
@@ -224,7 +224,7 @@ async def test_json_asr_logs_postprocess_success(caplog):
     assert "[ASR-POSTPROCESS] request endpoint=/api/v1/voice/asr/json" in caplog.text
     assert "context_present=True" in caplog.text
     assert "context_keys=['candidate_answers', 'expected_answer_type', 'expected_slots', 'npc_question']" in caplog.text
-    assert "[ASR-POSTPROCESS] response text='暑假' applied=True fallback_reason=None" in caplog.text
+    assert "[ASR-POSTPROCESS] response text_len=2 applied=True fallback_reason=None" in caplog.text
 
 
 @pytest.mark.asyncio
