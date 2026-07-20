@@ -38,9 +38,9 @@ var planted_flowers: Array[String] = []
 
 # ——— 节点引用 ———
 @onready var coach_overlay: CoachOverlay = $CoachLayer/CoachOverlay
-@onready var mic_panel: Control = $OverlayLayer/MicPanel
-@onready var mic_icon: ColorRect = $OverlayLayer/MicPanel/MicIcon
-@onready var mic_label: Label = $OverlayLayer/MicPanel/MicLabel
+@onready var mic_panel: Control = $MicLayer/MicPanel
+@onready var mic_icon: Control = $MicLayer/MicPanel/MicIcon
+@onready var mic_label: Label = $MicLayer/MicPanel/MicLabel
 @onready var sunny_npc: Node2D = $SunnyNPC
 @onready var flora_npc: Node2D = $FloraNPC
 @onready var weather_crystal: Node2D = $WeatherCrystal
@@ -64,6 +64,7 @@ signal badge_earned()
 signal scene_transition_requested(target_scene: String)
 
 func _ready() -> void:
+	GameManager.set_checkpoint("RainbowGarden")
 	if badge_ui:
 		badge_ui.visible = false
 	if navigation_ui:
@@ -309,14 +310,16 @@ func _start_mic_pulse() -> void:
 
 	mic_tween = create_tween()
 	mic_tween.set_loops()
-	mic_tween.tween_property(mic_icon, "color", Color(0.2, 1.0, 0.4, 1.0), 0.6)
-	mic_tween.tween_property(mic_icon, "color", Color(0.2, 0.4, 0.2, 1.0), 0.6)
+	mic_tween.tween_property(mic_icon, "scale", Vector2(1.3, 1.3), 0.6)
+	mic_tween.tween_property(mic_icon, "scale", Vector2(1.0, 1.0), 0.6)
 	UITweenManager.register_tween("ui_feedback", mic_tween)
 
 func _stop_mic_pulse() -> void:
 	if mic_tween:
 		mic_tween.kill()
 		mic_tween = null
+	if mic_icon:
+		mic_icon.scale = Vector2.ONE
 
 ## ——— Task 1: fix_weather_crystal ———
 
@@ -351,6 +354,7 @@ func _fix_weather_crystal(weather: String) -> void:
 	if fixed_weather.size() >= 3:
 		fix_weather_state = TaskState.COMPLETED
 		task_completed.emit("fix_weather_crystal")
+		GameManager.save_progress()
 		var weather_scores = await HybridAPI.assess_player_input(
 			last_player_input, "fix_weather_crystal", "rainbow_garden"
 		)
@@ -395,6 +399,7 @@ func _find_animal(animal_name: String) -> void:
 	if found_animals.size() >= TARGET_ANIMALS.size():
 		find_animals_state = TaskState.COMPLETED
 		task_completed.emit("find_lost_animals")
+		GameManager.save_progress()
 		var animal_scores = await HybridAPI.assess_player_input(
 			last_player_input, "find_lost_animals", "rainbow_garden"
 		)
@@ -443,6 +448,7 @@ func _plant_flower(verb: String, color: String) -> void:
 	if planted_flowers.size() >= REQUIRED_PLANT_COMBOS.size():
 		plant_flowers_state = TaskState.COMPLETED
 		task_completed.emit("plant_flowers")
+		GameManager.save_progress()
 		var flower_scores = await HybridAPI.assess_player_input(
 			last_player_input, "plant_flowers", "rainbow_garden"
 		)
@@ -500,6 +506,7 @@ func _award_garden_badge() -> void:
 
 func _on_main_menu_button_pressed() -> void:
 	scene_transition_requested.emit("MainMenu")
+	GameManager.set_checkpoint("MainMenu")
 	get_tree().change_scene_to_file("res://assets/scenes/MainMenu.tscn")
 
 func _get_localized_string(key: String) -> String:

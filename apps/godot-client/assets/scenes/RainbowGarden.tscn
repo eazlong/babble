@@ -11,6 +11,7 @@
 [ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/63_480x270.png" id="feifei_6"]
 [ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/64_480x270.png" id="feifei_7"]
 [ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/feifei_idle.png" id="feifei_idle"]
+[ext_resource type="PackedScene" path="res://assets/scenes/ui/VoiceMicIndicator.tscn" id="mic_icon"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_t6dbj"]
 animations = [{
@@ -147,7 +148,10 @@ horizontal_alignment = 1
 [node name="OverlayLayer" type="CanvasLayer" parent="."]
 layer = 40
 
-[node name="MicPanel" type="Control" parent="OverlayLayer" unique_id=344185901]
+[node name="MicLayer" type="CanvasLayer" parent="."]
+layer = 90
+
+[node name="MicPanel" type="Control" parent="MicLayer" unique_id=344185901]
 visible = false
 layout_mode = 3
 anchors_preset = 15
@@ -156,15 +160,14 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MicIcon" type="ColorRect" parent="OverlayLayer/MicPanel" unique_id=1696573497]
+[node name="MicIcon" parent="MicLayer/MicPanel" unique_id=1696573497 instance=ExtResource("mic_icon")]
 layout_mode = 1
 offset_left = 620.0
 offset_top = 340.0
 offset_right = 700.0
 offset_bottom = 420.0
-color = Color(0.2, 0.8, 0.4, 1)
 
-[node name="MicLabel" type="Label" parent="OverlayLayer/MicPanel" unique_id=122427398]
+[node name="MicLabel" type="Label" parent="MicLayer/MicPanel" unique_id=122427398]
 layout_mode = 1
 offset_left = 580.0
 offset_top = 430.0

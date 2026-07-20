@@ -12,10 +12,11 @@
 [ext_resource type="Texture2D" uid="uid://cx11cvl7rdcn3" path="res://assets/textures/ui/fp/ui_starbar_fill.png" id="8_star_fill"]
 [ext_resource type="Texture2D" uid="uid://pjkoh3hv2q6l" path="res://assets/textures/ui/fp/ui_quest_tracker_bg.png" id="9_quest_bg"]
 [ext_resource type="SpriteFrames" uid="uid://lq2gvsfh8vgi" path="res://assets/sprites/feifei/feifei_frames.tres" id="10_peub6"]
-[ext_resource type="Texture2D" uid="uid://bjm5j6jnh78ku" path="res://assets/textures/ui/fp/ui_mic_button_idle.png" id="11_mic_idle"]
+[ext_resource type="PackedScene" path="res://assets/scenes/ui/VoiceMicIndicator.tscn" id="11_mic_button"]
 [ext_resource type="Texture2D" uid="uid://b1o63kftolank" path="res://assets/textures/ui/fp/ui_compass_bg.png" id="12_compass_bg"]
 [ext_resource type="Texture2D" uid="uid://cmhb0yd2kjidi" path="res://assets/textures/ui/fp/ui_compass_arrow.png" id="13_compass_arrow"]
 [ext_resource type="Texture2D" uid="uid://b1al4bt4wn5jh" path="res://assets/textures/ui/badge_beginning.png" id="15_badge"]
+[ext_resource type="Texture2D" uid="uid://b1dwmwygplrui" path="res://assets/textures/hotel/grass.png" id="17_bal7h"]
 
 [node name="BeginningFP" type="Node2D" unique_id=1070436742]
 script = ExtResource("1_scene_ctrl")
@@ -118,6 +119,9 @@ position = Vector2(400, 600)
 [node name="HUDLayer" type="CanvasLayer" parent="." unique_id=82425486]
 layer = 10
 
+[node name="MicLayer" type="CanvasLayer" parent="."]
+layer = 90
+
 [node name="StarBar" type="Control" parent="HUDLayer" unique_id=1835237087]
 layout_mode = 3
 anchors_preset = 5
@@ -176,7 +180,7 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "序章：从混沌迷雾中醒来"
 
-[node name="MicButton" type="Control" parent="HUDLayer" unique_id=608592095]
+[node name="MicButton" parent="MicLayer" unique_id=608592095 instance=ExtResource("11_mic_button")]
 visible = false
 layout_mode = 3
 anchors_preset = 7
@@ -190,15 +194,6 @@ offset_right = 40.0
 offset_bottom = -50.0
 grow_horizontal = 2
 grow_vertical = 0
-
-[node name="Button" type="TextureRect" parent="HUDLayer/MicButton" unique_id=315049318]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("11_mic_idle")
 
 [node name="MagicCompass" type="Control" parent="HUDLayer" unique_id=702472776]
 layout_mode = 3
@@ -312,3 +307,46 @@ horizontal_alignment = 1
 
 [node name="FirstPersonNavigator" type="Node" parent="." unique_id=803615523]
 script = ExtResource("2_navigator")
+
+[node name="ParallaxBackground2" type="ParallaxBackground" parent="." unique_id=257890102]
+
+[node name="SkyLayer" type="ParallaxLayer" parent="ParallaxBackground2" unique_id=1336656371]
+z_index = -100
+motion_scale = Vector2(0.1, 0.1)
+motion_mirroring = Vector2(1920, 0)
+
+[node name="Sky" type="Sprite2D" parent="ParallaxBackground2/SkyLayer" unique_id=1319279931]
+texture = ExtResource("2_1mnpl")
+centered = false
+
+[node name="FarTreeLayer" type="ParallaxLayer" parent="ParallaxBackground2" unique_id=1059813652]
+z_index = -60
+motion_scale = Vector2(0.35, 0.35)
+motion_mirroring = Vector2(1920, 0)
+
+[node name="TreesFar" type="Sprite2D" parent="ParallaxBackground2/FarTreeLayer" unique_id=1247467076]
+position = Vector2(0, 744)
+scale = Vector2(0.8629445, 0.38268793)
+texture = ExtResource("17_bal7h")
+centered = false
+
+[node name="MidTreeLayer" type="ParallaxLayer" parent="ParallaxBackground2" unique_id=929380964]
+z_index = -40
+motion_scale = Vector2(0.55, 0.55)
+motion_mirroring = Vector2(1920, 0)
+
+[node name="TreesMid" type="Sprite2D" parent="ParallaxBackground2/MidTreeLayer" unique_id=1188197637]
+position = Vector2(648.00006, 1768)
+scale = Vector2(0.7401497, 0.81178945)
+centered = false
+
+[node name="GroundLayer" type="ParallaxLayer" parent="ParallaxBackground2" unique_id=961399393]
+z_index = -20
+motion_scale = Vector2(0.8, 0.8)
+motion_mirroring = Vector2(1920, 0)
+
+[node name="Ground" type="Sprite2D" parent="ParallaxBackground2/GroundLayer" unique_id=1140490182]
+position = Vector2(-3.410605e-13, 936)
+scale = Vector2(1.13, 0.4)
+texture = ExtResource("7_bg_ground")
+centered = false

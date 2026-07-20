@@ -10,6 +10,7 @@
 [ext_resource type="SpriteFrames"  path="res://assets/sprites/feifei/feifei_fly_frames.tres" id="10_peub6"]
 [ext_resource type="Script" uid="uid://he8al45fkcd2" path="res://assets/scripts/components/TreasureChest.gd" id="11_chest"]
 [ext_resource type="Script" uid="uid://d12o4o7t4mchg" path="res://assets/scripts/components/MagicFlower.gd" id="12_flower"]
+[ext_resource type="PackedScene" path="res://assets/scenes/ui/VoiceMicIndicator.tscn" id="13_mic_button"]
 
 [node name="SpiritForestFP" type="Node2D" unique_id=1070436742]
 script = ExtResource("1_scene_ctrl")
@@ -255,6 +256,9 @@ offset_bottom = 40.0
 [node name="HUDLayer" type="CanvasLayer" parent="." unique_id=82425486]
 layer = 10
 
+[node name="MicLayer" type="CanvasLayer" parent="."]
+layer = 90
+
 [node name="StarBar" type="Control" parent="HUDLayer" unique_id=1835237087]
 layout_mode = 3
 anchors_preset = 5
@@ -305,7 +309,7 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "任务: 探索精灵森林"
 
-[node name="MicButton" type="Control" parent="HUDLayer" unique_id=608592095]
+[node name="MicButton" parent="MicLayer" unique_id=608592095 instance=ExtResource("13_mic_button")]
 visible = false
 layout_mode = 3
 anchors_preset = 7
@@ -319,15 +323,6 @@ offset_right = 40.0
 offset_bottom = -50.0
 grow_horizontal = 2
 grow_vertical = 0
-
-[node name="Button" type="ColorRect" parent="HUDLayer/MicButton" unique_id=315049318]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.2, 0.8, 0.4, 1)
 
 [node name="MagicCompass" type="Control" parent="HUDLayer" unique_id=702472776]
 layout_mode = 3

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dxtqeva5wto0i"]
 
-[ext_resource type="Texture2D"  path="res://assets/sprites/feifei/feifei_idle.png" id="18_qibpq"]
+[ext_resource type="Texture2D" uid="uid://cbaw0206d7xa1" path="res://assets/sprites/feifei/feifei_idle1.png" id="18_qibpq"]
 [ext_resource type="Texture2D" uid="uid://doex2qcwdfl6q" path="res://assets/textures/objects/tree_big.png" id="21_7as8w"]
 [ext_resource type="Texture2D" uid="uid://dc5v3r2jya7e4" path="res://assets/textures/objects/mushroom_glow.png" id="21_myj53"]
 [ext_resource type="Script" path="res://assets/scripts/components/SceneTransitionArrow.gd" id="arrow_ctrl"]
@@ -16,16 +16,17 @@
 [ext_resource type="Script" uid="uid://buy7xmvqcrpbc" path="res://assets/scripts/components/InteractiveObject.gd" id="interactive_obj"]
 [ext_resource type="Script" uid="uid://cn7dj4kaex1qv" path="res://assets/scripts/components/PlayerController.gd" id="player_ctrl"]
 [ext_resource type="SpriteFrames" path="res://assets/resources/player_sprite_frames.tres" id="player_frames"]
-[ext_resource type="Script" uid="uid://c8s4k3vh4cyf3" path="res://assets/scripts/scenes/SpiritForestController.gd" id="scene_ctrl"]
-[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/57_480x270.png" id="feifei_0"]
-[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/58_480x270.png" id="feifei_1"]
-[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/59_480x270.png" id="feifei_2"]
-[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/60_480x270.png" id="feifei_3"]
-[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/61_480x270.png" id="feifei_4"]
-[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/62_480x270.png" id="feifei_5"]
-[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/63_480x270.png" id="feifei_6"]
-[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/64_480x270.png" id="feifei_7"]
-[ext_resource type="Texture2D"  path="res://assets/resources/sprites/feifei/feifei_idle.png" id="feifei_idle"]
+[ext_resource type="Script" path="res://assets/scripts/scenes/SpiritForestController.gd" id="scene_ctrl"]
+[ext_resource type="PackedScene" path="res://assets/scenes/ui/VoiceMicIndicator.tscn" id="mic_icon"]
+[ext_resource type="Texture2D" uid="uid://dmttaep8kl4kj" path="res://assets/resources/sprites/feifei/57_480x270.png" id="feifei_0"]
+[ext_resource type="Texture2D" uid="uid://b5qwsd7w8m3a4" path="res://assets/resources/sprites/feifei/58_480x270.png" id="feifei_1"]
+[ext_resource type="Texture2D" uid="uid://ct5ifu6ybt33d" path="res://assets/resources/sprites/feifei/59_480x270.png" id="feifei_2"]
+[ext_resource type="Texture2D" uid="uid://dv01mfdohyrdi" path="res://assets/resources/sprites/feifei/60_480x270.png" id="feifei_3"]
+[ext_resource type="Texture2D" uid="uid://b3icndn0k8g42" path="res://assets/resources/sprites/feifei/61_480x270.png" id="feifei_4"]
+[ext_resource type="Texture2D" uid="uid://cvum2t5x801th" path="res://assets/resources/sprites/feifei/62_480x270.png" id="feifei_5"]
+[ext_resource type="Texture2D" uid="uid://pxbjt0mdfhyh" path="res://assets/resources/sprites/feifei/63_480x270.png" id="feifei_6"]
+[ext_resource type="Texture2D" uid="uid://cr0kg0qkyiy5o" path="res://assets/resources/sprites/feifei/64_480x270.png" id="feifei_7"]
+[ext_resource type="Texture2D" uid="uid://cscran6sftqi7" path="res://assets/resources/sprites/feifei/feifei_idle.png" id="feifei_idle"]
 [ext_resource type="Script" uid="uid://b60kedydwbynr" path="res://assets/scripts/ui/SpiritPreview.gd" id="spirit_preview"]
 [ext_resource type="Script" path="res://assets/scripts/components/WateringCan.gd" id="watering_can_ctrl"]
 
@@ -206,6 +207,9 @@ bbcode_enabled = true
 [node name="OverlayLayer" type="CanvasLayer" parent="." unique_id=1343859126]
 layer = 40
 
+[node name="MicLayer" type="CanvasLayer" parent="."]
+layer = 90
+
 [node name="BadgeUI" type="Control" parent="OverlayLayer" unique_id=1197520718]
 visible = false
 layout_mode = 3
@@ -238,7 +242,7 @@ offset_bottom = 70.0
 text = "Forest Badge!"
 horizontal_alignment = 1
 
-[node name="MicPanel" type="Control" parent="OverlayLayer" unique_id=244085601]
+[node name="MicPanel" type="Control" parent="MicLayer" unique_id=244085601]
 visible = false
 layout_mode = 3
 anchors_preset = 15
@@ -247,15 +251,14 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MicIcon" type="ColorRect" parent="OverlayLayer/MicPanel" unique_id=1596473897]
+[node name="MicIcon" parent="MicLayer/MicPanel" unique_id=1596473897 instance=ExtResource("mic_icon")]
 layout_mode = 1
 offset_left = 620.0
 offset_top = 340.0
 offset_right = 700.0
 offset_bottom = 420.0
-color = Color(0.2, 0.8, 0.4, 1)
 
-[node name="MicLabel" type="Label" parent="OverlayLayer/MicPanel" unique_id=22427298]
+[node name="MicLabel" type="Label" parent="MicLayer/MicPanel" unique_id=22427298]
 layout_mode = 1
 offset_left = 580.0
 offset_top = 430.0

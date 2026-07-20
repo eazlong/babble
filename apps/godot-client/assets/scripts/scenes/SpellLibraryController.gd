@@ -31,9 +31,9 @@ var current_dialogue_index: int = 0
 
 # ——— 节点引用 ———
 @onready var coach_overlay: CoachOverlay = $CoachLayer/CoachOverlay
-@onready var mic_panel: Control = $OverlayLayer/MicPanel
-@onready var mic_icon: ColorRect = $OverlayLayer/MicPanel/MicIcon
-@onready var mic_label: Label = $OverlayLayer/MicPanel/MicLabel
+@onready var mic_panel: Control = $MicLayer/MicPanel
+@onready var mic_icon: Control = $MicLayer/MicPanel/MicIcon
+@onready var mic_label: Label = $MicLayer/MicPanel/MicLabel
 @onready var luna_npc: Node2D = $LunaNPC
 @onready var teacher_npc: Node2D = $TeacherNPC
 @onready var bookshelf: Node2D = $Bookshelf
@@ -55,6 +55,7 @@ signal badge_earned()
 signal scene_transition_requested(target_scene: String)
 
 func _ready() -> void:
+	GameManager.set_checkpoint("SpellLibrary")
 	if badge_ui:
 		badge_ui.visible = false
 	if navigation_ui:
@@ -273,14 +274,16 @@ func _start_mic_pulse() -> void:
 
 	mic_tween = create_tween()
 	mic_tween.set_loops()
-	mic_tween.tween_property(mic_icon, "color", Color(0.2, 1.0, 0.4, 1.0), 0.6)
-	mic_tween.tween_property(mic_icon, "color", Color(0.2, 0.4, 0.2, 1.0), 0.6)
+	mic_tween.tween_property(mic_icon, "scale", Vector2(1.3, 1.3), 0.6)
+	mic_tween.tween_property(mic_icon, "scale", Vector2(1.0, 1.0), 0.6)
 	UITweenManager.register_tween("ui_feedback", mic_tween)
 
 func _stop_mic_pulse() -> void:
 	if mic_tween:
 		mic_tween.kill()
 		mic_tween = null
+	if mic_icon:
+		mic_icon.scale = Vector2.ONE
 
 ## ——— Task 1: organize_books ———
 
@@ -315,6 +318,7 @@ func _organize_book(category: String) -> void:
 	if organized_books.size() == REQUIRED_CATEGORIES.size():
 		organize_books_state = TaskState.COMPLETED
 		task_completed.emit("organize_books")
+		GameManager.save_progress()
 		var scores = await HybridAPI.assess_player_input(
 			last_player_input, "organize_books", "spell_library"
 		)
@@ -377,6 +381,7 @@ func _process_command_input(text: String) -> void:
 func _complete_follow_commands() -> void:
 	follow_commands_state = TaskState.COMPLETED
 	task_completed.emit("follow_commands")
+	GameManager.save_progress()
 	var follow_scores = await HybridAPI.assess_player_input(
 		last_player_input, "follow_commands", "spell_library"
 	)
@@ -424,6 +429,7 @@ func _process_dialogue_response(text: String) -> void:
 func _complete_practice_dialogue() -> void:
 	practice_dialogue_state = TaskState.COMPLETED
 	task_completed.emit("practice_dialogue")
+	GameManager.save_progress()
 	var dialogue_scores = await HybridAPI.assess_player_input(
 		last_player_input, "practice_dialogue", "spell_library"
 	)
@@ -441,8 +447,9 @@ func _play_celebration() -> void:
 
 func _show_badge_unlocked(badge_id: String) -> void:
 	badge_collected = true
-	GameManager.unlocked_areas.append("RainbowGarden")
-	GameManager.save_progress()
+	if not GameManager.unlocked_areas.has("RainbowGarden"):
+		GameManager.unlocked_areas.append("RainbowGarden")
+	GameManager.set_checkpoint("RainbowGarden")
 
 	if badge_ui:
 		badge_ui.visible = true
@@ -461,9 +468,10 @@ func _show_badge_unlocked(badge_id: String) -> void:
 
 func _award_library_badge() -> void:
 	badge_collected = true
-	GameManager.unlocked_areas.append("RainbowGarden")
+	if not GameManager.unlocked_areas.has("RainbowGarden"):
+		GameManager.unlocked_areas.append("RainbowGarden")
 	GameManager.lxp_score += 100
-	GameManager.save_progress()
+	GameManager.set_checkpoint("RainbowGarden")
 
 	if badge_ui:
 		badge_ui.visible = true

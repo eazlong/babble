@@ -60,8 +60,8 @@ const COACH_RESPONSE_TIMEOUT: float = 8.0
 
 @onready var feifei: FeifeiShoulder = $FeifeiLayer/FeifeiShoulder
 @onready var quest_tracker: Control = $HUDLayer/QuestTracker
-@onready var mic_button: Control = $HUDLayer/MicButton
-@onready var mic_button_icon: TextureRect = $HUDLayer/MicButton/Button
+@onready var mic_button: Control = $MicLayer/MicButton
+@onready var mic_button_icon: TextureRect = $MicLayer/MicButton/Button
 @onready var magic_compass: Control = $HUDLayer/MagicCompass
 @onready var mid_layer: Node2D = $MidLayer
 @onready var main_camera: Camera2D = $CameraSystem/MainCamera
@@ -90,7 +90,14 @@ signal prologue_completed()
 signal task_completed(task_name: String)
 
 func _ready() -> void:
-	GameManager.current_scene = "BeginningFP"
+	if GameManager.should_resume_to_scene("BeginningFP"):
+		var resume_path: String = GameManager.get_scene_path()
+		var resume_result := get_tree().change_scene_to_file(resume_path)
+		if resume_result != OK:
+			push_error("[BeginningFP] Failed to resume saved scene: %s" % error_string(resume_result))
+		return
+
+	GameManager.set_checkpoint("BeginningFP", not GameManager.is_test_mode_skip_auto_load_save())
 	_load_dialogue_flows()
 	_create_prologue_visuals()
 	_setup_voice_failure_intervention()
@@ -337,7 +344,7 @@ func _complete_prologue() -> void:
 		GameManager.unlocked_areas.append("MirageInnIntroduction")
 	if not GameManager.completed_dialogues.has("beginning_prologue_complete"):
 		GameManager.completed_dialogues.append("beginning_prologue_complete")
-	GameManager.save_progress()
+	GameManager.set_checkpoint("MirageInnIntroduction")
 	prologue_completed.emit()
 
 	await get_tree().create_timer(Config.SCENE_FADE_DURATION).timeout
