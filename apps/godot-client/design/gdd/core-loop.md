@@ -13,22 +13,22 @@
 核心循环是 LinguaQuest RPG 的游戏骨架，定义了从 30 秒微循环到长期进度循环的完整玩家体验节奏。所有其他系统（对话、任务、评估、奖励）都围绕核心循环展开。
 
 核心循环的设计目标：
-- **30 秒循环**: 让每次语音交互都产生可见反馈（魔法效果）
-- **5-15 分钟循环**: 提供短期目标（积累星级获得 Badge）
+- **30 秒循环**: 让每次语音交互都产生可见反馈（言灵回应、神器微光、迷雾退散）
+- **8-12 分钟循环**: 提供短期目标（积累灵光获得神器徽记）
 - **会话循环**: 提供自然停止点和长期动力（奖励收集）
-- **长期循环**: 提供跨会话的成长轨迹（CEFR 等级）
+- **长期循环**: 提供跨会话的成长轨迹（六大神器进度 + CEFR 等级）
 
 ---
 
 ## 2. 玩家幻想
 
-**玩家应该感觉**: "我的每一次英语表达都在产生魔法效果，积累到力量"
+**玩家应该感觉**: “我的每一次英语表达都在唤醒言灵、点亮神器、驱散迷雾。”
 
 循环设计必须满足：
 - **即时反馈**: 每次语音回答都在 1.5s 内产生视觉+音频反馈
-- **可见进步**: 星级积累清晰可见，Badge 解锁有仪式感
+- **可见进步**: 灵光积累清晰可见，神器徽记解锁有仪式感
 - **节奏感**: 任务难度呈锯齿形曲线（紧张→释放→更高紧张）
-- **自然停止点**: 会话结束不强制，而是 Spark 温柔建议休息
+- **自然停止点**: 会话结束不强制，而是飞飞温柔建议休息
 
 ---
 
@@ -39,27 +39,27 @@
 **定义**: 单次 NPC-玩家对话回合
 
 ```
-[Phase 1] NPC 发起对话（0-2s）
+[Phase 1] NPC / 灵物发起对话（0-2s）
   - NPC 通过 TTS 语音播放问题/提示
   - 同步显示 NPC 动画（表情、动作）
   
 [Phase 2] 玩家语音输入（等待触发，最长 10s）
   - VAD 检测玩家发言起止
-  - 静默 > 10s 触发 Spark 提示介入
+  - 静默 > 10s 触发飞飞提示介入
   
 [Phase 3] ASR 转录 + LLM 评估（0.5-1.5s）
   - Whisper ASR 转录语音为文本
   - GPT-4o 评估准确性、流利度、词汇
   - 计算 LXP 分数
   
-[Phase 4] NPC 响应（0.5-1.0s）
+[Phase 4] NPC / 世界响应（0.5-1.0s）
   - NPC TTS 播放回复（鼓励/纠正/继续）
-  - 触发魔法特效（正确: 光芒绽放；错误: Spark 提示）
+  - 触发言灵反馈（正确: 神器微光/迷雾退散；需要帮助: 飞飞提示）
   
-[Phase 5] 星级反馈（即时）
-  - 显示 1-5 星评价
-  - 累积到当前场景星级总数
-  - 触发 Spark 评论（"Great!" / "Try again!"）
+[Phase 5] 灵光反馈（即时）
+  - 显示 1-5 星评价（世界内称为灵光强度）
+  - 累积到当前区域灵光总数
+  - 触发飞飞评论（"Great!" / "Try again!"）
 ```
 
 **关键参数**:
@@ -67,71 +67,71 @@
 |------|--------|---------|------|
 | `npc_response_delay_ms` | 500 | 300-1000 | Feel |
 | `silence_threshold_s` | 10 | 5-15 | Gate |
-| `spark_intervention_max_count` | 3 | 1-5 | Gate |
+| `feifei_intervention_max_count` | 3 | 1-5 | Gate |
 | `star_per_correct_response` | 3-5 | 1-5 | Curve |
 
 **边缘情况**:
-| 场景 | 处理规则 |
+| 区域 | 处理规则 |
 |------|---------|
-| ASR 空结果 | Spark 提示"I couldn't hear you clearly. Can you say it again?"，不扣星 |
+| ASR 空结果 | 飞飞提示"I couldn't hear you clearly. Can you say it again?"，不扣星 |
 | 网络延迟 > 3s | 显示加载动画，NPC 暂停等待 |
-| 连续 2 次错误 | Spark 进入"示范模式"——播放正确发音让玩家跟读，跟读成功计为完成（不引入文字输入） |
-| 背景噪音 > 60dB | Spark 提示"Let's find a quieter place"，暂停当前对话 |
+| 连续 2 次错误 | 飞飞进入“示范模式”——播放正确发音让玩家跟读，跟读成功计为完成（不引入文字输入） |
+| 背景噪音 > 60dB | 飞飞提示"Let's find a quieter place"，暂停当前对话 |
 
 ---
 
 ### 3.2 8-12 分钟中循环（Short-Term Goal）
 
-**定义**: 单个场景完成循环
+**定义**: 单个区域完成循环
 
 **时长调整理由**：
 - 四年级学生有意注意持续 20-25 分钟（需休息）
-- 单场景控制在 8-12 分钟，确保连续 2-3 场景不超注意力窗口
-- 添加"课间休息"机制：每完成场景后 Spark 建议"休息 1 分钟"，播放眼保健操动画
+- 单区域控制在 8-12 分钟，确保连续 2-3 区域不超注意力窗口
+- 添加“课间休息”机制：每完成区域后飞飞建议“休息 1 分钟”，播放眼保健操动画
 
 ```
-[Phase 1] 场景启动（1-2 分钟）
-  - Spark 飞出介绍场景主题
-  - NPC 欢迎对话（教学引导）
-  - 显示场景目标："Collect stars to unlock the Badge"
+[Phase 1] 区域启动（1-2 分钟）
+  - 飞飞飞出介绍当前迷雾/神器问题
+  - NPC / 灵物欢迎对话（教学引导）
+  - 显示区域目标："Collect stars to awaken the Artifact"
 
 [Phase 2] 任务序列（5-8 分钟）
-  - 主线任务 1 → 微循环序列 → 星级累积
-  - 主线任务 2 → 微循环序列 → 星级累积
-  - 主线任务 3 → 微循环序列 → 星级累积
+  - 主线任务 1 → 微循环序列 → 灵光累积
+  - 主线任务 2 → 微循环序列 → 灵光累积
+  - 主线任务 3 → 微循环序列 → 灵光累积
 
 [Phase 3] 里程碑检查（即时）
-  - 星级 >= threshold → 触发 Badge 解锁
-  - 星级 < threshold → Spark 提示剩余星数
+  - 灵光 >= threshold → 触发神器徽记解锁
+  - 灵光 < threshold → 飞飞提示剩余灵光
 
-[Phase 4] Badge 解锁仪式（30-60s）
-  - Spark 飞出宣布"Badge unlocked!"
-  - Badge 动画（发光、旋转）
+[Phase 4] 神器徽记解锁仪式（30-60s）
+  - 飞飞飞出宣布"Artifact mark unlocked!"
+  - 神器徽记动画（发光、旋转）
   - NPC 恭祝对话
-  - 奖励展示（皮肤/装饰随机掉落）
+  - 奖励展示（飞飞灵饰/区域装饰随机掉落）
 
 [Phase 5] 课间休息（1 分钟，强制）
-  - Spark 建议"休息一会儿，保护眼睛"
+  - 飞飞建议"休息一会儿，保护眼睛"
   - 播放眼保健操简短动画（可选）
-  - 显示下次场景解锁提示
-  - Spark 询问"Ready for the next adventure?"
+  - 显示下一片迷雾区域解锁提示
+  - 飞飞询问"Ready for the next adventure?"
 ```
 
 **关键参数**:
 | 参数 | 默认值 | 可调范围 | 类别 |
 |------|--------|---------|------|
-| `stars_to_unlock_badge` | 动态阈值 | 10-25 | Curve |
+| `stars_to_unlock_artifact_mark` | 动态阈值 | 10-25 | Curve |
 | `tasks_per_scene` | 3-4 | 2-6 | Gate |
-| `badge_unlock_animation_s` | 30 | 15-60 | Feel |
+| `artifact_mark_unlock_animation_s` | 30 | 15-60 | Feel |
 | `scene_duration_min` | 8-12 | 5-20 | Gate |
 | `break_duration_s` | 60 | 30-120 | Feel |
 
 **边缘情况**:
-| 场景 | 处理规则 |
+| 区域 | 处理规则 |
 |------|---------|
-| 星级 > 20 但任务未完成 | Badge 解锁但任务可继续（可选完成） |
-| 玩家跳过任务 | Spark 跟随但不强制，主线任务不可跳过 |
-| 中途退出场景 | 保存当前星级，下次进入继续累积 |
+| 灵光 > 20 但任务未完成 | 神器徽记解锁但任务可继续（可选完成） |
+| 玩家跳过任务 | 飞飞跟随但不强制，主线任务不可跳过 |
+| 中途退出区域 | 保存当前灵光，下次进入继续累积 |
 
 ---
 
@@ -142,34 +142,34 @@
 **时长调整理由**：
 - 四年级学生注意力持续 20-25 分钟（生理硬约束）
 - 单会话控制在 20-25 分钟，匹配注意力窗口，避免疲劳和注意力下降
-- 完成 1 个场景（8-12 分钟）后即为自然停止点，不强制连续多场景
-- 允许连续 2 场景（16-24 分钟），但仍不超过 30 分钟总窗口
+- 完成 1 个区域（8-12 分钟）后即为自然停止点，不强制连续多区域
+- 允许连续 2 区域（16-24 分钟），但仍不超过 30 分钟总窗口
 
 ```
 [Phase 1] 会话启动（1-2 分钟）
   - MainMenu 显示
-  - 玩家选择场景
-  - Spark 问候对话（回顾上次进度）
+  - 玩家选择区域
+  - 飞飞问候对话（回顾上次进度）
 
-[Phase 2] 场景游玩（16-24 分钟）
-  - 中循环序列（1-2 个场景）
-  - 每场景间强制 1 分钟课间休息
-  - 每完成 2 场景强制 5 分钟大休息（Spark 建议）
-  - 日常任务触发（每会话 3 个）
+[Phase 2] 区域游玩（16-24 分钟）
+  - 中循环序列（1-2 个区域）
+  - 每区域间强制 1 分钟课间休息
+  - 每完成 2 区域强制 5 分钟大休息（飞飞建议）
+  - 日常修复任务触发（每会话 3 个）
 
 [Phase 3] 会话结束触发（条件触发）
-  - 条件 1: 游玩时间 >= 45 分钟 → Spark 强制建议"Time for a break!"
-  - 条件 2: 完成 3 场景 → Spark 建议"Great work today! Come back tomorrow"
-  - 条件 3: 玩家说"I want to rest" → Spark 确认并保存
-  - 条件 4: 玩家主动退出 → Spark 保存并告别
+  - 条件 1: 游玩时间 >= 45 分钟 → 飞飞强制建议"Time for a break!"
+  - 条件 2: 完成 3 区域 → 飞飞建议"Great work today! Come back tomorrow"
+  - 条件 3: 玩家说"I want to rest" → 飞飞确认并保存
+  - 条件 4: 玩家主动退出 → 飞飞保存并告别
 
 [Phase 4] 会话总结（1-2 分钟）
-  - Spark 总结本次学习成果
-  - 显示本次获得的星级、Badge、奖励
+  - 飞飞总结本次学习成果
+  - 显示本次获得的灵光、神器徽记、奖励
   - 家长控制台同步数据
 
 [Phase 5] 会话结束
-  - Spark 告别动画
+  - 飞飞告别动画
   - MainMenu 返回
 ```
 
@@ -185,7 +185,7 @@
 | `long_break_duration_min` | 5 | 3-10 | Feel |
 
 **边缘情况**:
-| 场景 | 处理规则 |
+| 区域 | 处理规则 |
 |------|---------|
 | 网络中断 | 本地缓存会话数据，恢复后同步 |
 | 强制关闭应用 | 下次启动自动恢复上次会话进度 |
@@ -198,55 +198,55 @@
 **定义**: 跨会话的 CEFR 等级和奖励积累
 
 ```
-[Phase 1] A1 阶段（第 1 章）
-  - 场景: 精灵森林、咒语图书馆、彩虹花园
-  - Badge: Forest Badge, Library Badge, Garden Badge
-  - 词汇: 四年级上学期课标词汇（问候、颜色、数字、课堂用语、自然词汇）
-  - 解锁条件: 3 Badge 全部获得
+[Phase 1] A1 阶段（迷雾岛第一章）
+  - 区域: 雾湾、长安集市、花灯庭院、仙舟渡口、词灵书阁、岛心观星台
+  - 神器: 回声螺、记忆玉简、彩灯莲、风向罗盘、句法机关锁、星河镜
+  - 词汇: 四年级上学期课标词汇（问候、介绍、颜色、数字、课堂用语、自然与物品词汇）
+  - 解锁条件: 六大神器徽记全部获得
   
 [Phase 2] A1→A2 升级
   - LXP 总量达到阈值（待定义）
   - CEFR 评估测试通过
-  - 解锁传说级奖励（皮肤/精灵外观）
+  - 解锁传说级奖励（飞飞灵饰/岛屿装饰）
   
-[Phase 3] A2 阶段（第 2 章）
-  - 场景: 待设计（Phase 2）
+[Phase 3] A2 阶段（迷雾外海）
+  - 区域: 待设计（Phase 2）
   - 词汇: 四年级下学期课标词汇
   
-[Phase 4] B1-C2 阶段（后续章节）
+[Phase 4] B1-C2 阶段（后续群岛）
   - Phase 3 扩展内容
 ```
 
 **关键参数**:
 | 参数 | 默认值 | 可调范围 | 类别 |
 |------|--------|---------|------|
-| `badges_to_unlock_chapter2` | 3 | 2-5 | Curve |
+| `artifact_marks_to_unlock_chapter2` | 6 | 4-6 | Curve |
 | `lxp_threshold_for_cefr_upgrade` | TBD | TBD | Curve |
 | `legendary_rewards_per_cefr_level` | 1 | 1-3 | Curve |
 
 **边缘情况**:
-| 场景 | 处理规则 |
+| 区域 | 处理规则 |
 |------|---------|
 | 玩家快速通关 A1 | LXP 总量不足时提示"Explore more vocabulary before advancing" |
-| 玩家停滞在 A1 | Spark 主动建议新任务，避免 boredom |
+| 玩家停滞在 A1 | 飞飞主动建议新任务，避免 boredom |
 | CEFR 测试失败 | 不扣分，允许重新测试，提供针对性练习 |
 
 ---
 
 ## 4. 公式
 
-**核心循环本身不定义星级计算公式**，而是委托给专门的子系统：
+**核心循环本身不定义灵光计算公式**，而是委托给专门的子系统：
 
 | 计算职责 | 权威来源 | 说明 |
 |----------|----------|------|
-| 单次回复星级 | `lxp-system.md` §4.5 | LXP 0-100 → 1-5 星映射 |
-| Badge 解锁阈值 | `star-economy.md` §4.1 | 动态阈值 `calculate_badge_threshold(scene_id, player_avg_stars)` |
-| 场景通关检查 | `star-economy.md` §4.3 | `can_unlock_badge(scene_stars, threshold)` |
+| 单次回复灵光 | `lxp-system.md` §4.5 | LXP 0-100 → 1-5 星映射 |
+| 神器徽记 解锁阈值 | `star-economy.md` §4.1 | 动态阈值 `calculate_artifact_mark_threshold(scene_id, player_avg_stars)` |
+| 区域通关检查 | `star-economy.md` §4.3 | `can_unlock_artifact_mark(scene_stars, threshold)` |
 
 **核心循环仅定义调用时机**：
 ```
-[微循环 Phase 5] 调用 lxp-system 的星级计算，获取本次回复星级
-[中循环 Phase 3] 调用 star-economy 的阈值公式，检查是否可解锁 Badge
+[微循环 Phase 5] 调用 lxp-system 的灵光计算，获取本次回复灵光
+[中循环 Phase 3] 调用 star-economy 的阈值公式，检查是否可解锁 神器徽记
 ```
 
 **变量表**（来自 lxp-system.md）:
@@ -256,7 +256,7 @@
 | `fluency` | float | 0-100 | 流利度（语速、停顿次数、连贯性） |
 | `vocabulary` | float | 0-100 | 词汇多样性（TTR 指数） |
 | `LXP` | float | 0-100 | 加权总分（lxp-system.md §4.1） |
-| `stars` | int | 1-5 | 最终星级（lxp-system.md §4.5） |
+| `stars` | int | 1-5 | 最终灵光（lxp-system.md §4.5） |
 
 ---
 
@@ -264,21 +264,21 @@
 
 ### 5.1 ASR 失败处理矩阵
 
-| ASR 结果 | 置信度 | Spark 行为 | 星级影响 |
+| ASR 结果 | 置信度 | 飞飞 行为 | 灵光影响 |
 |----------|--------|-----------|---------|
 | 空结果 | - | "I couldn't hear you. Try again?" | 0 星（不计入） |
 | 低置信度 | < 0.5 | "Did you say [transcription]? Try saying it clearly." | 1 星（鼓励尝试） |
 | 中置信度 | 0.5-0.7 | "Good try! Let's practice [target_word] together." | 2 星（部分正确） |
-| 高置信度 + 正确 | >= 0.7 | "Perfect! [target_word] unlocked!" | 3-5 星 |
-| 高置信度 + 错误 | >= 0.7 | "You said [wrong_word]. The magic word is [target_word]." | 1 星（错误识别） |
+| 高置信度 + 正确 | >= 0.7 | "Perfect! [target_word] awakened!" | 3-5 星 |
+| 高置信度 + 错误 | >= 0.7 | "You said [wrong_word]. The word spirit is listening for [target_word]." | 1 星（错误识别） |
 
 ### 5.2 多任务并发处理
 
-| 场景 | 处理规则 |
+| 区域 | 处理规则 |
 |------|---------|
 | 主线任务 + 日常任务触发 | 优先主线，日常任务可在主线间隙完成 |
 | 两个 NPC 同时对话 | 不允许，NPC 按剧情顺序触发 |
-| Spark 介入 + NPC 对话中 | Spark 暂停 NPC 动画，介入完成后恢复 |
+| 飞飞介入 + NPC 对话中 | 飞飞暂停 NPC 动画，介入完成后恢复 |
 
 ---
 
@@ -288,14 +288,14 @@
 |----------|---------|
 | Dialogue System | NPC 对话流程、TTS/ASR 管线 |
 | Quest System | 任务触发、进度追踪 |
-| Assessment System | LXP 计算、星级评估 |
-| Reward System | Badge、奖励掉落 |
+| Assessment System | LXP 计算、灵光评估 |
+| Reward System | 神器徽记、奖励掉落 |
 
 | 下游系统 | 消费内容 |
 |----------|---------|
-| Parent Dashboard | 会话时长、星级统计、Badge 获得 |
+| Parent Dashboard | 会话时长、灵光统计、神器徽记 获得 |
 | Spirit Coach |介入时机判断、错误模式分析 |
-| Game State Manager | 当前场景、星级累计、会话时长 |
+| Game State Manager | 当前区域、灵光累计、会话时长 |
 
 ---
 
@@ -303,11 +303,11 @@
 
 | 旋钮名 | 文件位置 | 默认值 | 范围 | 类别 | 说明 |
 |--------|---------|--------|------|------|------|
-| `silence_threshold_s` | `assets/data/core_loop.json` | 10 | 5-15 | Gate | 静默多久触发 Spark 提示 |
-| `stars_to_unlock_badge` | `assets/data/core_loop.json` | 动态(15-25) | 10-25 | Curve | Badge 解锁动态阈值 |
+| `silence_threshold_s` | `assets/data/core_loop.json` | 10 | 5-15 | Gate | 静默多久触发飞飞提示 |
+| `stars_to_unlock_artifact_mark` | `assets/data/core_loop.json` | 动态(15-25) | 10-25 | Curve | 神器徽记解锁动态阈值 |
 | `max_session_length_min` | `assets/data/core_loop.json` | 30 | 20-30 | Gate | 最大会话时长（匹配四年级注意力窗口 20-25min） |
 | `npc_response_delay_ms` | `assets/data/core_loop.json` | 500 | 300-1000 | Feel | NPC 响应延迟 |
-| `spark_intervention_max` | `assets/data/core_loop.json` | 3 | 1-5 | Gate | 单次会话 Spark 最多介入次数 |
+| `feifei_intervention_max` | `assets/data/core_loop.json` | 3 | 1-5 | Gate | 单次会话飞飞最多介入次数 |
 | `auto_save_interval_min` | `assets/data/core_loop.json` | 5 | 3-10 | Feel | 自动保存频率 |
 
 ---
@@ -317,21 +317,21 @@
 ### 功能标准
 
 - [ ] 30 秒循环可在 1.5s 内完成端到端响应（NPC →玩家 →NPC）
-- [ ] 星级计算准确映射到 1-5 星
-- [ ] Badge 解锁条件明确（动态阈值 10-25 星，基于场景难度和玩家历史）
-- [ ] 会话时长限制生效（>= 30 分钟触发 Spark 告别提示）
-- [ ] ASR 连续失败 2 次后 Spark 示范模式正常触发
+- [ ] 灵光计算准确映射到 1-5 星
+- [ ] 神器徽记解锁条件明确（动态阈值 10-25 星，基于区域难度和玩家历史）
+- [ ] 会话时长限制生效（>= 30 分钟触发飞飞告别提示）
+- [ ] ASR 连续失败 2 次后飞飞示范模式正常触发
 
 ### 体验标准
 
-- [ ] 测试玩家（6-10 岁）理解星级累积目标
-- [ ] Badge 解锁仪式有仪式感（测试玩家愿意截图分享）
-- [ ] Spark 介入不打断对话沉浸感
+- [ ] 测试玩家（6-10 岁）理解灵光累积目标
+- [ ] 神器徽记解锁仪式有仪式感（测试玩家愿意截图分享）
+- [ ] 飞飞介入不打断对话沉浸感
 - [ ] 会话结束自然（测试玩家愿意说"I'll come back tomorrow"）
 
 ### 性能标准
 
-- [ ] P95 延迟 < 1.5s（VAD → ASR → LLM → TTS → Spark）
+- [ ] P95 延迟 < 1.5s（VAD → ASR → LLM → TTS → 飞飞）
 - [ ] ASR 识别率 >= 85%（儿童口音）
 - [ ] 会话数据保存成功率 >= 99.9%
 
@@ -341,5 +341,5 @@
 
 1. `/design-review design/gdd/core-loop.md` — 审查此 GDD
 2. `/design-system lxp-system` — 定义完整 LXP 公式
-3. `/design-system star-economy` — 设计星级经济平衡
+3. `/design-system star-economy` — 设计灵光经济平衡
 4. `/consistency-check` — 检查与其他 GDD 的一致性

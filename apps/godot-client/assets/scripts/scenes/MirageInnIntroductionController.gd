@@ -42,7 +42,7 @@ const WORD_SPIRIT_HELLO = preload("res://assets/textures/objects/inn/word_spirit
 const GUEST_ROOM_DISTANT_LIGHT = preload("res://assets/textures/objects/inn/guest_room_distant_light.png")
 
 @onready var feifei: FeifeiShoulder = $FeifeiLayer/FeifeiShoulder
-@onready var mic_button: Control = $HUDLayer/MicButton
+@onready var mic_button: Control = $MicLayer/MicButton
 @onready var quest_label: Label = $HUDLayer/QuestTracker/QuestLabel
 
 var state: InnIntroState = InnIntroState.ENTRY
@@ -68,7 +68,7 @@ var wardrobe_empty: TextureRect
 func _ready() -> void:
 	var manager: Variant = _game_manager()
 	if manager:
-		manager.current_scene = "MirageInnIntroduction"
+		manager.set_checkpoint("MirageInnIntroduction")
 	_load_dialogue_flows()
 	_build_visuals()
 	_setup_voice_failure_intervention()
@@ -89,9 +89,6 @@ func _process(delta: float) -> void:
 	if voice_pipeline.is_recording:
 		record_duration += delta
 		silence_timer = 0.0
-		if record_duration > MAX_RECORD_DURATION:
-			voice_pipeline.stop_listening()
-			_stop_voice_listening()
 	else:
 		silence_timer += delta
 		record_duration = 0.0
@@ -167,7 +164,7 @@ func _complete_intro() -> void:
 			manager.unlocked_areas.append("ChangAnMarket")
 		if not manager.completed_dialogues.has("mirage_inn_introduction_complete"):
 			manager.completed_dialogues.append("mirage_inn_introduction_complete")
-		manager.save_progress()
+		manager.set_checkpoint("ChangAnMarket")
 
 	await _fade_to_black()
 	var change_result := get_tree().change_scene_to_file(TARGET_SCENE_PATH)

@@ -25,18 +25,18 @@
 
 ### 1.3 玩家体验幻想
 
-**玩家应该感觉**："Spark是我的魔法伙伴，它用我能理解的方式帮助我探索魔法世界"
+**玩家应该感觉**："飞飞是我的灵兽伙伴，它用我能理解的方式帮助我探索迷雾岛"
 
 当NPC混合使用中英文时，孩子应该感到：
 - **被支持**：中文引导让他们不害怕，英文示范让他们有目标
-- **有成就感**：每次成功说英文都触发魔法效果（NPC回应、Spark发光、星星积累）
+- **有成就感**：每次成功说英文都触发言灵反馈（NPC回应、飞飞发光、星辉积累）
 - **安全**：说错了不会被批评，只会得到温柔的示范和鼓励
-- **魔法沉浸**：语言比例的变化不是"考试难度调整"，而是"魔法世界的氛围变化"——初级区域更多中文指引，高级区域更多英文咒语
+- **言灵沉浸**：语言比例的变化不是"考试难度调整"，而是"迷雾岛的氛围变化"——初级区域更多中文指引，高级区域更多英文咒语
 
 **关键体验原则**：
-- 语言适应是**隐性的**——孩子不会意识到"因为我答错了所以中文变多了"，而是感觉"这个场景的魔法氛围更友好"
+- 语言适应是**隐性的**——孩子不会意识到"因为我答错了所以中文变多了"，而是感觉"这个场景的言灵氛围更友好"
 - 所有反馈都是**正面的**——成功有庆祝，失败有示范，没有"错误"只有"还没学会"
-- Spark是**伙伴不是老师**——它说"让我们一起试试"而不是"你错了，应该这样说"
+- 飞飞是**伙伴不是老师**——它说"让我们一起试试"而不是"你错了，应该这样说"
 
 ---
 
@@ -131,12 +131,12 @@ interface LanguageSegment {
 // 示例
 const exampleDialogue: DialogueLine = {
   id: "spark_greeting_001",
-  text: "你好！Hello! 我是Spark。",
+  text: "你好！Hello! 我是飞飞。",
   language: "mixed",
   segments: [
     { text: "你好！", language: "zh" },
     { text: "Hello! ", language: "en" },
-    { text: "我是Spark。", language: "zh" }
+    { text: "我是飞飞。", language: "zh" }
   ],
   teaching_point: "greeting",
   difficulty: "easy"
@@ -275,7 +275,7 @@ const TEMPLATES: EncouragementTemplate[] = [
     priority: 15,  // 最高优先级
     response: {
       npc_text: "Excellent! {player_input}! 你说得太棒了！",
-      spark_action: 'celebrate',  // Spark特效：发光、旋转
+      spark_action: 'celebrate',  // 飞飞特效：发光、旋转
       difficulty_adjustment: 'none',
       audio_speed: 1.0
     }
@@ -289,7 +289,7 @@ const TEMPLATES: EncouragementTemplate[] = [
     priority: 14,
     response: {
       npc_text: "Great job! Very good! 继续加油！",
-      spark_action: 'encourage',  // Spark特效：点头、微笑
+      spark_action: 'encourage',  // 飞飞特效：点头、微笑
       difficulty_adjustment: 'none',
       audio_speed: 1.0
     }
@@ -304,7 +304,7 @@ const TEMPLATES: EncouragementTemplate[] = [
     priority: 16,  // 比perfect_success更高
     response: {
       npc_text: "You did it! 太厉害了！我就知道你可以！",
-      spark_action: 'celebrate_big',  // Spark特效：大庆祝，星星爆发
+      spark_action: 'celebrate_big',  // 飞飞特效：大庆祝，星辉爆发
       difficulty_adjustment: 'none',
       audio_speed: 1.0
     }
@@ -319,7 +319,7 @@ const TEMPLATES: EncouragementTemplate[] = [
     priority: 12,  // 在repeated_failure(11)之上，asr_unclear(10)之上
     response: {
       npc_text: "Let me show you how! 听我说：{demo}",
-      spark_action: 'demonstrate',  // Spark示范模式
+      spark_action: 'demonstrate',  // 飞飞示范模式
       difficulty_adjustment: 'none',
       audio_speed: 0.7  // 慢速示范，便于跟读
     }
@@ -769,7 +769,7 @@ NPC回复文本
 **处理**：
 1. 匹配模板 `asr_unclear`
 2. NPC说："Let me show you! [慢速示范]"
-3. Spark执行 `demonstrate` 动作
+3. 飞飞执行 `demonstrate` 动作
 4. 不降低难度（避免强化错误行为）
 
 ### 6.2 玩家说中文
@@ -779,7 +779,7 @@ NPC回复文本
 **处理**：
 1. 匹配模板 `spoken_chinese`
 2. NPC说："很好！试试用英文说：Good morning!"
-3. Spark执行 `encourage` 动作
+3. 飞飞执行 `encourage` 动作
 4. TTS分段合成：中文部分用中文语音，英文部分用英文语音
 
 ### 6.3 中英混合输入
@@ -798,7 +798,7 @@ NPC回复文本
 **处理**：
 1. 匹配模板 `repeated_failure`
 2. NPC说："No worries! 跟我一起说：[简化版]"
-3. Spark执行 `simplify` 动作
+3. 飞飞执行 `simplify` 动作
 4. 降低难度（difficulty_adjustment: 'down'）
 5. TTS语速降低到 0.6
 

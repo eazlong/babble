@@ -1,0 +1,370 @@
+{
+  "schema_version": 1,
+  "scene_id": "word_spirit_library_archive_hall",
+  "flows": [
+    {
+      "flow_id": "archive.wake_guardian",
+      "speaker": "guardian",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "guardian_welcome",
+          "text": {
+            "en": "Welcome back. The word spirits are waiting to be inscribed.",
+            "zh": "欢迎回来。词灵们正等着被刻印。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.feifei_first_intro",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "feifei_first_intro",
+          "text": {
+            "en": "This is the Archive Hall. The stone is empty. We use our voice to call letter spirits and inscribe words we learned. Say a letter name, like 'A', and the spirit will fly over. When you finish all letters, say 'done' to confirm.",
+            "zh": "这是归卷厅。石碑上还空着——我们要用声音召唤字母精灵，把学过的单词刻上去。说一个字母名，比如 'A'，对应的精灵就会飞过来。拼完所有字母后，说 'done' 确认。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.feifei_first_spelling",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "feifei_first_spelling",
+          "text": {
+            "en": "Try saying a letter name, like 'A'.",
+            "zh": "说一个字母名试试，比如 'A'。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.feifei_first_reading",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "feifei_first_reading",
+          "text": {
+            "en": "Now say the word to the stone.",
+            "zh": "拼好了！现在对着石碑，把这个词读出来。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.feifei_first_undo",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "feifei_first_undo",
+          "text": {
+            "en": "The last letter flew back.",
+            "zh": "嗯，最后一个字母飞回去了。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.feifei_consecutive_ink_shadow",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "feifei_consecutive_ink_shadow",
+          "text": {
+            "en": "It's okay. Some word spirits are shy. Let's inscribe the next one; this one will come back later.",
+            "zh": "没关系，有些词灵比较害羞。我们先刻下一个，它待会儿就回来了。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.feifei_too_many_ink_shadow",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "feifei_too_many_ink_shadow",
+          "text": {
+            "en": "Many word spirits are hiding today. Let's come back tomorrow to find them.",
+            "zh": "今天有好多词灵藏起来了，明天我们再来找它们吧。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.feifei_playback_review",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "feifei_playback_review",
+          "text": {
+            "en": "Does it sound right? Say 'retry' to try again, or 'accept' to inscribe it as is.",
+            "zh": "听起来像吗？说 'retry' 再试一次，或者说 'accept' 就这样刻印。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.feifei_rest_prompt",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "feifei_rest_prompt",
+          "text": {
+            "en": "Let's take a short break. Drink some water, then say 'next' to continue.",
+            "zh": "休息一下，喝口水再继续。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.spark_spell_hint",
+      "speaker": "spark",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "spark_spell_hint",
+          "text": {
+            "en": "Say a letter to call a spirit.",
+            "zh": "说一个字母来召唤精灵。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.spark_reading_hint",
+      "speaker": "spark",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "spark_reading_hint",
+          "text": {
+            "en": "Now say the word.",
+            "zh": "现在读出这个词。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.spark_letter_unclear",
+      "speaker": "spark",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "spark_letter_unclear",
+          "text": {
+            "en": "I couldn't hear the letter clearly. Try again.",
+            "zh": "我没听清那个字母，再试一次。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.spark_one_at_a_time",
+      "speaker": "spark",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "spark_one_at_a_time",
+          "text": {
+            "en": "One letter at a time.",
+            "zh": "一次说一个字母。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.spark_spell_error",
+      "speaker": "spark",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "spark_spell_error",
+          "text": {
+            "en": "Not quite. Say 'undo' to fix a letter, or 'clear' to start over.",
+            "zh": "不太对。说 'undo' 修改一个字母，或者说 'clear' 重新开始。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.spark_reading_retry",
+      "speaker": "spark",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "spark_reading_retry",
+          "text": {
+            "en": "Almost! Try once more.",
+            "zh": "就差一点！再试一次。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.spark_demo_intro",
+      "speaker": "spark",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "spark_demo_intro",
+          "text": {
+            "en": "Let me help. Watch the letters, then say it with me.",
+            "zh": "我来帮你。看着这些字母，然后跟我一起说。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.spark_demo_outro",
+      "speaker": "spark",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "spark_demo_outro",
+          "text": {
+            "en": "Now let's say it together.",
+            "zh": "现在我们一起说。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.spark_inscribe_clear",
+      "speaker": "spark",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "spark_inscribe_clear",
+          "text": {
+            "en": "Perfect! The word spirit is now in the stone.",
+            "zh": "太棒了！词灵已经刻进石碑里了。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.spark_inscribe_close",
+      "speaker": "spark",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "spark_inscribe_close",
+          "text": {
+            "en": "Good! The word spirit heard you.",
+            "zh": "不错！词灵听到你了。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.spark_scatter",
+      "speaker": "spark",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "spark_scatter",
+          "text": {
+            "en": "The word spirit slipped away. We'll try again later.",
+            "zh": "词灵溜走了。我们待会儿再试。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.guardian_confirm_letter",
+      "speaker": "guardian",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "guardian_confirm_letter",
+          "text": {
+            "en": "Did you say '{letter}'?",
+            "zh": "你说的是 '{letter}' 吗？"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.guardian_exit_confirm",
+      "speaker": "guardian",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "guardian_exit_confirm",
+          "text": {
+            "en": "Some word spirits are still waiting. Leave anyway?",
+            "zh": "还有一些词灵在等着。确定要离开吗？"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.guardian_complete_report",
+      "speaker": "guardian",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "guardian_complete_report",
+          "text": {
+            "en": "Today's inscription is complete. {count} word spirits now rest in the stone. Well done.",
+            "zh": "今天的刻印完成了。{count} 个词灵已经安息在石碑里。做得好。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.guardian_no_words",
+      "speaker": "guardian",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "guardian_no_words",
+          "text": {
+            "en": "The stone is quiet today. Come back after learning new words.",
+            "zh": "石碑今天很安静。学了新词再来吧。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.guardian_next_prompt",
+      "speaker": "guardian",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "guardian_next_prompt",
+          "text": {
+            "en": "Say 'next' to continue, or 'leave' to exit.",
+            "zh": "说 'next' 继续，或者说 'leave' 退出。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.guardian_silence_exit_option",
+      "speaker": "guardian",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "guardian_silence_exit_option",
+          "text": {
+            "en": "Say 'leave' if you want to stop for today.",
+            "zh": "如果想今天先停，说 'leave' 就可以。"
+          }
+        }
+      ]
+    }
+  ]
+}

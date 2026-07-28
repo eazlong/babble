@@ -4,9 +4,9 @@ extends Node2D
 @onready var lang_panel: Control = $OverlayLayer/LangPanel
 @onready var lang_zh_button: Button = $OverlayLayer/LangPanel/LangZhButton
 @onready var lang_en_button: Button = $OverlayLayer/LangPanel/LangEnButton
-@onready var mic_panel: Control = $OverlayLayer/MicPanel
-@onready var mic_icon: ColorRect = $OverlayLayer/MicPanel/MicIcon
-@onready var mic_label: Label = $OverlayLayer/MicPanel/MicLabel
+@onready var mic_panel: Control = $MicLayer/MicPanel
+@onready var mic_icon: Control = $MicLayer/MicPanel/MicIcon
+@onready var mic_label: Label = $MicLayer/MicPanel/MicLabel
 @onready var scene_select_panel: Control = $OverlayLayer/SceneSelectPanel
 @onready var spirit_forest_button: Button = $OverlayLayer/SceneSelectPanel/SpiritForestButton
 @onready var spell_library_button: Button = $OverlayLayer/SceneSelectPanel/SpellLibraryButton
@@ -28,7 +28,8 @@ func _ready() -> void:
 	var success: bool = config_loader.load_scene_configs("res://assets/resources/scene_configs/")
 	if success:
 		var configs: Array = config_loader.get_all_scene_configs().values()
-		SceneManagementSystem.initialize(configs)
+		var scene_system: Node = get_node("/root/SceneManagementSystem")
+		scene_system.call("initialize", configs)
 		print("[MainMenu] SceneManagementSystem initialized with %d configs" % configs.size())
 	else:
 		push_warning("[MainMenu] Failed to load scene configs")
@@ -58,10 +59,6 @@ func _process(delta: float) -> void:
 	if VoicePipeline.is_recording:
 		record_duration += delta
 		silence_timer = 0.0
-		if record_duration > MAX_RECORD_DURATION:
-			VoicePipeline.stop_listening()
-			_deactivate_mic()
-			show_language_panel()
 	else:
 		silence_timer += delta
 		record_duration = 0.0
@@ -92,7 +89,7 @@ func show_mic_panel() -> void:
 	mic_active = true
 	mic_panel.visible = true
 	var tween: Tween = create_tween()
-	var tween_id: int = UITweenManager.register_tween("ui_feedback", tween)
+	UITweenManager.register_tween("ui_feedback", tween)
 	tween.tween_property(mic_panel, "modulate:a", 1.0, 0.3)
 
 	_start_mic_pulse()
@@ -107,7 +104,7 @@ func _deactivate_mic() -> void:
 	_stop_mic_pulse()
 
 	var tween: Tween = create_tween()
-	var tween_id: int = UITweenManager.register_tween("ui_feedback", tween)
+	UITweenManager.register_tween("ui_feedback", tween)
 	tween.tween_property(mic_panel, "modulate:a", 0.0, 0.3)
 	tween.tween_callback(func(): mic_panel.visible = false)
 
@@ -122,6 +119,8 @@ func _stop_mic_pulse() -> void:
 	if mic_tween:
 		mic_tween.kill()
 		mic_tween = null
+	if mic_icon:
+		mic_icon.scale = Vector2.ONE
 
 func _on_voice_ended(audio_data: PackedByteArray) -> void:
 	print("[MainMenuController] _on_voice_ended triggered! audio_size=", audio_data.size())
@@ -165,7 +164,7 @@ func show_language_panel() -> void:
 	lang_en_button.position = Vector2(300, 100)
 
 	var tween: Tween = create_tween()
-	var tween_id: int = UITweenManager.register_tween("ui_feedback", tween)
+	UITweenManager.register_tween("ui_feedback", tween)
 	tween.set_parallel(true)
 	tween.tween_property(lang_zh_button, "position", Vector2(100, 100), 0.5)
 	tween.tween_property(lang_en_button, "position", Vector2(440, 100), 0.5)
@@ -196,8 +195,10 @@ func _on_lang_en_button_pressed() -> void:
 	enter_game_scene()
 
 func enter_game_scene() -> void:
-	# 序章流程：直接进入 BeginningFP（SpiritForest 第一人称改造版）
-	get_tree().change_scene_to_file("res://assets/scenes/BeginningFP.tscn")
+	var target_path: String = GameManager.get_scene_path()
+	if target_path.is_empty() or GameManager.current_scene == "MainMenu":
+		target_path = "res://assets/scenes/BeginningFP.tscn"
+	get_tree().change_scene_to_file(target_path)
 
 func _on_spirit_forest_pressed() -> void:
 	get_tree().change_scene_to_file("res://assets/scenes/BeginningFP.tscn")

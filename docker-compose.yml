@@ -35,8 +35,6 @@ services:
     env_file:
       - ./services/voice-service/.env
     environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY}
       FISH_SPEECH_URL: ${FISH_SPEECH_URL:-http://host.docker.internal:8002}
       WHISPER_MODEL_SIZE: ${WHISPER_MODEL_SIZE:-small}
       WHISPER_DEVICE: ${WHISPER_DEVICE:-cpu}

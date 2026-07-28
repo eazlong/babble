@@ -68,6 +68,8 @@ var _test_save_dir: String = "":
 # Async save thread state
 var _save_thread: Thread = null
 var _pending_save_slot: int = 0
+var _queued_save_slot: int = 0
+var _queued_save_data: Dictionary = {}
 
 # Async load thread state
 var _load_thread: Thread = null
@@ -110,11 +112,13 @@ func _process(_delta: float) -> void:
 			_pending_save_slot = 0
 			current_state = State.IDLE
 			save_completed.emit(slot_id)
+			_flush_queued_save()
 		else:
 			var slot_id: int = _pending_save_slot
 			_pending_save_slot = 0
 			current_state = State.ERROR
 			save_failed.emit(slot_id, result.get("error", "Unknown save error"))
+			_flush_queued_save()
 
 	# Check load thread
 	if _load_thread != null and not _load_thread.is_alive():
@@ -282,7 +286,8 @@ func save(slot_id: int, custom_data: Dictionary) -> void:
 	# Prevent concurrent save operations
 	if _save_thread != null:
 		if _save_thread.is_alive():
-			save_failed.emit(slot_id, "Save operation already in progress")
+			_queued_save_slot = slot_id
+			_queued_save_data = custom_data.duplicate(true)
 			return
 		else:
 			# Previous thread finished but wasn't cleaned up
@@ -301,6 +306,16 @@ func save(slot_id: int, custom_data: Dictionary) -> void:
 	_save_thread.start(_write_save_file.bind(slot_id, save_data, _save_dir))
 	# Enable _process to poll for thread completion
 	set_process(true)
+
+
+func _flush_queued_save() -> void:
+	if _queued_save_slot == 0:
+		return
+	var slot_id := _queued_save_slot
+	var save_data := _queued_save_data.duplicate(true)
+	_queued_save_slot = 0
+	_queued_save_data.clear()
+	save(slot_id, save_data)
 
 
 ## Thread function: writes save data atomically to disk.

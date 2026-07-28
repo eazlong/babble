@@ -1,9 +1,10 @@
 [gd_scene format=3 uid="uid://m3ovclbgm2ke"]
 
 [ext_resource type="Script" uid="uid://8of2kfy3fits" path="res://assets/scripts/scenes/MirageInnIntroductionController.gd" id="1_controller"]
-[ext_resource type="Texture2D" path="res://assets/textures/backgrounds/mirage_inn_hall_bg.png" id="2_6th42"]
-[ext_resource type="Script" path="res://assets/scripts/components/FeifeiShoulder.gd" id="2_feifei"]
+[ext_resource type="Texture2D" uid="uid://mgra0fhak8f8" path="res://assets/textures/backgrounds/mirage_inn_hall_bg.png" id="2_6th42"]
+[ext_resource type="Script" uid="uid://cgmypvx1mcar" path="res://assets/scripts/components/FeifeiShoulder.gd" id="2_feifei"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/feifei/feifei_fly_frames.tres" id="3_frames"]
+[ext_resource type="PackedScene" path="res://assets/scenes/ui/VoiceMicIndicator.tscn" id="4_mic_button"]
 
 [node name="MirageInnIntroduction" type="Node2D" unique_id=906173929]
 script = ExtResource("1_controller")
@@ -84,7 +85,10 @@ text = "任务：进入蜃影客栈"
 vertical_alignment = 1
 autowrap_mode = 3
 
-[node name="MicButton" type="Control" parent="HUDLayer" unique_id=232720854]
+[node name="MicLayer" type="CanvasLayer" parent="." unique_id=1919810338]
+layer = 90
+
+[node name="MicButton" parent="MicLayer" unique_id=232720854 instance=ExtResource("4_mic_button")]
 visible = false
 layout_mode = 3
 anchors_preset = 7
@@ -98,26 +102,6 @@ offset_right = 48.0
 offset_bottom = -46.0
 grow_horizontal = 2
 grow_vertical = 0
-
-[node name="Button" type="ColorRect" parent="HUDLayer/MicButton" unique_id=352777122]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.2, 0.72, 0.46, 1)
-
-[node name="MicLabel" type="Label" parent="HUDLayer/MicButton" unique_id=1516301935]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "说"
-horizontal_alignment = 1
-vertical_alignment = 1
 
 [node name="FeifeiLayer" type="CanvasLayer" parent="." unique_id=820909006]
 layer = 20

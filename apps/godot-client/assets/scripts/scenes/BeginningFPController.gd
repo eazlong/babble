@@ -1,28 +1,5 @@
 ## BeginningFP 序章第一人称场景控制器
 ##
-## 对齐 PRD-v1.md §8：
-# 序章：迷雾岛苏醒
-# 场景
-# 黑暗。
-# 耳边传来风声。
-# 浓雾翻滚。
-# 玩家慢慢睁开眼睛。
-
-##   feifei飞入, 并进行语音唤醒， 对话如下：
-##   feifei: 你好啊，太好了，你醒了啊，外来人。我是腓腓。我发现你倒在了混沌迷雾里了，所以把你带到这里来。对了，你叫什么名字呀？
-##   玩家: 说出自己的名字
-##
-## 如果说的是中文名字
-##   feifei: 好的，好名字。不过迷雾岛周围的人们都说话很奇怪，使用了一种特殊的语言，叫英语，你需要有一个英语的名字。你可以告诉我你想要的英语名字吗？或者我帮你取一个（默认 Carl）。
-##   玩家： 我叫 xx
-##
-##   feifei: {玩家名字}, 听起来很棒。我想你应该很好奇这是什么地方，这里叫做——迷雾岛，很久以前，这里和外面的世界连接在一起。可是不知道什么时候开始，这些混沌迷雾出现了，它覆盖了周围的大陆，也阻断了大家之间的交流。
-##   
-## 镜头展示远方被迷雾覆盖的大陆
-##   feifei: 你看，远方的大陆都被迷雾覆盖了。在迷雾岛外面，还有六块大陆，传说中，保护这个世界的力量来自六件神器。可是不知道为什么，神器全部消失了…… 现在，守护迷雾岛的力量也越来越弱。
-## 镜头转向远处破旧客栈
-##   feifei  看到前面的客栈了吗？那里叫——蜃影客栈, 它就是这里没有迷雾的原因。它内部有一个阵法，阵法能量来源于六个神器，只是神器都遗失了。阵法也逐渐失去他的力量。我们去蜃影客栈看看吧，我带你去。
-##   镜头跟随 Feifei 飞入客栈
 
 
 extends Node2D
@@ -54,22 +31,40 @@ const WAKE_FADE_DURATION: float = 2.6
 const WAKE_FEIFEI_HEAD_START: float = 0.55
 const TTS_PLAYBACK_TIMEOUT: float = 60.0
 const TTS_MIC_BUFFER_MIN: float = 0.25
-const ASR_TIMEOUT: float = 12.0
+const FOG_SCROLL_SPEED: float = 24.0
+const FOG_VERTICAL_DRIFT: float = 8.0
+const FOG_VERTICAL_DRIFT_SPEED: float = 0.35
+# ASR postprocess 可能花到 ASR_POSTPROCESS_TIMEOUT_MS(默认 30s) + Whisper 转写时间，
+# 12s 会在接受提议(acceptance)等重推理场景超时，导致在途响应迟到后被 misroute。
+# 对齐 postprocess 上限并留转写余量。
+const ASR_TIMEOUT: float = 32.0
 const COACH_SILENCE_MS: int = 15000
 const COACH_RESPONSE_TIMEOUT: float = 8.0
+const SLOT_AWAITING: String = "awaiting"
+const SLOT_PROPOSED: String = "proposed"
+const SLOT_FILLED: String = "filled"
+const SPECIAL_NAME_POOL: Array[String] = [
+	"Carl",
+	"Wendy",
+	"Leo",
+	"Mia",
+	"Luna",
+]
 
 @onready var feifei: FeifeiShoulder = $FeifeiLayer/FeifeiShoulder
 @onready var quest_tracker: Control = $HUDLayer/QuestTracker
-@onready var mic_button: Control = $HUDLayer/MicButton
-@onready var mic_button_icon: TextureRect = $HUDLayer/MicButton/Button
+@onready var mic_button: Control = $MicLayer/MicButton
+@onready var mic_button_icon: TextureRect = $MicLayer/MicButton/Button
 @onready var magic_compass: Control = $HUDLayer/MagicCompass
-@onready var mid_layer: Node2D = $MidLayer
+@onready var mid_layer: Node2D = $InnLayer
 @onready var main_camera: Camera2D = $CameraSystem/MainCamera
+@onready var fog_layer: ParallaxLayer = $ParallaxBackground/FogLayer
 
 var state: PrologueState = PrologueState.DREAM_WAKE
 var voice_listening: bool = false
 var silence_timer: float = 0.0
 var record_duration: float = 0.0
+var fog_time: float = 0.0
 var last_player_input: String = ""
 var player_source_name: String = ""
 var player_display_name: String = ""
@@ -78,6 +73,9 @@ var dialogue_flow_loader: Variant = DialogueFlowLoaderScript.new()
 var coach_tracker: Variant = CoachContextTrackerScript.new()
 var voice_failure_intervention: VoiceFailureIntervention
 var asr_request_active: bool = false
+var special_name_slot_state: String = SLOT_AWAITING
+var proposed_special_name: String = ""
+var recent_proposed_special_names: Array[String] = []
 
 var fog_overlay: ColorRect
 var wake_vignette: ColorRect
@@ -90,7 +88,14 @@ signal prologue_completed()
 signal task_completed(task_name: String)
 
 func _ready() -> void:
-	GameManager.current_scene = "BeginningFP"
+	if GameManager.should_resume_to_scene("BeginningFP"):
+		var resume_path: String = GameManager.get_scene_path()
+		var resume_result := get_tree().change_scene_to_file(resume_path)
+		if resume_result != OK:
+			push_error("[BeginningFP] Failed to resume saved scene: %s" % error_string(resume_result))
+		return
+
+	GameManager.set_checkpoint("BeginningFP", not GameManager.is_test_mode_skip_auto_load_save())
 	_load_dialogue_flows()
 	_create_prologue_visuals()
 	_setup_voice_failure_intervention()
@@ -114,9 +119,6 @@ func _process(delta: float) -> void:
 	if VoicePipeline.is_recording:
 		record_duration += delta
 		silence_timer = 0.0
-		if record_duration > Config.MAX_RECORD_DURATION:
-			VoicePipeline.stop_listening()
-			_stop_voice_listening()
 	else:
 		silence_timer += delta
 		record_duration = 0.0
@@ -226,6 +228,7 @@ func _play_wake_from_dream() -> void:
 	wake_bottom_lid.visible = false
 
 func _animate_mist(delta: float) -> void:
+	_animate_fog_layer(delta)
 	if not fog_overlay:
 		return
 	var pulse := sin(Time.get_ticks_msec() / 1000.0 * 0.8) * 0.04
@@ -235,6 +238,13 @@ func _animate_mist(delta: float) -> void:
 	elif state == PrologueState.COMPLETED:
 		target_alpha = maxf(0.10, target_alpha - 0.16)
 	fog_overlay.color.a = lerpf(fog_overlay.color.a, target_alpha, delta * 1.5)
+
+func _animate_fog_layer(delta: float) -> void:
+	if not fog_layer:
+		return
+	fog_time += delta
+	fog_layer.motion_offset.x -= FOG_SCROLL_SPEED * delta
+	fog_layer.motion_offset.y = sin(fog_time * FOG_VERTICAL_DRIFT_SPEED) * FOG_VERTICAL_DRIFT
 
 func _on_player_response(text: String) -> void:
 	last_player_input = text.strip_edges()
@@ -265,6 +275,9 @@ func _handle_source_name(text: String) -> void:
 		await _accept_display_name(player_source_name, text)
 		return
 
+	special_name_slot_state = SLOT_AWAITING
+	proposed_special_name = ""
+	recent_proposed_special_names.clear()
 	await _speak_flow("beginning.ask_special_name", 0.0, {
 		"player_source_name": player_source_name,
 		"special_language_name": GameManager.SPECIAL_LANGUAGE_NAME,
@@ -337,7 +350,7 @@ func _complete_prologue() -> void:
 		GameManager.unlocked_areas.append("MirageInnIntroduction")
 	if not GameManager.completed_dialogues.has("beginning_prologue_complete"):
 		GameManager.completed_dialogues.append("beginning_prologue_complete")
-	GameManager.save_progress()
+	GameManager.set_checkpoint("MirageInnIntroduction")
 	prologue_completed.emit()
 
 	await get_tree().create_timer(Config.SCENE_FADE_DURATION).timeout
@@ -387,7 +400,7 @@ func _follow_feifei_into_inn() -> void:
 	await _speak_flow("beginning.inn_follow_feifei", 2.0)
 
 func _start_voice_listening() -> void:
-	if voice_listening:
+	if voice_listening or asr_request_active:
 		return
 	voice_listening = true
 	silence_timer = 0.0
@@ -430,7 +443,7 @@ func _on_voice_started() -> void:
 	print("[BeginningFP] Voice started")
 
 func _on_voice_ended(audio_data: PackedByteArray) -> void:
-	if not voice_listening:
+	if not voice_listening or asr_request_active:
 		return
 	_stop_voice_listening()
 	if feifei:
@@ -451,6 +464,10 @@ func _on_asr_received(result: Dictionary) -> void:
 	if result.has("error"):
 		await _handle_voice_attempt_failed("asr_error")
 		return
+	if state == PrologueState.AWAIT_SPECIAL_NAME:
+		await _handle_special_name_asr_result(result)
+		return
+
 	if not HybridAPI.get_asr_intent_matched(result, true):
 		await _handle_asr_intent_not_matched(result)
 		return
@@ -462,6 +479,42 @@ func _on_asr_received(result: Dictionary) -> void:
 		await _handle_voice_attempt_failed("empty_asr")
 		return
 	await _on_player_response(text)
+
+func _handle_special_name_asr_result(result: Dictionary) -> void:
+	var intent := HybridAPI.get_asr_intent(result)
+	if intent == "delegate":
+		await _propose_special_name()
+		return
+
+	var text: String = HybridAPI.get_asr_corrected_text(result).strip_edges()
+	var extracted_name: String = HybridAPI.get_asr_extracted_value(result, "name", "").strip_edges()
+	if not extracted_name.is_empty():
+		special_name_slot_state = SLOT_FILLED
+		await _handle_special_name(extracted_name)
+		return
+
+	if intent == "provide" and not text.is_empty() and special_name_slot_state != SLOT_PROPOSED:
+		special_name_slot_state = SLOT_FILLED
+		await _handle_special_name(text)
+		return
+
+	await _handle_asr_intent_not_matched(result)
+
+func _pick_special_name_candidate() -> String:
+	for candidate in SPECIAL_NAME_POOL:
+		if not recent_proposed_special_names.has(candidate):
+			return candidate
+	return GameManager.DEFAULT_SPECIAL_LANGUAGE_PLAYER_NAME
+
+func _propose_special_name() -> void:
+	_stop_voice_listening()
+	var candidate := _pick_special_name_candidate()
+	proposed_special_name = candidate
+	special_name_slot_state = SLOT_PROPOSED
+	if not recent_proposed_special_names.has(candidate):
+		recent_proposed_special_names.append(candidate)
+	await _say_text(_loc("special_name_proposal") % candidate, 1.5, "spirit")
+	_start_voice_listening()
 
 func _handle_asr_intent_not_matched(result: Dictionary) -> void:
 	var fallback: String = _get_asr_retry_hint_for_state()
@@ -482,6 +535,7 @@ func _watch_asr_timeout() -> void:
 	if not asr_request_active:
 		return
 	asr_request_active = false
+	HybridAPI.cancel_in_flight_asr_request()
 	push_warning("[BeginningFP] Voice service ASR timed out.")
 	await _handle_voice_attempt_failed("asr_timeout")
 
@@ -610,8 +664,6 @@ func _extract_name(text: String) -> String:
 	return trimmed
 
 func _extract_special_name(text: String) -> String:
-	if _contains_any(text, ["帮我取", "你取", "你帮", "帮我想", "随便", "都可以"]):
-		return GameManager.DEFAULT_SPECIAL_LANGUAGE_PLAYER_NAME
 	var extracted := _extract_name(text)
 	if extracted.is_empty():
 		return GameManager.DEFAULT_SPECIAL_LANGUAGE_PLAYER_NAME
@@ -683,26 +735,38 @@ func _get_asr_language_for_state() -> String:
 
 func _build_asr_context_for_state() -> Dictionary:
 	var expected_language_name := GameManager.SPECIAL_LANGUAGE_NAME if state == PrologueState.AWAIT_SPECIAL_NAME else GameManager.SOURCE_LANGUAGE_NAME
+	var expected_slot := _build_special_name_slot(expected_language_name) if state == PrologueState.AWAIT_SPECIAL_NAME else {
+		"key": "name",
+		"type": "person_name",
+		"description": "玩家告诉腓腓的%s名" % expected_language_name,
+	}
 	return {
-		"session_id": voice_failure_intervention.get_session_id(),
+		"session_id": voice_failure_intervention.get_session_id() if voice_failure_intervention else "",
 		"user_id": GameManager.player_name if GameManager.player_name != "" else "anonymous",
 		"npc_id": "feifei_beginning",
 		"scene_id": SCENE_ID,
 		"npc_question": _language_hint_text("special_name_retry") if state == PrologueState.AWAIT_SPECIAL_NAME else _language_hint_text("name_retry"),
-		"expected_slots": [
-			{
-				"key": "name",
-				"type": "person_name",
-				"description": "玩家告诉腓腓的%s名" % expected_language_name,
-			}
-		],
+		"expected_slots": [expected_slot],
 		"expected_answer_type": "player_name",
 		"target_intent": _get_asr_target_intent_for_state(),
 		"intent_description": _get_asr_intent_description_for_state(),
 		"candidate_answers": [],
-		"recent_turns": voice_failure_intervention.get_recent_turns(),
+		"recent_turns": voice_failure_intervention.get_recent_turns() if voice_failure_intervention else [],
 		"player_level": GameManager.player_cefr_level,
 		"language": _get_asr_language_for_state(),
+	}
+
+func _build_special_name_slot(expected_language_name: String) -> Dictionary:
+	return {
+		"key": "name",
+		"type": "person_name",
+		"description": "玩家告诉腓腓的%s名" % expected_language_name,
+		"delegatable": true,
+		"value_pool": SPECIAL_NAME_POOL,
+		"pick_strategy": "exclude_recent",
+		"proposal_template": _loc("special_name_proposal_template"),
+		"slot_state": special_name_slot_state,
+		"proposed_value": proposed_special_name,
 	}
 
 func _get_asr_retry_hint_for_state() -> String:
@@ -737,6 +801,8 @@ func _loc(key: String) -> String:
 		"quest_complete": {"zh": "序章完成：进入蜃影客栈", "en": "Prologue complete: Enter Mirage Inn"},
 		"name_retry": {"zh": "告诉腓腓你的%s名就可以。", "en": "Tell feifei your %s name."},
 		"special_name_retry": {"zh": "告诉腓腓你的%s名，或者说“你帮我取一个”。", "en": "Tell feifei your %s name, or ask feifei to choose one."},
+		"special_name_proposal": {"zh": "那就叫%s，你觉得怎么样？", "en": "How about %s? Do you like it?"},
+		"special_name_proposal_template": {"zh": "那就叫{value}，你觉得怎么样？", "en": "How about {value}? Do you like it?"},
 		"recognizing": {"zh": "正在识别你的声音...", "en": "Listening to your voice..."},
 		"coach_waiting": {"zh": "别着急，腓腓来帮你。", "en": "No rush. Feifei will help."},
 		"coach_fallback": {"zh": "我们慢慢来。你可以靠近一点，对着麦克风说出你的名字。", "en": "Let's take it slowly. Move a little closer and say your name into the microphone."},

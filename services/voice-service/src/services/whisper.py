@@ -79,6 +79,15 @@ def _raw_pcm_to_wav(audio_bytes: bytes) -> io.BytesIO:
     return buf
 
 
+def _normalize_whisper_language(language: str) -> str | None:
+    normalized = (language or "").strip().lower().replace("-", "_")
+    if normalized in ("", "auto"):
+        return None
+    if normalized in ("cn_en", "mul_cn", "zh_cn", "cmn"):
+        return "zh"
+    return normalized
+
+
 class WhisperService:
     def __init__(self):
         self.model = None
@@ -106,7 +115,7 @@ class WhisperService:
         if self.model is None:
             raise RuntimeError("WhisperService not initialized, call init() first")
 
-        lang = None if language in ("auto", "") else language
+        lang = _normalize_whisper_language(language)
 
         try:
             segments, info = await asyncio.get_event_loop().run_in_executor(

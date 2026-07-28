@@ -3,8 +3,9 @@
 处理Godot客户端音频（PCM float32 stereo 44100Hz）到讯飞标准格式（int16 mono 16000Hz）
 """
 
+import io
 import logging
-from typing import Union
+import wave
 
 import numpy as np
 from scipy import signal
@@ -28,51 +29,95 @@ class AudioConverter:
     @classmethod
     def convert_to_xfyun_format(cls, audio_bytes: bytes) -> bytes:
         """
-        将Godot音频转换为讯飞标准格式
+        将音频转换为讯飞标准格式
 
         Args:
-            audio_bytes: PCM float32 stereo 44100Hz（原始字节）
+            audio_bytes: WAV容器音频或Godot PCM float32 stereo 44100Hz（原始字节）
 
         Returns:
             bytes: PCM int16 mono 16000Hz（原始字节）
         """
         try:
-            # 检查音频数据大小
             if len(audio_bytes) == 0:
                 logger.error("Audio data is empty (0 bytes)")
                 raise ValueError("Empty audio data")
 
-            # 处理奇数长度：截断到 float32 倍数
-            if len(audio_bytes) % 4 != 0:
-                logger.warning(f"Audio data size {len(audio_bytes)} is not multiple of 4, truncating to {len(audio_bytes) - (len(audio_bytes) % 4)} bytes")
-                audio_bytes = audio_bytes[:len(audio_bytes) - (len(audio_bytes) % 4)]
+            if cls._is_wav(audio_bytes):
+                return cls._convert_wav_to_xfyun_format(audio_bytes)
 
-            if len(audio_bytes) == 0:
-                logger.error("Audio data became empty after truncation")
-                raise ValueError("Empty audio data after truncation")
-
-            # Step 1: 字节流转换为numpy数组
-            samples = np.frombuffer(audio_bytes, dtype=cls.GODOT_DTYPE)
-            logger.debug(f"Input: {len(samples)} samples ({len(audio_bytes)} bytes), dtype={samples.dtype}")
-
-            # Step 2: 立体声转单声道
-            mono_samples = cls._stereo_to_mono(samples)
-            logger.debug(f"After stereo->mono: {len(mono_samples)} samples")
-
-            # Step 3: float32转int16
-            int16_samples = cls._float32_to_int16(mono_samples)
-            logger.debug(f"After float32->int16: dtype={int16_samples.dtype}")
-
-            # Step 4: 重采样 44100Hz -> 16000Hz
-            resampled = cls._resample(int16_samples, cls.GODOT_SAMPLE_RATE, cls.XFYUN_SAMPLE_RATE)
-            logger.debug(f"After resampling: {len(resampled)} samples")
-
-            # Step 5: 转回字节
-            return resampled.tobytes()
+            return cls._convert_godot_raw_to_xfyun_format(audio_bytes)
 
         except Exception as e:
             logger.error(f"Audio conversion error: {e}")
             raise
+
+    @classmethod
+    def _is_wav(cls, audio_bytes: bytes) -> bool:
+        return len(audio_bytes) >= 12 and audio_bytes[:4] == b"RIFF" and audio_bytes[8:12] == b"WAVE"
+
+    @classmethod
+    def _convert_wav_to_xfyun_format(cls, audio_bytes: bytes) -> bytes:
+        with wave.open(io.BytesIO(audio_bytes), "rb") as wav_file:
+            channels = wav_file.getnchannels()
+            sample_width = wav_file.getsampwidth()
+            sample_rate = wav_file.getframerate()
+            frames = wav_file.readframes(wav_file.getnframes())
+
+        if sample_width != 2:
+            raise ValueError(f"Unsupported WAV sample width: {sample_width}")
+        if len(frames) == 0:
+            raise ValueError("Empty WAV audio data")
+
+        samples = np.frombuffer(frames, dtype=np.int16)
+        if channels > 1:
+            samples = cls._channels_to_mono(samples, channels)
+        if sample_rate != cls.XFYUN_SAMPLE_RATE:
+            samples = cls._resample(samples, sample_rate, cls.XFYUN_SAMPLE_RATE)
+
+        return samples.astype(cls.XFYUN_DTYPE).tobytes()
+
+    @classmethod
+    def _convert_godot_raw_to_xfyun_format(cls, audio_bytes: bytes) -> bytes:
+        # 处理奇数长度：截断到 float32 倍数
+        if len(audio_bytes) % 4 != 0:
+            logger.warning(f"Audio data size {len(audio_bytes)} is not multiple of 4, truncating to {len(audio_bytes) - (len(audio_bytes) % 4)} bytes")
+            audio_bytes = audio_bytes[:len(audio_bytes) - (len(audio_bytes) % 4)]
+
+        if len(audio_bytes) == 0:
+            logger.error("Audio data became empty after truncation")
+            raise ValueError("Empty audio data after truncation")
+
+        # Step 1: 字节流转换为numpy数组
+        samples = np.frombuffer(audio_bytes, dtype=cls.GODOT_DTYPE)
+        logger.debug(f"Input: {len(samples)} samples ({len(audio_bytes)} bytes), dtype={samples.dtype}")
+
+        # Step 2: 立体声转单声道
+        mono_samples = cls._stereo_to_mono(samples)
+        logger.debug(f"After stereo->mono: {len(mono_samples)} samples")
+
+        # Step 3: float32转int16
+        int16_samples = cls._float32_to_int16(mono_samples)
+        logger.debug(f"After float32->int16: dtype={int16_samples.dtype}")
+
+        # Step 4: 重采样 44100Hz -> 16000Hz
+        resampled = cls._resample(int16_samples, cls.GODOT_SAMPLE_RATE, cls.XFYUN_SAMPLE_RATE)
+        logger.debug(f"After resampling: {len(resampled)} samples")
+
+        # Step 5: 转回字节
+        return resampled.tobytes()
+
+    @classmethod
+    def _channels_to_mono(cls, samples: np.ndarray, channels: int) -> np.ndarray:
+        """多声道转单声道（取平均值）"""
+        if channels <= 0:
+            raise ValueError(f"Invalid channel count: {channels}")
+        remainder = len(samples) % channels
+        if remainder != 0:
+            samples = samples[:-remainder]
+            logger.debug("Truncated incomplete multi-channel frame")
+        if len(samples) == 0:
+            raise ValueError("Empty audio samples")
+        return samples.reshape(-1, channels).mean(axis=1).astype(samples.dtype)
 
     @classmethod
     def _stereo_to_mono(cls, samples: np.ndarray) -> np.ndarray:
@@ -90,6 +135,9 @@ class AudioConverter:
     @classmethod
     def _float32_to_int16(cls, samples: np.ndarray) -> np.ndarray:
         """float32转int16（带clipping）"""
+        if len(samples) == 0:
+            raise ValueError("Empty audio samples")
+
         # 归一化到[-1, 1]范围（如果还没归一化）
         if samples.max() > 1.0 or samples.min() < -1.0:
             samples = np.clip(samples, -1.0, 1.0)

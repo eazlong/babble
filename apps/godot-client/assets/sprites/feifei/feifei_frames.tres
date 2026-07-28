@@ -1,102 +1,720 @@
-[gd_resource type="SpriteFrames" format=3 uid="uid://lq2gvsfh8vgi"]
+[gd_resource type="SpriteFrames" format=3 uid="uid://dvi5h3uwc03ih"]
 
-[ext_resource type="Texture2D" uid="uid://ce6rmvdan8i3w" path="res://assets/sprites/feifei/feifei_fly_01.png" id="1_fly01"]
-[ext_resource type="Texture2D" uid="uid://lbhsod7hjoxk" path="res://assets/sprites/feifei/feifei_fly_02.png" id="2_fly02"]
-[ext_resource type="Texture2D" uid="uid://de1aeggbciwgm" path="res://assets/sprites/feifei/feifei_fly_03.png" id="3_fly03"]
-[ext_resource type="Texture2D" uid="uid://b71k4kkier7pl" path="res://assets/sprites/feifei/feifei_fly_04.png" id="4_fly04"]
-[ext_resource type="Texture2D" uid="uid://dshvtik27spit" path="res://assets/sprites/feifei/feifei_fly_05.png" id="5_fly05"]
-[ext_resource type="Texture2D" uid="uid://dhpptpmay1wvd" path="res://assets/sprites/feifei/feifei_fly_06.png" id="6_fly06"]
-[ext_resource type="Texture2D" uid="uid://bsw8gsad2fdtn" path="res://assets/sprites/feifei/feifei_fly_07.png" id="7_fly07"]
-[ext_resource type="Texture2D" uid="uid://ci4li7sw5e14k" path="res://assets/sprites/feifei/feifei_fly_08.png" id="8_fly08"]
-[ext_resource type="Texture2D" uid="uid://bk4mlc7phtwuh" path="res://assets/sprites/feifei/feifei_fly_09.png" id="9_fly09"]
-[ext_resource type="Texture2D" uid="uid://cqrksd2a82rkp" path="res://assets/sprites/feifei/feifei_fly_10.png" id="10_fly10"]
-[ext_resource type="Texture2D" uid="uid://bksxknvnhtrl5" path="res://assets/sprites/feifei/feifei_fly_11.png" id="11_fly11"]
-[ext_resource type="Texture2D" uid="uid://doywo3tptri7s" path="res://assets/sprites/feifei/feifei_fly_12.png" id="12_fly12"]
-[ext_resource type="Texture2D" uid="uid://cibhasu5e8mbi" path="res://assets/sprites/feifei/feifei_fly_13.png" id="13_fly13"]
-[ext_resource type="Texture2D" uid="uid://b2vrdgovjxq8g" path="res://assets/sprites/feifei/feifei_fly_14.png" id="14_fly14"]
-[ext_resource type="Texture2D" uid="uid://c7o5d3xnmh58e" path="res://assets/sprites/feifei/feifei_fly_15.png" id="15_fly15"]
-[ext_resource type="Texture2D" uid="uid://de76e24elawjs" path="res://assets/sprites/feifei/feifei_fly_16.png" id="16_fly16"]
-[ext_resource type="Texture2D" uid="uid://l4e5odeuexcp" path="res://assets/sprites/feifei/feifei_fly_17.png" id="17_fly17"]
-[ext_resource type="Texture2D" uid="uid://dpara1j5d0sh" path="res://assets/sprites/feifei/feifei_fly_18.png" id="18_fly18"]
-[ext_resource type="Texture2D" uid="uid://rddq5b3nuvhb" path="res://assets/sprites/feifei/feifei_fly_19.png" id="19_fly19"]
-[ext_resource type="Texture2D" uid="uid://c35q6bu5yq71j" path="res://assets/sprites/feifei/feifei_fly_20.png" id="20_fly20"]
-[ext_resource type="Texture2D" uid="uid://ckcrso8naqi73" path="res://assets/sprites/feifei/feifei_fly_21.png" id="21_fly21"]
-[ext_resource type="Texture2D" uid="uid://c0gubrge120yt" path="res://assets/sprites/feifei/feifei_fly_22.png" id="22_fly22"]
-[ext_resource type="Texture2D" uid="uid://bsfbfiwhlf41t" path="res://assets/sprites/feifei/feifei_fly_23.png" id="23_fly23"]
-[ext_resource type="Texture2D" uid="uid://bjde8vsqercct" path="res://assets/sprites/feifei/feifei_fly_24.png" id="24_fly24"]
-[ext_resource type="Texture2D" uid="uid://bpljq53a8cgin" path="res://assets/sprites/feifei/feifei_fly_25.png" id="25_fly25"]
-[ext_resource type="Texture2D" uid="uid://dixex1d4v537p" path="res://assets/sprites/feifei/feifei_fly_26.png" id="26_fly26"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0043_transparent.png" id="1_iii35"]
+[ext_resource type="Texture2D" uid="uid://g8ddfu5spibp" path="res://assets/sprites/feifei/video_rmbg_00001_.png" id="1_x8ye1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0044_transparent.png" id="2_8jljv"]
+[ext_resource type="Texture2D" uid="uid://cbcs27xs33yhh" path="res://assets/sprites/feifei/video_rmbg_00002_.png" id="2_uqcg2"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0045_transparent.png" id="3_5f4b6"]
+[ext_resource type="Texture2D" uid="uid://boiabg1gmkgee" path="res://assets/sprites/feifei/video_rmbg_00003_.png" id="3_k37o8"]
+[ext_resource type="Texture2D" uid="uid://xhaty7wxsnb0" path="res://assets/sprites/feifei/video_rmbg_00004_.png" id="4_f2viu"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0046_transparent.png" id="4_jf06r"]
+[ext_resource type="Texture2D" uid="uid://ipgm0v4bkinx" path="res://assets/sprites/feifei/video_rmbg_00005_.png" id="5_nq12l"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0047_transparent.png" id="5_tm735"]
+[ext_resource type="Texture2D" uid="uid://bv07nhaaug5un" path="res://assets/sprites/feifei/video_rmbg_00006_.png" id="6_aykyc"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0048_transparent.png" id="6_h0d2i"]
+[ext_resource type="Texture2D" uid="uid://gmadiekxgkkv" path="res://assets/sprites/feifei/video_rmbg_00007_.png" id="7_51ufj"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0049_transparent.png" id="7_xlssb"]
+[ext_resource type="Texture2D" uid="uid://dfcpan2ta8myf" path="res://assets/sprites/feifei/video_rmbg_00008_.png" id="8_6bqop"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0050_transparent.png" id="8_d1780"]
+[ext_resource type="Texture2D" uid="uid://do3txkiudwf7b" path="res://assets/sprites/feifei/video_rmbg_00009_.png" id="9_1uh81"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0051_transparent.png" id="9_tygk5"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0052_transparent.png" id="10_ap1nt"]
+[ext_resource type="Texture2D" uid="uid://d13itpairamsr" path="res://assets/sprites/feifei/video_rmbg_00010_.png" id="10_hb3o7"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0053_transparent.png" id="11_olg0a"]
+[ext_resource type="Texture2D" uid="uid://dcqifvn6x8238" path="res://assets/sprites/feifei/video_rmbg_00011_.png" id="11_rswte"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0054_transparent.png" id="12_85l1r"]
+[ext_resource type="Texture2D" uid="uid://ef120jxpbxa3" path="res://assets/sprites/feifei/video_rmbg_00012_.png" id="12_xfnrn"]
+[ext_resource type="Texture2D" uid="uid://bjfjr0ojt2b4p" path="res://assets/sprites/feifei/video_rmbg_00013_.png" id="13_12p4p"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0055_transparent.png" id="13_rh0jh"]
+[ext_resource type="Texture2D" uid="uid://d2ogqsujp7ld2" path="res://assets/sprites/feifei/video_rmbg_00014_.png" id="14_r852q"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0056_transparent.png" id="14_tuetx"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0057_transparent.png" id="15_1dnbd"]
+[ext_resource type="Texture2D" uid="uid://c3iphce5mwnfy" path="res://assets/sprites/feifei/video_rmbg_00015_.png" id="15_evy26"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0058_transparent.png" id="16_2c4xd"]
+[ext_resource type="Texture2D" uid="uid://dyojaryfyebib" path="res://assets/sprites/feifei/video_rmbg_00016_.png" id="16_jkird"]
+[ext_resource type="Texture2D" uid="uid://jishvpxcyujm" path="res://assets/sprites/feifei/video_rmbg_00017_.png" id="17_dysd7"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0059_transparent.png" id="17_jtk4x"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0060_transparent.png" id="18_0k2d6"]
+[ext_resource type="Texture2D" uid="uid://dtnkmfwkwp4m3" path="res://assets/sprites/feifei/video_rmbg_00018_.png" id="18_vlc1i"]
+[ext_resource type="Texture2D" uid="uid://crvi5pveocyul" path="res://assets/sprites/feifei/video_rmbg_00019_.png" id="19_i8u8w"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0061_transparent.png" id="19_x68e2"]
+[ext_resource type="Texture2D" uid="uid://coc7t13t8s7hb" path="res://assets/sprites/feifei/video_rmbg_00020_.png" id="20_a6eh4"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0062_transparent.png" id="20_nx2eb"]
+[ext_resource type="Texture2D" uid="uid://c26vj3gpsw8kd" path="res://assets/sprites/feifei/video_rmbg_00021_.png" id="21_ap5ml"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0063_transparent.png" id="21_osye6"]
+[ext_resource type="Texture2D" uid="uid://bv30kiu2xiur5" path="res://assets/sprites/feifei/video_rmbg_00022_.png" id="22_ctray"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0064_transparent.png" id="22_gvj8t"]
+[ext_resource type="Texture2D" uid="uid://dqy1fgmqydbe5" path="res://assets/sprites/feifei/video_rmbg_00023_.png" id="23_q28n0"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0065_transparent.png" id="23_ujo8r"]
+[ext_resource type="Texture2D" uid="uid://2e57b4483y4i" path="res://assets/sprites/feifei/video_rmbg_00024_.png" id="24_l03fx"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0066_transparent.png" id="24_unyj5"]
+[ext_resource type="Texture2D" uid="uid://ydosys1t2hrn" path="res://assets/sprites/feifei/video_rmbg_00025_.png" id="25_k02rw"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0067_transparent.png" id="25_x7a03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0068_transparent.png" id="26_37j57"]
+[ext_resource type="Texture2D" uid="uid://dvbk5kj00tmxw" path="res://assets/sprites/feifei/video_rmbg_00026_.png" id="26_j33fa"]
+[ext_resource type="Texture2D" uid="uid://bicvrikt21lqg" path="res://assets/sprites/feifei/video_rmbg_00027_.png" id="27_ry2te"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0069_transparent.png" id="27_wobku"]
+[ext_resource type="Texture2D" uid="uid://hb8viu85layg" path="res://assets/sprites/feifei/video_rmbg_00028_.png" id="28_ibamg"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0070_transparent.png" id="28_jjr72"]
+[ext_resource type="Texture2D" uid="uid://l5q2a4i2ictp" path="res://assets/sprites/feifei/video_rmbg_00029_.png" id="29_py8d3"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0071_transparent.png" id="29_x8ye1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0072_transparent.png" id="30_uqcg2"]
+[ext_resource type="Texture2D" uid="uid://cwaj12yhphrns" path="res://assets/sprites/feifei/video_rmbg_00030_.png" id="30_urib4"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0073_transparent.png" id="31_k37o8"]
+[ext_resource type="Texture2D" uid="uid://bswetwmwatnsw" path="res://assets/sprites/feifei/video_rmbg_00031_.png" id="31_rr8eq"]
+[ext_resource type="Texture2D" uid="uid://buftmuvksg6g1" path="res://assets/sprites/feifei/video_rmbg_00032_.png" id="32_8wj4k"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0074_transparent.png" id="32_f2viu"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0075_transparent.png" id="33_nq12l"]
+[ext_resource type="Texture2D" uid="uid://dc8ppasefifys" path="res://assets/sprites/feifei/video_rmbg_00033_.png" id="33_y6u8c"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0076_transparent.png" id="34_aykyc"]
+[ext_resource type="Texture2D" uid="uid://b77khdlmsbxil" path="res://assets/sprites/feifei/video_rmbg_00034_.png" id="34_knk2d"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0077_transparent.png" id="35_51ufj"]
+[ext_resource type="Texture2D" uid="uid://dcvcqrml7qd2" path="res://assets/sprites/feifei/video_rmbg_00035_.png" id="35_y114e"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0078_transparent.png" id="36_6bqop"]
+[ext_resource type="Texture2D" uid="uid://didiv7sm1g2xx" path="res://assets/sprites/feifei/video_rmbg_00036_.png" id="36_af1nx"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0079_transparent.png" id="37_1uh81"]
+[ext_resource type="Texture2D" uid="uid://bidq3olumaqu7" path="res://assets/sprites/feifei/video_rmbg_00037_.png" id="37_il1o8"]
+[ext_resource type="Texture2D" uid="uid://c340e2vbav4rn" path="res://assets/sprites/feifei/video_rmbg_00038_.png" id="38_fqfp2"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0080_transparent.png" id="38_hb3o7"]
+[ext_resource type="Texture2D" uid="uid://cef8a2vdp04h1" path="res://assets/sprites/feifei/video_rmbg_00039_.png" id="39_2pxcf"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0081_transparent.png" id="39_rswte"]
+[ext_resource type="Texture2D" uid="uid://c1fx2kyio37sw" path="res://assets/sprites/feifei/video_rmbg_00040_.png" id="40_iusu5"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0082_transparent.png" id="40_xfnrn"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0083_transparent.png" id="41_12p4p"]
+[ext_resource type="Texture2D" uid="uid://m3dcv8bwey6m" path="res://assets/sprites/feifei/video_rmbg_00041_.png" id="41_aork0"]
+[ext_resource type="Texture2D" uid="uid://ds7e2tlyomfyv" path="res://assets/sprites/feifei/video_rmbg_00042_.png" id="42_dxc30"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0084_transparent.png" id="42_r852q"]
+[ext_resource type="Texture2D" uid="uid://gees0l6vh5og" path="res://assets/sprites/feifei/video_rmbg_00043_.png" id="43_aux2b"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0085_transparent.png" id="43_evy26"]
+[ext_resource type="Texture2D" uid="uid://bmh7llqwhhjk2" path="res://assets/sprites/feifei/video_rmbg_00044_.png" id="44_145sk"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0086_transparent.png" id="44_jkird"]
+[ext_resource type="Texture2D" uid="uid://dq36kedxf23qx" path="res://assets/sprites/feifei/video_rmbg_00045_.png" id="45_b6ajh"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0087_transparent.png" id="45_dysd7"]
+[ext_resource type="Texture2D" uid="uid://b8budq4u3yfxi" path="res://assets/sprites/feifei/video_rmbg_00046_.png" id="46_ppljl"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0088_transparent.png" id="46_vlc1i"]
+[ext_resource type="Texture2D" uid="uid://bbcwpa8oq5gia" path="res://assets/sprites/feifei/video_rmbg_00047_.png" id="47_8xmcr"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0089_transparent.png" id="47_i8u8w"]
+[ext_resource type="Texture2D" uid="uid://cirqvdny0y625" path="res://assets/sprites/feifei/video_rmbg_00048_.png" id="48_48rvf"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0090_transparent.png" id="48_a6eh4"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0091_transparent.png" id="49_ap5ml"]
+[ext_resource type="Texture2D" uid="uid://cwvfm8jsxl8vf" path="res://assets/sprites/feifei/video_rmbg_00049_.png" id="49_p1eeg"]
+[ext_resource type="Texture2D" uid="uid://blrbolbg4io5" path="res://assets/sprites/feifei/video_rmbg_00050_.png" id="50_7dsuj"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0092_transparent.png" id="50_ctray"]
+[ext_resource type="Texture2D" uid="uid://deg637bnxr577" path="res://assets/sprites/feifei/video_rmbg_00051_.png" id="51_44n5f"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0093_transparent.png" id="51_q28n0"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0094_transparent.png" id="52_l03fx"]
+[ext_resource type="Texture2D" uid="uid://djbwc43e1681q" path="res://assets/sprites/feifei/video_rmbg_00052_.png" id="52_tgt8w"]
+[ext_resource type="Texture2D" uid="uid://br4hbos2j8141" path="res://assets/sprites/feifei/video_rmbg_00053_.png" id="53_1ka0e"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0095_transparent.png" id="53_k02rw"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0096_transparent.png" id="54_j33fa"]
+[ext_resource type="Texture2D" uid="uid://04xjlp3qnw78" path="res://assets/sprites/feifei/video_rmbg_00054_.png" id="54_vr6x1"]
+[ext_resource type="Texture2D" uid="uid://dspsysleytk3j" path="res://assets/sprites/feifei/video_rmbg_00055_.png" id="55_c01y2"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0097_transparent.png" id="55_ry2te"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0098_transparent.png" id="56_ibamg"]
+[ext_resource type="Texture2D" uid="uid://dp4pqm2lvwxnk" path="res://assets/sprites/feifei/video_rmbg_00056_.png" id="56_oy1qp"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0099_transparent.png" id="57_py8d3"]
+[ext_resource type="Texture2D" uid="uid://cn6kmfcb1l65k" path="res://assets/sprites/feifei/video_rmbg_00057_.png" id="57_y72s1"]
+[ext_resource type="Texture2D" uid="uid://b6xvk3jktnxpy" path="res://assets/sprites/feifei/video_rmbg_00058_.png" id="58_6h55b"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0100_transparent.png" id="58_urib4"]
+[ext_resource type="Texture2D" uid="uid://di6t3e4tu4kli" path="res://assets/sprites/feifei/video_rmbg_00059_.png" id="59_5o75t"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0101_transparent.png" id="59_rr8eq"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0102_transparent.png" id="60_8wj4k"]
+[ext_resource type="Texture2D" uid="uid://binhx4jtb30ms" path="res://assets/sprites/feifei/video_rmbg_00060_.png" id="60_eudi8"]
+[ext_resource type="Texture2D" uid="uid://be000los1i3sv" path="res://assets/sprites/feifei/video_rmbg_00061_.png" id="61_c8e0i"]
+[ext_resource type="Texture2D" path="res://assets/sprites/feifei/frame_0103_transparent.png" id="61_y6u8c"]
+[ext_resource type="Texture2D" uid="uid://gafhbliig4kv" path="res://assets/sprites/feifei/video_rmbg_00062_.png" id="62_c02sb"]
+[ext_resource type="Texture2D" uid="uid://dl8dh8218ce" path="res://assets/sprites/feifei/video_rmbg_00063_.png" id="63_d1yl2"]
+[ext_resource type="Texture2D" uid="uid://bbyjdh0ibnn6k" path="res://assets/sprites/feifei/video_rmbg_00064_.png" id="64_0fpme"]
+[ext_resource type="Texture2D" uid="uid://cr0svdoeogygj" path="res://assets/sprites/feifei/video_rmbg_00065_.png" id="65_cl7e2"]
+[ext_resource type="Texture2D" uid="uid://b1c4h86fdr8rv" path="res://assets/sprites/feifei/video_rmbg_00066_.png" id="66_7a3wa"]
+[ext_resource type="Texture2D" uid="uid://dmlabhebunm8y" path="res://assets/sprites/feifei/video_rmbg_00067_.png" id="67_s4sn6"]
+[ext_resource type="Texture2D" uid="uid://s4bcladonqie" path="res://assets/sprites/feifei/video_rmbg_00068_.png" id="68_run1r"]
+[ext_resource type="Texture2D" uid="uid://bhc5jfirsd5gc" path="res://assets/sprites/feifei/video_rmbg_00069_.png" id="69_smuhl"]
+[ext_resource type="Texture2D" uid="uid://c8gfoasqdy7ua" path="res://assets/sprites/feifei/video_rmbg_00070_.png" id="70_a7gq7"]
+[ext_resource type="Texture2D" uid="uid://cfaqvgrg666er" path="res://assets/sprites/feifei/video_rmbg_00071_.png" id="71_vwq36"]
+[ext_resource type="Texture2D" uid="uid://bwqocmbrlh8fo" path="res://assets/sprites/feifei/video_rmbg_00072_.png" id="72_ns4hi"]
+[ext_resource type="Texture2D" uid="uid://cualw4hv40lna" path="res://assets/sprites/feifei/video_rmbg_00073_.png" id="73_3ateu"]
+[ext_resource type="Texture2D" uid="uid://foko5jg3fec4" path="res://assets/sprites/feifei/video_rmbg_00074_.png" id="74_cgixy"]
+[ext_resource type="Texture2D" uid="uid://b35vuqvbwtc4w" path="res://assets/sprites/feifei/video_rmbg_00075_.png" id="75_jsimg"]
+[ext_resource type="Texture2D" uid="uid://bg6n3vuseruyu" path="res://assets/sprites/feifei/video_rmbg_00076_.png" id="76_p0mec"]
+[ext_resource type="Texture2D" uid="uid://bfx53d5qgika7" path="res://assets/sprites/feifei/video_rmbg_00077_.png" id="77_a0kfa"]
+[ext_resource type="Texture2D" uid="uid://bv846qgs4ak6" path="res://assets/sprites/feifei/video_rmbg_00078_.png" id="78_3o83d"]
+[ext_resource type="Texture2D" uid="uid://drtovhj4amewk" path="res://assets/sprites/feifei/video_rmbg_00079_.png" id="79_rll18"]
+[ext_resource type="Texture2D" uid="uid://dye5pily30pmb" path="res://assets/sprites/feifei/video_rmbg_00080_.png" id="80_vd40l"]
+[ext_resource type="Texture2D" uid="uid://bwats4ooior3h" path="res://assets/sprites/feifei/video_rmbg_00081_.png" id="81_ujhhv"]
+[ext_resource type="Texture2D" uid="uid://cjuymlolp0nva" path="res://assets/sprites/feifei/video_rmbg_00082_.png" id="82_lp2kk"]
+[ext_resource type="Texture2D" uid="uid://dhy377g3kcl2k" path="res://assets/sprites/feifei/video_rmbg_00083_.png" id="83_nbs32"]
+[ext_resource type="Texture2D" uid="uid://d27n77doti780" path="res://assets/sprites/feifei/video_rmbg_00084_.png" id="84_l4o5q"]
+[ext_resource type="Texture2D" uid="uid://3glgecbxrffq" path="res://assets/sprites/feifei/video_rmbg_00085_.png" id="85_v7qkn"]
+[ext_resource type="Texture2D" uid="uid://dj3amj8au764s" path="res://assets/sprites/feifei/video_rmbg_00086_.png" id="86_okcj0"]
+[ext_resource type="Texture2D" uid="uid://ckt25dwxu50ab" path="res://assets/sprites/feifei/video_rmbg_00087_.png" id="87_lp6da"]
+[ext_resource type="Texture2D" uid="uid://btyf7slfbvcgc" path="res://assets/sprites/feifei/video_rmbg_00088_.png" id="88_i0d8e"]
+[ext_resource type="Texture2D" uid="uid://nxyw6tdhrtvt" path="res://assets/sprites/feifei/video_rmbg_00089_.png" id="89_kf7rd"]
+[ext_resource type="Texture2D" uid="uid://63ai11kipa6n" path="res://assets/sprites/feifei/video_rmbg_00090_.png" id="90_sfso3"]
+[ext_resource type="Texture2D" uid="uid://4ebxwq8ltcvr" path="res://assets/sprites/feifei/video_rmbg_00091_.png" id="91_4fvlv"]
+[ext_resource type="Texture2D" uid="uid://bs1fpgm7jid00" path="res://assets/sprites/feifei/video_rmbg_00092_.png" id="92_g57jx"]
+[ext_resource type="Texture2D" uid="uid://bu6qbi8k3oiuw" path="res://assets/sprites/feifei/video_rmbg_00093_.png" id="93_bay8w"]
+[ext_resource type="Texture2D" uid="uid://bc2vo3436yqd1" path="res://assets/sprites/feifei/video_rmbg_00094_.png" id="94_p4s6a"]
+[ext_resource type="Texture2D" uid="uid://bnvxmokdsadu8" path="res://assets/sprites/feifei/video_rmbg_00095_.png" id="95_bkbr0"]
+[ext_resource type="Texture2D" uid="uid://bjq1hud4w5jhe" path="res://assets/sprites/feifei/video_rmbg_00096_.png" id="96_e53ki"]
+[ext_resource type="Texture2D" uid="uid://dkg6tiknh54hn" path="res://assets/sprites/feifei/video_rmbg_00097_.png" id="97_t350v"]
+[ext_resource type="Texture2D" uid="uid://b15ognt18s4fu" path="res://assets/sprites/feifei/video_rmbg_00098_.png" id="98_bwuht"]
+[ext_resource type="Texture2D" uid="uid://dbusu8vyxaqkp" path="res://assets/sprites/feifei/video_rmbg_00099_.png" id="99_oy7sh"]
+[ext_resource type="Texture2D" uid="uid://d21rotkegwa7m" path="res://assets/sprites/feifei/video_rmbg_00100_.png" id="100_2msve"]
+[ext_resource type="Texture2D" uid="uid://ccyt7q0ipt08l" path="res://assets/sprites/feifei/video_rmbg_00101_.png" id="101_8blm5"]
+[ext_resource type="Texture2D" uid="uid://bpr8oras76epi" path="res://assets/sprites/feifei/video_rmbg_00102_.png" id="102_t37hq"]
+[ext_resource type="Texture2D" uid="uid://b3csesiwgtcwb" path="res://assets/sprites/feifei/video_rmbg_00103_.png" id="103_u3420"]
+[ext_resource type="Texture2D" uid="uid://dgudbef3fv2fj" path="res://assets/sprites/feifei/video_rmbg_00104_.png" id="104_2xstx"]
+[ext_resource type="Texture2D" uid="uid://0xjlyts7qmw8" path="res://assets/sprites/feifei/video_rmbg_00105_.png" id="105_uhpo6"]
+[ext_resource type="Texture2D" uid="uid://dg8qxx5st2ywc" path="res://assets/sprites/feifei/video_rmbg_00106_.png" id="106_s0l0q"]
+[ext_resource type="Texture2D" uid="uid://bgcjundxi6sxg" path="res://assets/sprites/feifei/video_rmbg_00107_.png" id="107_25dds"]
+[ext_resource type="Texture2D" uid="uid://cm6g33nhwt58p" path="res://assets/sprites/feifei/video_rmbg_00108_.png" id="108_awtmd"]
+[ext_resource type="Texture2D" uid="uid://gy6o8h28p88r" path="res://assets/sprites/feifei/video_rmbg_00109_.png" id="109_naqk7"]
+[ext_resource type="Texture2D" uid="uid://bcntpa03toxys" path="res://assets/sprites/feifei/video_rmbg_00110_.png" id="110_dttm6"]
+[ext_resource type="Texture2D" uid="uid://dvfak3nl8ngp4" path="res://assets/sprites/feifei/video_rmbg_00111_.png" id="111_403a4"]
+[ext_resource type="Texture2D" uid="uid://cp47b2pje2nqt" path="res://assets/sprites/feifei/video_rmbg_00112_.png" id="112_swb16"]
+[ext_resource type="Texture2D" uid="uid://bm5nd70rtd0so" path="res://assets/sprites/feifei/video_rmbg_00113_.png" id="113_si05r"]
+[ext_resource type="Texture2D" uid="uid://b45qhagtje0s2" path="res://assets/sprites/feifei/video_rmbg_00114_.png" id="114_m364q"]
+[ext_resource type="Texture2D" uid="uid://dydpuu6gya4ol" path="res://assets/sprites/feifei/video_rmbg_00115_.png" id="115_m3uqc"]
+[ext_resource type="Texture2D" uid="uid://leotcfqgrs2e" path="res://assets/sprites/feifei/video_rmbg_00116_.png" id="116_bj8hw"]
+[ext_resource type="Texture2D" uid="uid://plt37imukbby" path="res://assets/sprites/feifei/video_rmbg_00117_.png" id="117_2i0he"]
+[ext_resource type="Texture2D" uid="uid://cmd5vaqwmmbk7" path="res://assets/sprites/feifei/video_rmbg_00118_.png" id="118_dcd6d"]
+[ext_resource type="Texture2D" uid="uid://xpg45ruwi1gc" path="res://assets/sprites/feifei/video_rmbg_00119_.png" id="119_g5ei2"]
+[ext_resource type="Texture2D" uid="uid://dmxts6ud8nt6j" path="res://assets/sprites/feifei/video_rmbg_00120_.png" id="120_wsx1e"]
+[ext_resource type="Texture2D" uid="uid://b1liykx6ve5a1" path="res://assets/sprites/feifei/video_rmbg_00121_.png" id="121_a1dtm"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_0dabx"]
+load_path = "res://.godot/imported/feifei_fly_06.png-f8fe95b7961942dd0abbfe5deae5e1de.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_u7de1"]
+load_path = "res://.godot/imported/feifei_fly_07.png-6d2b90e3dc5d2745f989b97ee453d564.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_d2i16"]
+load_path = "res://.godot/imported/feifei_fly_08.png-18ef0c1154377fb2c07743d3238d2de2.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_nmvnv"]
+load_path = "res://.godot/imported/feifei_fly_09.png-b6327685415c3e7c307e45f6434f8c19.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_tx2t6"]
+load_path = "res://.godot/imported/feifei_fly_10.png-a9f3518f0b65976177b6da48ecddb5a3.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_f2fac"]
+load_path = "res://.godot/imported/feifei_fly_11.png-e64bd042785a80fd3632a1aa89d34653.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_3nvmt"]
+load_path = "res://.godot/imported/feifei_fly_12.png-93008a8b45f8db59f1944fe9ba878805.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_snrta"]
+load_path = "res://.godot/imported/feifei_fly_13.png-23d24809b4e5aa8a768796198e3f2277.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_xaiw6"]
+load_path = "res://.godot/imported/feifei_fly_14.png-abedcb77e668d53da2709c4c7b445ba9.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_4668m"]
+load_path = "res://.godot/imported/已移除背景的frame_0002.png-6ead1bc6589304267d60d19a1bdb1030.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_u20dm"]
+load_path = "res://.godot/imported/已移除背景的frame_0003.png-bed6f75e85a541eb19b5400c559a0bf4.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_oy1qp"]
+load_path = "res://.godot/imported/已移除背景的frame_0004.png-19cc2008441a570a96214d5c5ecf2548.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_y72s1"]
+load_path = "res://.godot/imported/已移除背景的frame_0005.png-b6d1f10cf0f6bf65123f093fa7c82536.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_6h55b"]
+load_path = "res://.godot/imported/已移除背景的frame_0006.png-50335d5e8f789bccdb04c2fc2406a27c.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_5o75t"]
+load_path = "res://.godot/imported/已移除背景的frame_0007.png-73fb4f1550fcca89ded421f5e5c845cf.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_eudi8"]
+load_path = "res://.godot/imported/已移除背景的frame_0008.png-298101da1ac7cff3a17ad61df6c98841.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_c8e0i"]
+load_path = "res://.godot/imported/已移除背景的frame_0009.png-86595f672cb6d2aae8d9f7fdddf14843.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_c02sb"]
+load_path = "res://.godot/imported/已移除背景的frame_0010.png-464f55d448a59c2ce87197aabbe8d7b5.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_d1yl2"]
+load_path = "res://.godot/imported/已移除背景的frame_0011.png-4a9cb8204eff828308a0fcd2935a6496.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_0fpme"]
+load_path = "res://.godot/imported/已移除背景的frame_0012.png-95171de430e141925fb103eca4b060a8.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_cl7e2"]
+load_path = "res://.godot/imported/已移除背景的frame_0013.png-a289351638555bcba86f65695eb08267.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_7a3wa"]
+load_path = "res://.godot/imported/已移除背景的frame_0014.png-d2a8f46544c8a65f28e7c5168aa4e41d.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_s4sn6"]
+load_path = "res://.godot/imported/已移除背景的frame_0015.png-bccb6652e5d431ffdb0cb584542cba82.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_run1r"]
+load_path = "res://.godot/imported/已移除背景的frame_0016.png-89eb0d2699fd18ed242fe0a24ccaf9c7.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_smuhl"]
+load_path = "res://.godot/imported/已移除背景的frame_0017.png-f8e458097d8ec7d9895286d5f280289f.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_a7gq7"]
+load_path = "res://.godot/imported/已移除背景的frame_0018.png-4cfcb4c3e43a2c05f717f860873d7540.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_vwq36"]
+load_path = "res://.godot/imported/已移除背景的frame_0019.png-2e80bb65cc822f6b23bfefa4e9c3c295.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_ns4hi"]
+load_path = "res://.godot/imported/已移除背景的frame_0020.png-f5f7b84b8d54c65e5039e0970b5a0dec.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_3ateu"]
+load_path = "res://.godot/imported/已移除背景的frame_0021.png-b5b9d3b6585145d1a06375b9869dd15f.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_cgixy"]
+load_path = "res://.godot/imported/已移除背景的frame_0022.png-2f9a6028676a1320bda478ff21d3c2b2.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_jsimg"]
+load_path = "res://.godot/imported/已移除背景的frame_0023.png-abc4c684acd42321fcd526b8be7c6f8e.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_p0mec"]
+load_path = "res://.godot/imported/已移除背景的frame_0024.png-16ce84f67639c15ae18d1e073ece884c.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_a0kfa"]
+load_path = "res://.godot/imported/已移除背景的frame_0025.png-52696435a384875fa6a811c2d83ee46f.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_3o83d"]
+load_path = "res://.godot/imported/已移除背景的frame_0026.png-0d90d15764139cf7229da65a016de6f5.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_rll18"]
+load_path = "res://.godot/imported/已移除背景的frame_0027.png-aa5897604144592f356cc1aa1dff4e50.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_vd40l"]
+load_path = "res://.godot/imported/已移除背景的frame_0028.png-be0542936f4e42349254e5bb802f7d27.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_ujhhv"]
+load_path = "res://.godot/imported/已移除背景的frame_0029.png-3b84ce22c04b1cd81c29f60dccadd0b2.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_lp2kk"]
+load_path = "res://.godot/imported/已移除背景的frame_0030.png-73f5944b314bd0ba4719f30f1d3ea776.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_nbs32"]
+load_path = "res://.godot/imported/已移除背景的frame_0031.png-0a59236d7663ba31f0a7e7792e9caa9c.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_l4o5q"]
+load_path = "res://.godot/imported/已移除背景的frame_0032.png-50803f5b94f3120375341be62592db3d.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_v7qkn"]
+load_path = "res://.godot/imported/已移除背景的frame_0033.png-96ea560e249c1ee2aa8dd79402d53bc8.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_okcj0"]
+load_path = "res://.godot/imported/已移除背景的frame_0034.png-5ae853d5f98a19d4226291eec413a899.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_lp6da"]
+load_path = "res://.godot/imported/已移除背景的frame_0035.png-50deb69c4e122aa27492ed893b71375f.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_i0d8e"]
+load_path = "res://.godot/imported/已移除背景的frame_0036.png-115ed93b1113d5a908e0b0abf4de2722.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_kf7rd"]
+load_path = "res://.godot/imported/已移除背景的frame_0037.png-2edb3170cf066f2b838be25fdec26d34.ctex"
 
 [resource]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("15_fly15")
+"texture": ExtResource("1_x8ye1")
 }, {
 "duration": 1.0,
-"texture": ExtResource("16_fly16")
+"texture": ExtResource("2_uqcg2")
 }, {
 "duration": 1.0,
-"texture": ExtResource("17_fly17")
+"texture": ExtResource("3_k37o8")
 }, {
 "duration": 1.0,
-"texture": ExtResource("18_fly18")
+"texture": ExtResource("4_f2viu")
 }, {
 "duration": 1.0,
-"texture": ExtResource("19_fly19")
+"texture": ExtResource("5_nq12l")
 }, {
 "duration": 1.0,
-"texture": ExtResource("20_fly20")
+"texture": ExtResource("6_aykyc")
 }, {
 "duration": 1.0,
-"texture": ExtResource("21_fly21")
+"texture": ExtResource("7_51ufj")
 }, {
 "duration": 1.0,
-"texture": ExtResource("22_fly22")
+"texture": ExtResource("8_6bqop")
 }, {
 "duration": 1.0,
-"texture": ExtResource("23_fly23")
+"texture": ExtResource("9_1uh81")
 }, {
 "duration": 1.0,
-"texture": ExtResource("24_fly24")
+"texture": ExtResource("10_hb3o7")
 }, {
 "duration": 1.0,
-"texture": ExtResource("25_fly25")
+"texture": ExtResource("11_rswte")
 }, {
 "duration": 1.0,
-"texture": ExtResource("26_fly26")
+"texture": ExtResource("12_xfnrn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_12p4p")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_r852q")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_evy26")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_jkird")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_dysd7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_vlc1i")
+}, {
+"duration": 1.0,
+"texture": ExtResource("19_i8u8w")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_a6eh4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_ap5ml")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_ctray")
+}, {
+"duration": 1.0,
+"texture": ExtResource("23_q28n0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("24_l03fx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("25_k02rw")
+}, {
+"duration": 1.0,
+"texture": ExtResource("26_j33fa")
+}, {
+"duration": 1.0,
+"texture": ExtResource("27_ry2te")
+}, {
+"duration": 1.0,
+"texture": ExtResource("28_ibamg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("29_py8d3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("30_urib4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("31_rr8eq")
+}, {
+"duration": 1.0,
+"texture": ExtResource("32_8wj4k")
+}, {
+"duration": 1.0,
+"texture": ExtResource("33_y6u8c")
+}, {
+"duration": 1.0,
+"texture": ExtResource("34_knk2d")
+}, {
+"duration": 1.0,
+"texture": ExtResource("35_y114e")
+}, {
+"duration": 1.0,
+"texture": ExtResource("36_af1nx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("37_il1o8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("38_fqfp2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("39_2pxcf")
+}, {
+"duration": 1.0,
+"texture": ExtResource("40_iusu5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("41_aork0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("42_dxc30")
+}, {
+"duration": 1.0,
+"texture": ExtResource("43_aux2b")
+}, {
+"duration": 1.0,
+"texture": ExtResource("44_145sk")
+}, {
+"duration": 1.0,
+"texture": ExtResource("45_b6ajh")
+}, {
+"duration": 1.0,
+"texture": ExtResource("46_ppljl")
+}, {
+"duration": 1.0,
+"texture": ExtResource("47_8xmcr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("48_48rvf")
+}, {
+"duration": 1.0,
+"texture": ExtResource("49_p1eeg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("50_7dsuj")
+}, {
+"duration": 1.0,
+"texture": ExtResource("51_44n5f")
+}, {
+"duration": 1.0,
+"texture": ExtResource("52_tgt8w")
+}, {
+"duration": 1.0,
+"texture": ExtResource("53_1ka0e")
+}, {
+"duration": 1.0,
+"texture": ExtResource("54_vr6x1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("55_c01y2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("56_oy1qp")
+}, {
+"duration": 1.0,
+"texture": ExtResource("57_y72s1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("58_6h55b")
+}, {
+"duration": 1.0,
+"texture": ExtResource("59_5o75t")
+}, {
+"duration": 1.0,
+"texture": ExtResource("60_eudi8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("61_c8e0i")
+}, {
+"duration": 1.0,
+"texture": ExtResource("62_c02sb")
+}, {
+"duration": 1.0,
+"texture": ExtResource("63_d1yl2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("64_0fpme")
+}, {
+"duration": 1.0,
+"texture": ExtResource("65_cl7e2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("66_7a3wa")
+}, {
+"duration": 1.0,
+"texture": ExtResource("67_s4sn6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("68_run1r")
+}, {
+"duration": 1.0,
+"texture": ExtResource("69_smuhl")
+}, {
+"duration": 1.0,
+"texture": ExtResource("70_a7gq7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("71_vwq36")
+}, {
+"duration": 1.0,
+"texture": ExtResource("72_ns4hi")
+}, {
+"duration": 1.0,
+"texture": ExtResource("73_3ateu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("74_cgixy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("75_jsimg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("76_p0mec")
+}, {
+"duration": 1.0,
+"texture": ExtResource("77_a0kfa")
+}, {
+"duration": 1.0,
+"texture": ExtResource("78_3o83d")
+}, {
+"duration": 1.0,
+"texture": ExtResource("79_rll18")
+}, {
+"duration": 1.0,
+"texture": ExtResource("80_vd40l")
+}, {
+"duration": 1.0,
+"texture": ExtResource("81_ujhhv")
+}, {
+"duration": 1.0,
+"texture": ExtResource("82_lp2kk")
+}, {
+"duration": 1.0,
+"texture": ExtResource("83_nbs32")
+}, {
+"duration": 1.0,
+"texture": ExtResource("84_l4o5q")
+}, {
+"duration": 1.0,
+"texture": ExtResource("85_v7qkn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("86_okcj0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("87_lp6da")
+}, {
+"duration": 1.0,
+"texture": ExtResource("88_i0d8e")
+}, {
+"duration": 1.0,
+"texture": ExtResource("89_kf7rd")
+}, {
+"duration": 1.0,
+"texture": ExtResource("90_sfso3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("91_4fvlv")
+}, {
+"duration": 1.0,
+"texture": ExtResource("92_g57jx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("93_bay8w")
+}, {
+"duration": 1.0,
+"texture": ExtResource("94_p4s6a")
+}, {
+"duration": 1.0,
+"texture": ExtResource("95_bkbr0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("96_e53ki")
+}, {
+"duration": 1.0,
+"texture": ExtResource("97_t350v")
+}, {
+"duration": 1.0,
+"texture": ExtResource("98_bwuht")
+}, {
+"duration": 1.0,
+"texture": ExtResource("99_oy7sh")
+}, {
+"duration": 1.0,
+"texture": ExtResource("100_2msve")
+}, {
+"duration": 1.0,
+"texture": ExtResource("101_8blm5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("102_t37hq")
+}, {
+"duration": 1.0,
+"texture": ExtResource("103_u3420")
+}, {
+"duration": 1.0,
+"texture": ExtResource("104_2xstx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("105_uhpo6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("106_s0l0q")
+}, {
+"duration": 1.0,
+"texture": ExtResource("107_25dds")
+}, {
+"duration": 1.0,
+"texture": ExtResource("108_awtmd")
+}, {
+"duration": 1.0,
+"texture": ExtResource("109_naqk7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("110_dttm6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("111_403a4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("112_swb16")
+}, {
+"duration": 1.0,
+"texture": ExtResource("113_si05r")
+}, {
+"duration": 1.0,
+"texture": ExtResource("114_m364q")
+}, {
+"duration": 1.0,
+"texture": ExtResource("115_m3uqc")
+}, {
+"duration": 1.0,
+"texture": ExtResource("116_bj8hw")
+}, {
+"duration": 1.0,
+"texture": ExtResource("117_2i0he")
+}, {
+"duration": 1.0,
+"texture": ExtResource("118_dcd6d")
+}, {
+"duration": 1.0,
+"texture": ExtResource("119_g5ei2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("120_wsx1e")
+}, {
+"duration": 1.0,
+"texture": ExtResource("121_a1dtm")
 }],
 "loop": true,
-"name": &"default",
-"speed": 1.0
+"name": &"fly",
+"speed": 40.0
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("6_fly06")
+"texture": SubResource("CompressedTexture2D_0dabx")
 }, {
 "duration": 1.0,
-"texture": ExtResource("7_fly07")
+"texture": SubResource("CompressedTexture2D_u7de1")
 }, {
 "duration": 1.0,
-"texture": ExtResource("8_fly08")
+"texture": SubResource("CompressedTexture2D_d2i16")
 }, {
 "duration": 1.0,
-"texture": ExtResource("9_fly09")
+"texture": SubResource("CompressedTexture2D_nmvnv")
 }, {
 "duration": 1.0,
-"texture": ExtResource("10_fly10")
+"texture": SubResource("CompressedTexture2D_tx2t6")
 }, {
 "duration": 1.0,
-"texture": ExtResource("11_fly11")
+"texture": SubResource("CompressedTexture2D_f2fac")
 }, {
 "duration": 1.0,
-"texture": ExtResource("12_fly12")
+"texture": SubResource("CompressedTexture2D_3nvmt")
 }, {
 "duration": 1.0,
-"texture": ExtResource("13_fly13")
+"texture": SubResource("CompressedTexture2D_snrta")
 }, {
 "duration": 1.0,
-"texture": ExtResource("14_fly14")
+"texture": SubResource("CompressedTexture2D_xaiw6")
 }],
 "loop": false,
 "name": &"happy",
@@ -104,104 +722,302 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("1_fly01")
+"texture": SubResource("CompressedTexture2D_4668m")
 }, {
 "duration": 1.0,
-"texture": ExtResource("2_fly02")
+"texture": SubResource("CompressedTexture2D_u20dm")
 }, {
 "duration": 1.0,
-"texture": ExtResource("3_fly03")
+"texture": SubResource("CompressedTexture2D_oy1qp")
 }, {
 "duration": 1.0,
-"texture": ExtResource("4_fly04")
+"texture": SubResource("CompressedTexture2D_y72s1")
 }, {
 "duration": 1.0,
-"texture": ExtResource("5_fly05")
+"texture": SubResource("CompressedTexture2D_6h55b")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_5o75t")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_eudi8")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_c8e0i")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_c02sb")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_d1yl2")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_0fpme")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_cl7e2")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_7a3wa")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_s4sn6")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_run1r")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_smuhl")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_a7gq7")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_vwq36")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_ns4hi")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_3ateu")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_cgixy")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_jsimg")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_p0mec")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_a0kfa")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_3o83d")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_rll18")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_vd40l")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_ujhhv")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_lp2kk")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_nbs32")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_l4o5q")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_v7qkn")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_okcj0")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_lp6da")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_i0d8e")
+}, {
+"duration": 1.0,
+"texture": SubResource("CompressedTexture2D_kf7rd")
 }],
 "loop": true,
 "name": &"hint",
-"speed": 2.0
+"speed": 30.0
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("1_fly01")
+"texture": ExtResource("1_iii35")
 }, {
 "duration": 1.0,
-"texture": ExtResource("2_fly02")
+"texture": ExtResource("2_8jljv")
 }, {
 "duration": 1.0,
-"texture": ExtResource("3_fly03")
+"texture": ExtResource("3_5f4b6")
 }, {
 "duration": 1.0,
-"texture": ExtResource("4_fly04")
+"texture": ExtResource("4_jf06r")
 }, {
 "duration": 1.0,
-"texture": ExtResource("5_fly05")
+"texture": ExtResource("5_tm735")
 }, {
 "duration": 1.0,
-"texture": ExtResource("6_fly06")
+"texture": ExtResource("6_h0d2i")
 }, {
 "duration": 1.0,
-"texture": ExtResource("7_fly07")
+"texture": ExtResource("7_xlssb")
 }, {
 "duration": 1.0,
-"texture": ExtResource("8_fly08")
+"texture": ExtResource("8_d1780")
 }, {
 "duration": 1.0,
-"texture": ExtResource("9_fly09")
+"texture": ExtResource("9_tygk5")
 }, {
 "duration": 1.0,
-"texture": ExtResource("10_fly10")
+"texture": ExtResource("10_ap1nt")
 }, {
 "duration": 1.0,
-"texture": ExtResource("11_fly11")
+"texture": ExtResource("11_olg0a")
 }, {
 "duration": 1.0,
-"texture": ExtResource("12_fly12")
+"texture": ExtResource("12_85l1r")
 }, {
 "duration": 1.0,
-"texture": ExtResource("13_fly13")
+"texture": ExtResource("13_rh0jh")
 }, {
 "duration": 1.0,
-"texture": ExtResource("14_fly14")
+"texture": ExtResource("14_tuetx")
 }, {
 "duration": 1.0,
-"texture": ExtResource("15_fly15")
+"texture": ExtResource("15_1dnbd")
 }, {
 "duration": 1.0,
-"texture": ExtResource("16_fly16")
+"texture": ExtResource("16_2c4xd")
 }, {
 "duration": 1.0,
-"texture": ExtResource("17_fly17")
+"texture": ExtResource("17_jtk4x")
 }, {
 "duration": 1.0,
-"texture": ExtResource("18_fly18")
+"texture": ExtResource("18_0k2d6")
 }, {
 "duration": 1.0,
-"texture": ExtResource("19_fly19")
+"texture": ExtResource("19_x68e2")
 }, {
 "duration": 1.0,
-"texture": ExtResource("20_fly20")
+"texture": ExtResource("20_nx2eb")
 }, {
 "duration": 1.0,
-"texture": ExtResource("21_fly21")
+"texture": ExtResource("21_osye6")
 }, {
 "duration": 1.0,
-"texture": ExtResource("22_fly22")
+"texture": ExtResource("22_gvj8t")
 }, {
 "duration": 1.0,
-"texture": ExtResource("23_fly23")
+"texture": ExtResource("23_ujo8r")
 }, {
 "duration": 1.0,
-"texture": ExtResource("24_fly24")
+"texture": ExtResource("24_unyj5")
 }, {
 "duration": 1.0,
-"texture": ExtResource("25_fly25")
+"texture": ExtResource("25_x7a03")
 }, {
 "duration": 1.0,
-"texture": ExtResource("26_fly26")
+"texture": ExtResource("26_37j57")
+}, {
+"duration": 1.0,
+"texture": ExtResource("27_wobku")
+}, {
+"duration": 1.0,
+"texture": ExtResource("28_jjr72")
+}, {
+"duration": 1.0,
+"texture": ExtResource("29_x8ye1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("30_uqcg2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("31_k37o8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("32_f2viu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("33_nq12l")
+}, {
+"duration": 1.0,
+"texture": ExtResource("34_aykyc")
+}, {
+"duration": 1.0,
+"texture": ExtResource("35_51ufj")
+}, {
+"duration": 1.0,
+"texture": ExtResource("36_6bqop")
+}, {
+"duration": 1.0,
+"texture": ExtResource("37_1uh81")
+}, {
+"duration": 1.0,
+"texture": ExtResource("38_hb3o7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("39_rswte")
+}, {
+"duration": 1.0,
+"texture": ExtResource("40_xfnrn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("41_12p4p")
+}, {
+"duration": 1.0,
+"texture": ExtResource("42_r852q")
+}, {
+"duration": 1.0,
+"texture": ExtResource("43_evy26")
+}, {
+"duration": 1.0,
+"texture": ExtResource("44_jkird")
+}, {
+"duration": 1.0,
+"texture": ExtResource("45_dysd7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("46_vlc1i")
+}, {
+"duration": 1.0,
+"texture": ExtResource("47_i8u8w")
+}, {
+"duration": 1.0,
+"texture": ExtResource("48_a6eh4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("49_ap5ml")
+}, {
+"duration": 1.0,
+"texture": ExtResource("50_ctray")
+}, {
+"duration": 1.0,
+"texture": ExtResource("51_q28n0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("52_l03fx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("53_k02rw")
+}, {
+"duration": 1.0,
+"texture": ExtResource("54_j33fa")
+}, {
+"duration": 1.0,
+"texture": ExtResource("55_ry2te")
+}, {
+"duration": 1.0,
+"texture": ExtResource("56_ibamg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("57_py8d3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("58_urib4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("59_rr8eq")
+}, {
+"duration": 1.0,
+"texture": ExtResource("60_8wj4k")
+}, {
+"duration": 1.0,
+"texture": ExtResource("61_y6u8c")
 }],
 "loop": true,
 "name": &"idle",
-"speed": 5.0
+"speed": 30.0
 }]

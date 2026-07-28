@@ -4,30 +4,8 @@ const API_BASE_URL = "http://localhost:8301"
 const QUEST_SERVICE_URL = "http://localhost:8306"
 const ASSESSMENT_SERVICE_URL = "http://localhost:8308"
 const REWARD_SERVICE_URL = "http://localhost:8307"
-const DEFAULT_ASR_TEST_ANSWERS: Array[String] = [
-	"hello",
-	"Carl",
-	"yes I can",
-	"hello",
-	"big",
-	"small",
-	"red",
-	"stand up",
-	"open the book",
-	"read aloud",
-	"I like magic books",
-	"I feel happy",
-	"thank you Luna",
-	"sunny",
-	"rainy",
-	"cloudy",
-	"cat in the tree",
-	"dog under the bridge",
-	"bird in the bush",
-	"plant red",
-	"water blue",
-	"grow yellow",
-]
+# ASR 测试模式：跳过麦克风，直接用 res://assets/test_audio/ 下的 wav 文件做真实 ASR。
+const DEFAULT_ASR_TEST_AUDIO_DIR: String = "res://assets/test_audio/"
 
 var http_request: HTTPRequest
 var error_panel: PanelContainer
@@ -49,13 +27,14 @@ var parallel_asr_http_request: HTTPRequest
 var _ping_in_progress: bool = false
 var services_ready_done: bool = false
 var asr_default_answer_test_enabled: bool = false
-var asr_default_test_answers: Array[String] = DEFAULT_ASR_TEST_ANSWERS.duplicate()
+var asr_test_audio_files: Array[String] = []
+var asr_test_audio_names: Array[String] = []
+var _asr_test_audio_index: int = 0
 
 # ——— 并行ASR状态追踪 ———
 var _parallel_asr_pending: bool = false
 var _parallel_asr_result: Dictionary = {}
 var _parallel_asr_timeout_ms: int = 1500
-var _asr_default_test_answer_index: int = 0
 
 func _ready() -> void:
 	_configure_asr_test_options()
@@ -84,14 +63,26 @@ func _ready() -> void:
 	# Auto-connect quest WebSocket when services are ready
 	services_ready.connect(_on_services_ready)
 
-func set_asr_default_answer_test_enabled(enabled: bool, answers: Array[String] = []) -> void:
+func set_asr_default_answer_test_enabled(
+	enabled: bool,
+	audio_dir: String = "",
+	audio_names: Array[String] = []
+) -> void:
 	asr_default_answer_test_enabled = enabled
-	_asr_default_test_answer_index = 0
-	if not answers.is_empty():
-		asr_default_test_answers = answers.duplicate()
-	elif asr_default_test_answers.is_empty():
-		asr_default_test_answers = DEFAULT_ASR_TEST_ANSWERS.duplicate()
-	print("[HybridAPI] ASR default-answer test enabled: ", asr_default_answer_test_enabled)
+	_asr_test_audio_index = 0
+	asr_test_audio_files.clear()
+	asr_test_audio_names.clear()
+	if not enabled:
+		print("[HybridAPI] ASR test-audio mode disabled")
+		return
+	for name in audio_names:
+		var trimmed := str(name).strip_edges()
+		if not trimmed.is_empty():
+			asr_test_audio_names.append(trimmed)
+	var resolved_dir := audio_dir if not audio_dir.is_empty() else DEFAULT_ASR_TEST_AUDIO_DIR
+	asr_test_audio_files = _collect_asr_test_audio_files(resolved_dir, asr_test_audio_names)
+	print("[HybridAPI] ASR test-audio mode enabled: dir=", resolved_dir,
+		" names=", asr_test_audio_names, " files=", asr_test_audio_files.size())
 
 func _configure_asr_test_options() -> void:
 	_configure_asr_test_options_from_project_settings()
@@ -99,10 +90,10 @@ func _configure_asr_test_options() -> void:
 
 func _configure_asr_test_options_from_project_settings() -> void:
 	var enabled := bool(ProjectSettings.get_setting("hybrid_api/asr_default_answer_test_enabled", false))
-	var answers_value: Variant = ProjectSettings.get_setting("hybrid_api/asr_default_answers", PackedStringArray())
-	var answers: Array[String] = _asr_answers_from_value(answers_value)
+	var audio_dir := str(ProjectSettings.get_setting("hybrid_api/asr_test_audio_dir", ""))
+	var audio_names := _asr_names_from_value(ProjectSettings.get_setting("hybrid_api/asr_test_audio_names", PackedStringArray()))
 	if enabled:
-		set_asr_default_answer_test_enabled(true, answers)
+		set_asr_default_answer_test_enabled(true, audio_dir, audio_names)
 
 func _configure_asr_test_options_from_cmdline() -> void:
 	var args: Array[String] = []
@@ -112,79 +103,98 @@ func _configure_asr_test_options_from_cmdline() -> void:
 		args.append(arg)
 
 	var enabled := false
-	var answers: Array[String] = []
+	var audio_dir := ""
+	var audio_names: Array[String] = []
 	for arg in args:
 		if arg == "--asr-default-answer-test":
 			enabled = true
-		elif arg.begins_with("--asr-default-answers="):
+		elif arg.begins_with("--asr-test-audio-dir="):
 			enabled = true
-			var raw_answers := arg.trim_prefix("--asr-default-answers=")
-			for answer in raw_answers.split("|", false):
-				var trimmed_answer := answer.strip_edges()
-				if not trimmed_answer.is_empty():
-					answers.append(trimmed_answer)
+			audio_dir = arg.trim_prefix("--asr-test-audio-dir=")
+		elif arg.begins_with("--asr-test-audio-names="):
+			enabled = true
+			audio_names = _split_pipe_list(arg.trim_prefix("--asr-test-audio-names="))
 
 	if enabled:
-		set_asr_default_answer_test_enabled(true, answers)
+		set_asr_default_answer_test_enabled(true, audio_dir, audio_names)
 
-func _asr_answers_from_value(value: Variant) -> Array[String]:
-	var answers: Array[String] = []
+func _asr_names_from_value(value: Variant) -> Array[String]:
+	var names: Array[String] = []
 	if value is PackedStringArray:
-		for answer in value:
-			var trimmed_answer := str(answer).strip_edges()
-			if not trimmed_answer.is_empty():
-				answers.append(trimmed_answer)
+		for name in value:
+			var trimmed := str(name).strip_edges()
+			if not trimmed.is_empty():
+				names.append(trimmed)
 	elif value is Array:
-		for answer in value:
-			var trimmed_answer := str(answer).strip_edges()
-			if not trimmed_answer.is_empty():
-				answers.append(trimmed_answer)
-	return answers
+		for name in value:
+			var trimmed := str(name).strip_edges()
+			if not trimmed.is_empty():
+				names.append(trimmed)
+	return names
 
-func _apply_asr_default_answer_test(asr_result: Dictionary) -> Dictionary:
-	if not asr_default_answer_test_enabled:
-		return asr_result
-	if asr_default_test_answers.is_empty():
-		asr_default_test_answers = DEFAULT_ASR_TEST_ANSWERS.duplicate()
+func _split_pipe_list(raw: String) -> Array[String]:
+	var out: Array[String] = []
+	for item in raw.split("|", false):
+		var trimmed := item.strip_edges()
+		if not trimmed.is_empty():
+			out.append(trimmed)
+	return out
 
-	var result := asr_result.duplicate(true)
-	var actual_text := str(result.get("text", ""))
-	var answer_index: int = mini(_asr_default_test_answer_index, asr_default_test_answers.size() - 1)
-	var replacement_text: String = asr_default_test_answers[answer_index]
-	_asr_default_test_answer_index += 1
-	result["actual_text"] = actual_text
-	result["text"] = replacement_text
-	result.erase("postprocess")
-	result["test_override"] = "asr_default_answer"
-	result["test_answer_index"] = answer_index
-	print("[HybridAPI] ASR default-answer test replaced '%s' with '%s'" % [actual_text, replacement_text])
-	return result
+## 收集目录下的测试音频完整路径。
+## names 非空时，只取目录中存在且匹配的文件，并按 names 顺序返回；
+## names 为空时，扫描目录下所有 .wav 并按文件名升序返回。
+func _collect_asr_test_audio_files(audio_dir: String, names: Array[String]) -> Array[String]:
+	var dir := DirAccess.open(audio_dir)
+	if dir == null:
+		push_warning("[HybridAPI] ASR test audio dir not accessible: " + audio_dir)
+		return []
+	var available: Dictionary = {}  # lower filename -> actual filename
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+	while file_name != "":
+		if not dir.current_is_dir() and file_name.to_lower().ends_with(".wav"):
+			available[file_name.to_lower()] = file_name
+		file_name = dir.get_next()
+	dir.list_dir_end()
 
-func _build_asr_default_answer_test_result(lang: String = "en", context: Dictionary = {}) -> Dictionary:
-	# 优先使用上下文指定的候选项，而非全局轮播列表
-	var answers_from_context: Array = context.get("candidate_answers", [])
-	if not answers_from_context.is_empty() and answers_from_context[0] is String:
-		var answer := str(answers_from_context[0])
-		var result := {
-			"text": answer,
-			"confidence": 1.0,
-			"detected_language": lang,
-			"processing_time_ms": 0,
-			"test_override": "asr_default_answer_candidate",
-			"context": context.duplicate(true) if not context.is_empty() else {},
-		}
-		print("[HybridAPI] ASR default-answer test from context candidate: '%s'" % answer)
-		return result
+	var base_dir := audio_dir.trim_suffix("/") + "/"
+	if not names.is_empty():
+		var files: Array[String] = []
+		for name in names:
+			var key := name.strip_edges().to_lower()
+			if key.is_empty():
+				continue
+			# 允许省略 .wav 后缀
+			if not key.ends_with(".wav"):
+				key = key + ".wav"
+			if not available.has(key):
+				push_warning("[HybridAPI] ASR test audio name not found in dir: " + name)
+				continue
+			files.append(base_dir + str(available[key]))
+		return files
 
-	var result := _apply_asr_default_answer_test({
-		"text": "",
-		"confidence": 1.0,
-		"detected_language": lang,
-		"processing_time_ms": 0,
-	})
-	if not context.is_empty() and not result.has("context"):
-		result["context"] = context
-	return result
+	var all_files: Array[String] = []
+	for actual_name in available.values():
+		all_files.append(base_dir + str(actual_name))
+	all_files.sort()
+	return all_files
+
+## 返回下一个测试音频文件的字节（轮换）。未配置文件时返回空字节数组。
+func get_next_asr_test_audio_data() -> PackedByteArray:
+	if asr_test_audio_files.is_empty():
+		push_warning("[HybridAPI] ASR test-audio mode enabled but no wav files configured")
+		return PackedByteArray()
+	var index: int = _asr_test_audio_index % asr_test_audio_files.size()
+	_asr_test_audio_index += 1
+	var path: String = asr_test_audio_files[index]
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		push_warning("[HybridAPI] Failed to open ASR test audio: " + path)
+		return PackedByteArray()
+	var data := file.get_buffer(file.get_length())
+	file.close()
+	print("[HybridAPI] ASR test audio loaded: ", path, " size=", data.size(), " index=", index)
+	return data
 
 func _emit_asr_received(result: Dictionary) -> void:
 	asr_received.emit(result)
@@ -216,14 +226,16 @@ func _build_asr_request_body(audio_data: PackedByteArray, lang: String = "en", c
 		payload["context"] = context
 	return JSON.stringify(payload)
 
+## 取消在途 ASR 请求，释放共享的 http_request。
+## 场景 ASR 超时后调用，避免迟到的响应被 misroute 到下一个请求，
+## 以及重试请求因 http_request 仍占用而返回 ERR_BUSY 连环失败。
+## cancel 触发的 request_completed(failure) 会被场景的 asr_request_active 守卫挡掉。
+func cancel_in_flight_asr_request() -> void:
+	if http_request and http_request.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
+		http_request.cancel_request()
+
 func recognize_speech(audio_data: PackedByteArray, lang: String = "en", context: Dictionary = {}) -> void:
 	print("[HybridAPI] recognize_speech: size=", audio_data.size(), " lang=", lang)
-	if asr_default_answer_test_enabled:
-		var result := _build_asr_default_answer_test_result(lang, context)
-		print("[HybridAPI] ASR default-answer test emitted: ", result)
-		call_deferred("_emit_asr_received", result)
-		return
-
 	var body := _build_asr_request_body(audio_data, lang, context)
 	print("[HybridAPI] JSON body size: ", body.length())
 	var headers = ["Content-Type: application/json"]
@@ -234,13 +246,6 @@ func recognize_speech(audio_data: PackedByteArray, lang: String = "en", context:
 ## 并行ASR识别：同时调用英文+中文ASR，比较置信度选择结果
 ## 返回 {text, confidence, detected_language, processing_time_ms}
 func recognize_speech_parallel(base64_audio: String, timeout_ms: int = 1500) -> Dictionary:
-	if asr_default_answer_test_enabled:
-		return _build_asr_default_answer_test_result("auto", {
-			"parallel": true,
-			"timeout_ms": timeout_ms,
-			"audio_size": base64_audio.length(),
-		})
-
 	_parallel_asr_timeout_ms = timeout_ms
 	_parallel_asr_pending = true
 	_parallel_asr_result = {}
@@ -396,11 +401,36 @@ func get_asr_extracted_value(asr_result: Dictionary, key: String, fallback: Stri
 				return value
 	return fallback
 
+func get_asr_intent(asr_result: Dictionary) -> String:
+	var postprocess = asr_result.get("postprocess", {})
+	if postprocess is Dictionary:
+		var intent := str(postprocess.get("intent", "")).strip_edges()
+		if intent in ["provide", "delegate", "off_topic"]:
+			return intent
+		if postprocess.has("intent_matched"):
+			return "provide" if bool(postprocess.get("intent_matched", true)) else "off_topic"
+	return "provide"
+
 func get_asr_intent_matched(asr_result: Dictionary, fallback: bool = true) -> bool:
 	var postprocess = asr_result.get("postprocess", {})
+	if postprocess is Dictionary and postprocess.has("intent"):
+		return get_asr_intent(asr_result) == "provide"
 	if postprocess is Dictionary and postprocess.has("intent_matched"):
 		return bool(postprocess.get("intent_matched", fallback))
 	return fallback
+
+## ASR 置信度（CLAUDE.md §7 helper）。
+## 读取 postprocess.confidence，回退到顶层 confidence。
+## NOTE: 这是 Whisper language_probability 的近似值，用于归卷厅字母识别分层时需校准。
+func get_asr_confidence(asr_result: Dictionary) -> float:
+	# 近似置信度：优先 postprocess.confidence，但当其为 0/缺失
+	# （fallback_reason=missing_context 等情况）时回退到顶层 Whisper confidence。
+	var postprocess = asr_result.get("postprocess", {})
+	if postprocess is Dictionary:
+		var pp_conf := float(postprocess.get("confidence", 0.0))
+		if pp_conf > 0.0:
+			return pp_conf
+	return float(asr_result.get("confidence", 0.0))
 
 func get_asr_guidance_npc_line(asr_result: Dictionary, fallback: String = "") -> String:
 	var postprocess = asr_result.get("postprocess", {})
@@ -440,9 +470,8 @@ func _on_request_completed(result: int, response_code: int, headers: PackedStrin
 		AudioManager.play_audio_from_base64(audio_data, format_type)
 		tts_received.emit(json)
 	elif json.has("text"):
-		var asr_result: Dictionary = _apply_asr_default_answer_test(json)
-		print("[HybridAPI] ASR response: ", asr_result)
-		asr_received.emit(asr_result)
+		print("[HybridAPI] ASR response: ", json)
+		asr_received.emit(json)
 	elif json.has("npc_text") or json.has("response"):
 		# Normalize dialogue response format
 		if json.has("npc_text") and not json.has("response"):
@@ -539,7 +568,6 @@ func _on_parallel_asr_request_completed(result: int, response_code: int, headers
 		"detected_language": json.get("detected_language", "unclear"),
 		"processing_time_ms": json.get("processing_time_ms", 0)
 	}
-	_parallel_asr_result = _apply_asr_default_answer_test(_parallel_asr_result)
 	print("[HybridAPI] Parallel ASR result: ", _parallel_asr_result)
 
 func publish_coach_silence_timeout(
