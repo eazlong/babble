@@ -93,15 +93,15 @@ func play_entry_fly_in() -> void:
 	feifei_sprite.modulate.a = 0.0
 	visible = true
 
-	if feifei_sprite.sprite_frames and feifei_sprite.sprite_frames.has_animation("default"):
-		feifei_sprite.play("default")
+	if feifei_sprite.sprite_frames and feifei_sprite.sprite_frames.has_animation("fly"):
+		feifei_sprite.play("fly")
 
 	# 从远处飞向屏幕中央，同步放大
 	var tween: Tween = create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(feifei_sprite, "position", entry_target_pos, ENTRY_DURATION * 0.6) \
 		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
-	tween.tween_property(feifei_sprite, "scale", Vector2.ONE, ENTRY_DURATION * 0.6) \
+	tween.tween_property(feifei_sprite, "scale", Vector2.ONE, ENTRY_DURATION * 1.0) \
 		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 	tween.tween_property(feifei_sprite, "modulate:a", 1.0, ENTRY_DURATION * 0.3) \
 		.set_ease(Tween.EASE_IN)

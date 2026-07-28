@@ -45,7 +45,7 @@ async def build_asr_response(result, context: dict[str, Any] | None, endpoint: s
         context=context,
     )
     logger.info(
-        "[ASR-POSTPROCESS] response text_len=%s applied=%s fallback_reason=%s corrected_text_len=%s correction_reason_present=%s extracted_keys=%s intent_matched=%s guidance_present=%s confidence=%s latency_ms=%s model=%s",
+        "[ASR-POSTPROCESS] response text_len=%s applied=%s fallback_reason=%s corrected_text_len=%s correction_reason_present=%s extracted_keys=%s intent_matched=%s intent=%s guidance_present=%s confidence=%s latency_ms=%s model=%s",
         len(result.text),
         postprocess.get("applied"),
         postprocess.get("fallback_reason"),
@@ -53,6 +53,7 @@ async def build_asr_response(result, context: dict[str, Any] | None, endpoint: s
         bool(postprocess.get("correction_reason")),
         context_keys(postprocess.get("extracted", {})),
         postprocess.get("intent_matched"),
+        postprocess.get("intent"),
         bool((postprocess.get("guidance") or {}).get("npc_line")),
         postprocess.get("confidence"),
         postprocess.get("latency_ms"),

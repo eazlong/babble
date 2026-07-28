@@ -50,18 +50,19 @@ window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
-[gui]
-
-theme/custom="res://assets/resources/fonts/ChineseTheme.tres"
-
 [game]
 
 test_mode_skip_auto_load_save=true
 
+[gui]
+
+theme/custom="res://assets/resources/fonts/ChineseTheme.tres"
+
 [hybrid_api]
 
-asr_default_answer_test_enabled=false
-asr_default_answers=PackedStringArray("Carl", "yes I can", "hello", "big", "small", "red", "stand up", "open the book", "read aloud", "I like magic books", "I feel happy", "thank you Luna", "sunny", "rainy", "cloudy", "cat in the tree", "dog under the bridge", "bird in the bush", "plant red", "water blue", "grow yellow")
+asr_default_answer_test_enabled=true
+asr_test_audio_dir="res://assets/test_audio/"
+asr_test_audio_names=PackedStringArray("wo_jiao_kaka_kaka_de_ka.wav", "bang_wo_qi_yi_ge_ba.wav", "ok.wav", "shu_jia.wav")
 
 [input]
 

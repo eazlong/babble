@@ -1,11 +1,13 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Texture2D" uid="uid://bjm5j6jnh78ku" path="res://assets/textures/ui/fp/ui_mic_button_idle.png" id="1_idle"]
+[ext_resource type="Script" path="res://assets/scripts/ui/VoiceMicIndicator.gd" id="2_script"]
 
 [node name="VoiceMicIndicator" type="Control"]
 custom_minimum_size = Vector2(80, 80)
 pivot_offset = Vector2(40, 40)
 mouse_filter = 2
+script = ExtResource("2_script")
 
 [node name="Button" type="TextureRect" parent="."]
 layout_mode = 1
@@ -15,3 +17,18 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("1_idle")
+
+[node name="PendingUploadBadge" type="Label" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -24.0
+offset_top = -6.0
+offset_right = 6.0
+offset_bottom = 24.0
+grow_horizontal = 0
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1

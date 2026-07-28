@@ -1,20 +1,17 @@
-[gd_scene load_steps=5 format=3 uid="uid://b4g8h2n6xq0fp"]
+[gd_scene format=3 uid="uid://cnugbx20cpo8v"]
 
-[ext_resource type="Script" path="res://assets/scripts/scenes/ChangAnMarketController.gd" id="1_controller"]
-[ext_resource type="Script" path="res://assets/scripts/components/FeifeiShoulder.gd" id="2_feifei"]
+[ext_resource type="Script" uid="uid://80k03tfvg7ci" path="res://assets/scripts/scenes/ChangAnMarketController.gd" id="1_controller"]
+[ext_resource type="Script" uid="uid://cgmypvx1mcar" path="res://assets/scripts/components/FeifeiShoulder.gd" id="2_feifei"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/feifei/feifei_fly_frames.tres" id="3_frames"]
 [ext_resource type="PackedScene" path="res://assets/scenes/ui/VoiceMicIndicator.tscn" id="4_mic_button"]
 
-[node name="ChangAnMarket" type="Node2D"]
+[node name="ChangAnMarket" type="Node2D" unique_id=1559488916]
 script = ExtResource("1_controller")
 
-[node name="HUDLayer" type="CanvasLayer" parent="."]
+[node name="HUDLayer" type="CanvasLayer" parent="." unique_id=64263337]
 layer = 10
 
-[node name="MicLayer" type="CanvasLayer" parent="."]
-layer = 90
-
-[node name="QuestTracker" type="Control" parent="HUDLayer"]
+[node name="QuestTracker" type="Control" parent="HUDLayer" unique_id=994105982]
 layout_mode = 3
 anchors_preset = 0
 offset_left = 38.0
@@ -22,7 +19,7 @@ offset_top = 46.0
 offset_right = 520.0
 offset_bottom = 138.0
 
-[node name="Background" type="ColorRect" parent="HUDLayer/QuestTracker"]
+[node name="Background" type="ColorRect" parent="HUDLayer/QuestTracker" unique_id=315998816]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -31,7 +28,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.08, 0.08, 0.1, 0.62)
 
-[node name="QuestLabel" type="Label" parent="HUDLayer/QuestTracker"]
+[node name="QuestLabel" type="Label" parent="HUDLayer/QuestTracker" unique_id=1805839471]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -46,7 +43,10 @@ text = "任务：进入长安西市"
 vertical_alignment = 1
 autowrap_mode = 3
 
-[node name="MicButton" parent="MicLayer" instance=ExtResource("4_mic_button")]
+[node name="MicLayer" type="CanvasLayer" parent="." unique_id=1473983997]
+layer = 90
+
+[node name="MicButton" parent="MicLayer" unique_id=1781491402 instance=ExtResource("4_mic_button")]
 visible = false
 layout_mode = 3
 anchors_preset = 7
@@ -61,10 +61,10 @@ offset_bottom = -46.0
 grow_horizontal = 2
 grow_vertical = 0
 
-[node name="FeifeiLayer" type="CanvasLayer" parent="."]
+[node name="FeifeiLayer" type="CanvasLayer" parent="." unique_id=65427913]
 layer = 20
 
-[node name="FeifeiShoulder" type="Control" parent="FeifeiLayer"]
+[node name="FeifeiShoulder" type="Control" parent="FeifeiLayer" unique_id=2036370026]
 layout_mode = 3
 anchors_preset = 0
 offset_left = -100.0
@@ -73,12 +73,12 @@ offset_right = 100.0
 offset_bottom = 400.0
 script = ExtResource("2_feifei")
 
-[node name="FeifeiSprite" type="AnimatedSprite2D" parent="FeifeiLayer/FeifeiShoulder"]
+[node name="FeifeiSprite" type="AnimatedSprite2D" parent="FeifeiLayer/FeifeiShoulder" unique_id=57439814]
 position = Vector2(1828, 628)
 scale = Vector2(1.24, 1.33)
 sprite_frames = ExtResource("3_frames")
 
-[node name="BubblePanel" type="Panel" parent="FeifeiLayer/FeifeiShoulder"]
+[node name="BubblePanel" type="Panel" parent="FeifeiLayer/FeifeiShoulder" unique_id=1455911493]
 visible = false
 layout_mode = 0
 offset_left = 1628.0
@@ -86,7 +86,7 @@ offset_top = 710.0
 offset_right = 1828.0
 offset_bottom = 810.0
 
-[node name="BubbleLabel" type="RichTextLabel" parent="FeifeiLayer/FeifeiShoulder/BubblePanel"]
+[node name="BubbleLabel" type="RichTextLabel" parent="FeifeiLayer/FeifeiShoulder/BubblePanel" unique_id=1891030636]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -97,5 +97,5 @@ grow_horizontal = 2
 grow_vertical = 2
 bbcode_enabled = true
 
-[node name="OverlayLayer" type="CanvasLayer" parent="."]
+[node name="OverlayLayer" type="CanvasLayer" parent="." unique_id=71381869]
 layer = 30

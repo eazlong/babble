@@ -42,8 +42,10 @@ class XfyunTTSService:
     # 音色ID映射 - 统一使用xiaoyan（女声，儿童友好）
     VOICE_MAP = {
         "spirit": "x4_yezi",     # 精灵导师 - x4_yezi（优质女声）
-        "spark": "x4_yezi",      # 火花精灵
-        "oakley": "x4_yezi",     # 橡树守卫
+        "elder": "x4_lingfeichen_assist",      # 火花精灵
+        "young_female": "x4_lingfeichen_assist",     # 橡树守卫
+        "young_male": "aisbabyxu",      # 小火龙
+        "word_spirit": "aisjinger",   # 单词精灵
         "default": "x4_yezi",    # 默认
     }
 

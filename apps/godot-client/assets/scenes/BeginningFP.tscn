@@ -3,15 +3,13 @@
 [ext_resource type="Script" uid="uid://bdmcfu3wvt8we" path="res://assets/scripts/scenes/BeginningFPController.gd" id="1_scene_ctrl"]
 [ext_resource type="Texture2D" uid="uid://0cjv05xtk23v" path="res://assets/textures/backgrounds/fog.png" id="2_1mnpl"]
 [ext_resource type="Script" uid="uid://duxmi4k0ivnmu" path="res://assets/scripts/components/FirstPersonNavigator.gd" id="2_navigator"]
-[ext_resource type="Texture2D" uid="uid://b1co6uqoiax46" path="res://assets/textures/backgrounds/beginning_trees_far.png" id="3_1mnpl"]
+[ext_resource type="Texture2D" uid="uid://cuc684aiutksr" path="res://assets/textures/backgrounds/fog_mid.png" id="3_5c4x7"]
 [ext_resource type="Script" uid="uid://cgmypvx1mcar" path="res://assets/scripts/components/FeifeiShoulder.gd" id="3_feifei"]
-[ext_resource type="Texture2D" uid="uid://b7sl234atefmm" path="res://assets/textures/backgrounds/beginning_trees_mid.png" id="4_1mnpl"]
 [ext_resource type="Texture2D" uid="uid://o72pfohmsj4x" path="res://assets/textures/ui/fp/ui_starbar_bg.png" id="6_81tbv"]
-[ext_resource type="Texture2D" uid="uid://mp7dty7vqb2n" path="res://assets/textures/hotel/level0.png" id="6_bal7h"]
-[ext_resource type="Texture2D" uid="uid://cvvm6mlh4a47l" path="res://assets/textures/backgrounds/forest_ground.png" id="7_bg_ground"]
+[ext_resource type="Texture2D" uid="uid://gb3mxpl06b2e" path="res://assets/textures/objects/inn/inn_no_title.png" id="6_bal7h"]
 [ext_resource type="Texture2D" uid="uid://cx11cvl7rdcn3" path="res://assets/textures/ui/fp/ui_starbar_fill.png" id="8_star_fill"]
 [ext_resource type="Texture2D" uid="uid://pjkoh3hv2q6l" path="res://assets/textures/ui/fp/ui_quest_tracker_bg.png" id="9_quest_bg"]
-[ext_resource type="SpriteFrames" uid="uid://lq2gvsfh8vgi" path="res://assets/sprites/feifei/feifei_frames.tres" id="10_peub6"]
+[ext_resource type="SpriteFrames" uid="uid://dvi5h3uwc03ih" path="res://assets/sprites/feifei/feifei_frames.tres" id="10_peub6"]
 [ext_resource type="PackedScene" path="res://assets/scenes/ui/VoiceMicIndicator.tscn" id="11_mic_button"]
 [ext_resource type="Texture2D" uid="uid://b1o63kftolank" path="res://assets/textures/ui/fp/ui_compass_bg.png" id="12_compass_bg"]
 [ext_resource type="Texture2D" uid="uid://cmhb0yd2kjidi" path="res://assets/textures/ui/fp/ui_compass_arrow.png" id="13_compass_arrow"]
@@ -21,57 +19,61 @@
 [node name="BeginningFP" type="Node2D" unique_id=1070436742]
 script = ExtResource("1_scene_ctrl")
 
-[node name="ParallaxBackground" type="ParallaxBackground" parent="." unique_id=1870177968]
+[node name="ParallaxBackground" type="ParallaxBackground" parent="." unique_id=257890102]
 
-[node name="SkyLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=2030992925]
+[node name="SkyLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1336656371]
 z_index = -100
 motion_scale = Vector2(0.1, 0.1)
 motion_mirroring = Vector2(1920, 0)
 
-[node name="Sky" type="Sprite2D" parent="ParallaxBackground/SkyLayer" unique_id=1826010445]
+[node name="Sky" type="Sprite2D" parent="ParallaxBackground/SkyLayer" unique_id=1319279931]
 texture = ExtResource("2_1mnpl")
 centered = false
 
-[node name="FarTreeLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1867270092]
+[node name="FogLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=325140530]
+z_index = -80
+motion_scale = Vector2(0.4, 0.4)
+motion_mirroring = Vector2(1920, 0)
+
+[node name="FogA" type="Sprite2D" parent="ParallaxBackground/FogLayer" unique_id=1433998338]
+scale = Vector2(1.0646068, 0.5725001)
+texture = ExtResource("3_5c4x7")
+centered = false
+
+[node name="FogB" type="Sprite2D" parent="ParallaxBackground/FogLayer" unique_id=1967426306]
+position = Vector2(1928, 5)
+scale = Vector2(1.0646068, 0.5725001)
+texture = ExtResource("3_5c4x7")
+centered = false
+
+[node name="GroundFarLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1059813652]
 z_index = -60
 motion_scale = Vector2(0.35, 0.35)
 motion_mirroring = Vector2(1920, 0)
 
-[node name="TreesFar" type="Sprite2D" parent="ParallaxBackground/FarTreeLayer" unique_id=346789904]
+[node name="GroundFar" type="Sprite2D" parent="ParallaxBackground/GroundFarLayer" unique_id=1247467076]
 position = Vector2(0, 744)
 scale = Vector2(0.8629445, 0.38268793)
-texture = ExtResource("3_1mnpl")
+texture = ExtResource("17_bal7h")
 centered = false
 
-[node name="MidTreeLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1524338012]
-z_index = -40
-motion_scale = Vector2(0.55, 0.55)
-motion_mirroring = Vector2(1920, 0)
-
-[node name="TreesMid" type="Sprite2D" parent="ParallaxBackground/MidTreeLayer" unique_id=930499507]
-position = Vector2(6.1035156e-05, 232.00002)
-scale = Vector2(0.7401497, 0.81178945)
-texture = ExtResource("4_1mnpl")
-centered = false
-
-[node name="GroundLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1473880499]
+[node name="GroundLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=961399393]
 z_index = -20
 motion_scale = Vector2(0.8, 0.8)
 motion_mirroring = Vector2(1920, 0)
 
-[node name="Ground" type="Sprite2D" parent="ParallaxBackground/GroundLayer" unique_id=564587528]
+[node name="Ground" type="Sprite2D" parent="ParallaxBackground/GroundLayer" unique_id=1140490182]
 position = Vector2(-3.410605e-13, 936)
 scale = Vector2(1.13, 0.4)
-texture = ExtResource("7_bg_ground")
 centered = false
 
-[node name="MidLayer" type="Node2D" parent="." unique_id=766447333]
+[node name="InnLayer" type="Node2D" parent="." unique_id=766447333]
 z_index = 10
 
-[node name="PropsLayer" type="Sprite2D" parent="MidLayer" unique_id=655375147]
+[node name="InnLayer" type="Sprite2D" parent="InnLayer" unique_id=655375147]
 z_index = 15
-position = Vector2(1664.0001, 648)
-scale = Vector2(0.70448875, 0.80421054)
+position = Vector2(1800, 752.00006)
+scale = Vector2(0.42331326, 0.49355265)
 texture = ExtResource("6_bal7h")
 
 [node name="FeifeiPaths" type="Node2D" parent="." unique_id=803615501]
@@ -114,13 +116,8 @@ position = Vector2(400, 600)
 
 [node name="CameraAnimator" type="AnimationPlayer" parent="CameraSystem" unique_id=803615514]
 
-[node name="SceneFlowController" type="Node" parent="." unique_id=803615522]
-
 [node name="HUDLayer" type="CanvasLayer" parent="." unique_id=82425486]
 layer = 10
-
-[node name="MicLayer" type="CanvasLayer" parent="."]
-layer = 90
 
 [node name="StarBar" type="Control" parent="HUDLayer" unique_id=1835237087]
 layout_mode = 3
@@ -180,21 +177,6 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "序章：从混沌迷雾中醒来"
 
-[node name="MicButton" parent="MicLayer" unique_id=608592095 instance=ExtResource("11_mic_button")]
-visible = false
-layout_mode = 3
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -40.0
-offset_top = -130.0
-offset_right = 40.0
-offset_bottom = -50.0
-grow_horizontal = 2
-grow_vertical = 0
-
 [node name="MagicCompass" type="Control" parent="HUDLayer" unique_id=702472776]
 layout_mode = 3
 anchors_preset = 1
@@ -234,6 +216,24 @@ text = "→"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="MicLayer" type="CanvasLayer" parent="." unique_id=1271097775]
+layer = 90
+
+[node name="MicButton" parent="MicLayer" unique_id=608592095 instance=ExtResource("11_mic_button")]
+visible = false
+layout_mode = 3
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -40.0
+offset_top = -130.0
+offset_right = 40.0
+offset_bottom = -50.0
+grow_horizontal = 2
+grow_vertical = 0
+
 [node name="FeifeiLayer" type="CanvasLayer" parent="." unique_id=840794365]
 layer = 20
 
@@ -247,9 +247,11 @@ offset_bottom = 400.0
 script = ExtResource("3_feifei")
 
 [node name="FeifeiSprite" type="AnimatedSprite2D" parent="FeifeiLayer/FeifeiShoulder" unique_id=2024235979]
-position = Vector2(1032.0001, 512)
-scale = Vector2(0.5, 0.5)
+position = Vector2(1103, 378)
+scale = Vector2(1.2, 1.2)
 sprite_frames = ExtResource("10_peub6")
+animation = &"fly"
+frame_progress = 0.8496853
 
 [node name="BubblePanel" type="Panel" parent="FeifeiLayer/FeifeiShoulder" unique_id=1903076905]
 visible = false
@@ -307,46 +309,3 @@ horizontal_alignment = 1
 
 [node name="FirstPersonNavigator" type="Node" parent="." unique_id=803615523]
 script = ExtResource("2_navigator")
-
-[node name="ParallaxBackground2" type="ParallaxBackground" parent="." unique_id=257890102]
-
-[node name="SkyLayer" type="ParallaxLayer" parent="ParallaxBackground2" unique_id=1336656371]
-z_index = -100
-motion_scale = Vector2(0.1, 0.1)
-motion_mirroring = Vector2(1920, 0)
-
-[node name="Sky" type="Sprite2D" parent="ParallaxBackground2/SkyLayer" unique_id=1319279931]
-texture = ExtResource("2_1mnpl")
-centered = false
-
-[node name="FarTreeLayer" type="ParallaxLayer" parent="ParallaxBackground2" unique_id=1059813652]
-z_index = -60
-motion_scale = Vector2(0.35, 0.35)
-motion_mirroring = Vector2(1920, 0)
-
-[node name="TreesFar" type="Sprite2D" parent="ParallaxBackground2/FarTreeLayer" unique_id=1247467076]
-position = Vector2(0, 744)
-scale = Vector2(0.8629445, 0.38268793)
-texture = ExtResource("17_bal7h")
-centered = false
-
-[node name="MidTreeLayer" type="ParallaxLayer" parent="ParallaxBackground2" unique_id=929380964]
-z_index = -40
-motion_scale = Vector2(0.55, 0.55)
-motion_mirroring = Vector2(1920, 0)
-
-[node name="TreesMid" type="Sprite2D" parent="ParallaxBackground2/MidTreeLayer" unique_id=1188197637]
-position = Vector2(648.00006, 1768)
-scale = Vector2(0.7401497, 0.81178945)
-centered = false
-
-[node name="GroundLayer" type="ParallaxLayer" parent="ParallaxBackground2" unique_id=961399393]
-z_index = -20
-motion_scale = Vector2(0.8, 0.8)
-motion_mirroring = Vector2(1920, 0)
-
-[node name="Ground" type="Sprite2D" parent="ParallaxBackground2/GroundLayer" unique_id=1140490182]
-position = Vector2(-3.410605e-13, 936)
-scale = Vector2(1.13, 0.4)
-texture = ExtResource("7_bg_ground")
-centered = false

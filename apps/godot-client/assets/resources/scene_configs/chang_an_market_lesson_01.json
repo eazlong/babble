@@ -52,12 +52,18 @@
     },
     {
       "id": "sit_here",
-      "type": "click",
+      "type": "voice",
       "quest_key": "quest_sit_here",
       "flow_id": "west_market_01.sit_here",
       "success_flow_id": "west_market_01.sit_here_success",
       "retry_flow_id": "west_market_01.sit_here_retry",
-      "reward_words": ["sit"]
+      "reward_words": ["sit"],
+      "asr": {
+        "clear_phrases": ["sit here", "i sit here"],
+        "acceptable_phrases": ["sit"],
+        "required_keywords": ["sit"],
+        "optional_keywords": ["here"]
+      }
     },
     {
       "id": "meet_a_ling",

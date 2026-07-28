@@ -88,9 +88,6 @@ func _process(delta: float) -> void:
 	if VoicePipeline.is_recording:
 		record_duration += delta
 		silence_timer = 0.0
-		if record_duration > MAX_RECORD_DURATION:
-			VoicePipeline.stop_listening()
-			_stop_voice_listening()
 	else:
 		silence_timer += delta
 		record_duration = 0.0

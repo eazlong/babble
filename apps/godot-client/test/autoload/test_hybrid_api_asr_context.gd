@@ -1,5 +1,7 @@
 extends GutTest
 
+const TEST_AUDIO_DIR := "res://test/fixtures/asr_test_audio/"
+
 func test_build_asr_request_body_includes_context() -> void:
 	var context := {
 		"npc_question": "这个家具是什么？",
@@ -47,6 +49,33 @@ func test_get_asr_extracted_value_prefers_slot_value() -> void:
 
 	assert_eq(HybridAPI.get_asr_extracted_value(result, "name", ""), "大飞", "姓名流程应优先使用extracted.name")
 
+func test_get_asr_intent_reads_enum_value() -> void:
+	var result := {
+		"postprocess": {
+			"intent": "delegate",
+			"intent_matched": false,
+		}
+	}
+
+	assert_eq(HybridAPI.get_asr_intent(result), "delegate", "应优先读取postprocess.intent枚举")
+
+func test_get_asr_intent_maps_legacy_intent_matched() -> void:
+	assert_eq(HybridAPI.get_asr_intent({"postprocess": {"intent_matched": true}}), "provide", "旧intent_matched=true应映射为provide")
+	assert_eq(HybridAPI.get_asr_intent({"postprocess": {"intent_matched": false}}), "off_topic", "旧intent_matched=false应映射为off_topic")
+
+func test_get_asr_intent_ignores_unknown_enum() -> void:
+	var result := {
+		"postprocess": {
+			"intent": "unknown",
+			"intent_matched": true,
+		}
+	}
+
+	assert_eq(HybridAPI.get_asr_intent(result), "provide", "未知intent应回退到旧布尔字段")
+
+func test_get_asr_intent_defaults_to_provide_without_postprocess() -> void:
+	assert_eq(HybridAPI.get_asr_intent({"text": "hello"}), "provide", "缺少postprocess时应保持旧流程默认通过")
+
 func test_get_asr_intent_matched_reads_postprocess_value() -> void:
 	var result := {
 		"postprocess": {
@@ -72,76 +101,87 @@ func test_get_asr_guidance_npc_line_reads_guidance() -> void:
 func test_get_asr_guidance_npc_line_falls_back_when_missing() -> void:
 	assert_eq(HybridAPI.get_asr_guidance_npc_line({"text": "hello"}, "fallback"), "fallback", "缺少引导语时应使用fallback")
 
-func test_asr_default_answer_test_removes_stale_postprocess() -> void:
+func test_collect_asr_test_audio_files_lists_sorted_wavs() -> void:
+	var files := HybridAPI._collect_asr_test_audio_files(TEST_AUDIO_DIR, [])
+
+	assert_eq(files.size(), 2, "应扫描出两个wav文件")
+	assert_true(files[0].ends_with("/02_second.wav"), "应按文件名升序排列")
+	assert_true(files[1].ends_with("/10_first.wav"), "文件名排序而非字典序前缀")
+
+func test_collect_asr_test_audio_files_filters_by_names_in_order() -> void:
+	# 指定文件名列表时，只取这些文件并按列表顺序返回（与文件名字典序相反）。
+	var files := HybridAPI._collect_asr_test_audio_files(TEST_AUDIO_DIR, ["10_first.wav", "02_second.wav"])
+
+	assert_eq(files.size(), 2, "应只取指定的两个文件")
+	assert_true(files[0].ends_with("/10_first.wav"), "顺序应跟随列表而非文件名")
+	assert_true(files[1].ends_with("/02_second.wav"), "顺序应跟随列表而非文件名")
+
+func test_collect_asr_test_audio_files_allows_missing_wav_suffix() -> void:
+	var files := HybridAPI._collect_asr_test_audio_files(TEST_AUDIO_DIR, ["10_first"])
+
+	assert_eq(files.size(), 1, "省略.wav后缀应仍能匹配")
+	assert_true(files[0].ends_with("/10_first.wav"), "应匹配到对应wav文件")
+
+func test_collect_asr_test_audio_files_skips_unknown_names() -> void:
+	var files := HybridAPI._collect_asr_test_audio_files(TEST_AUDIO_DIR, ["02_second.wav", "missing.wav"])
+
+	assert_eq(files.size(), 1, "目录中不存在的文件名应被跳过")
+	assert_true(files[0].ends_with("/02_second.wav"), "应保留存在的文件")
+
+func test_get_next_asr_test_audio_data_rotates() -> void:
 	var original_enabled := HybridAPI.asr_default_answer_test_enabled
-	var original_answers := HybridAPI.asr_default_test_answers.duplicate()
-	var original_index := HybridAPI._asr_default_test_answer_index
-	HybridAPI.set_asr_default_answer_test_enabled(true, ["hello"])
+	var original_files := HybridAPI.asr_test_audio_files.duplicate()
+	var original_index := HybridAPI._asr_test_audio_index
+	HybridAPI.set_asr_default_answer_test_enabled(true, TEST_AUDIO_DIR)
 
-	var result := HybridAPI._apply_asr_default_answer_test({
-		"text": "暑假",
-		"postprocess": {
-			"corrected_text": "书架",
-			"extracted": {"answer": "书架"}
-		}
-	})
+	var first := HybridAPI.get_next_asr_test_audio_data()
+	var second := HybridAPI.get_next_asr_test_audio_data()
+	var third := HybridAPI.get_next_asr_test_audio_data()
 
-	assert_eq(result.get("text", ""), "hello", "测试覆盖应替换原始text")
-	assert_false(result.has("postprocess"), "测试覆盖后不应保留旧postprocess纠错结果")
+	assert_gt(first.size(), 0, "第一次应读到音频字节")
+	assert_eq(second.size(), first.size(), "第二次应读到另一文件且大小相同")
+	assert_eq(third.size(), first.size(), "第三次应轮换回第一个文件")
 
 	HybridAPI.asr_default_answer_test_enabled = original_enabled
-	HybridAPI.asr_default_test_answers = original_answers
-	HybridAPI._asr_default_test_answer_index = original_index
+	HybridAPI.asr_test_audio_files = original_files
+	HybridAPI._asr_test_audio_index = original_index
 
-func test_recognize_speech_uses_context_candidate_when_provided() -> void:
+func test_get_next_asr_test_audio_data_empty_when_no_files() -> void:
 	var original_enabled := HybridAPI.asr_default_answer_test_enabled
-	HybridAPI.set_asr_default_answer_test_enabled(true)
+	var original_files := HybridAPI.asr_test_audio_files.duplicate()
+	var original_index := HybridAPI._asr_test_audio_index
+	HybridAPI.set_asr_default_answer_test_enabled(true, "res://nonexistent_dir_xyz/")
 
-	# MirageInnIntroduction 类型场景：candidate_answers 含 "书架"/"bookshelf"
-	HybridAPI.recognize_speech(PackedByteArray([1, 2, 3]), "zh", {
-		"candidate_answers": ["书架", "bookshelf", "book shelf"],
-	})
-	var result: Dictionary = await HybridAPI.asr_received
+	var data := HybridAPI.get_next_asr_test_audio_data()
 
-	assert_eq(result.get("text", ""), "书架", "上下文有candidate_answers时应优先取第一个")
-	assert_eq(result.get("test_override", ""), "asr_default_answer_candidate", "应标记为候选人答案模式")
+	assert_eq(data.size(), 0, "目录不存在时应返回空字节数组")
 
-	# 没有 candidate_answers 时回退全局列表
+	HybridAPI.asr_default_answer_test_enabled = original_enabled
+	HybridAPI.asr_test_audio_files = original_files
+	HybridAPI._asr_test_audio_index = original_index
+
+func test_recognize_speech_does_not_short_circuit_in_test_mode() -> void:
+	# 测试模式下 recognize_speech 不应再短路返回带 test_override 的假文本。
+	# 旧实现必 emit 含 test_override 的结果；新实现走真实 HTTP，结果无此标记。
+	var original_enabled := HybridAPI.asr_default_answer_test_enabled
+	HybridAPI.set_asr_default_answer_test_enabled(true, TEST_AUDIO_DIR)
+
+	# 临时屏蔽 api_error 的 push_error，避免真实 HTTP 失败被 GUT 计为 Unexpected Errors。
+	var error_handler := HybridAPI.api_error.is_connected(HybridAPI._on_api_error)
+	if error_handler:
+		HybridAPI.api_error.disconnect(HybridAPI._on_api_error)
+
+	var fake_override_seen := false
+	var on_received := func(result: Dictionary) -> void:
+		if result.has("test_override"):
+			fake_override_seen = true
+	HybridAPI.asr_received.connect(on_received)
 	HybridAPI.recognize_speech(PackedByteArray([1, 2, 3]), "en", {})
-	var result2: Dictionary = await HybridAPI.asr_received
-	assert_eq(result2.get("test_override", ""), "asr_default_answer", "无candidate_answers时应回退全局列表")
+	await get_tree().create_timer(0.3).timeout
+	HybridAPI.asr_received.disconnect(on_received)
 
+	if error_handler:
+		HybridAPI.api_error.connect(HybridAPI._on_api_error)
 	HybridAPI.asr_default_answer_test_enabled = original_enabled
 
-func test_recognize_speech_emits_default_answer_without_http() -> void:
-	var original_enabled := HybridAPI.asr_default_answer_test_enabled
-	var original_answers := HybridAPI.asr_default_test_answers.duplicate()
-	var original_index := HybridAPI._asr_default_test_answer_index
-	HybridAPI.set_asr_default_answer_test_enabled(true, ["bookshelf"])
-
-	HybridAPI.recognize_speech(PackedByteArray([1, 2, 3]), "zh", {"scene_id": "test_scene"})
-	var result: Dictionary = await HybridAPI.asr_received
-
-	assert_eq(result.get("text", ""), "bookshelf", "直接ASR测试模式应不依赖HTTP返回")
-	assert_eq(result.get("detected_language", ""), "zh", "默认ASR结果应保留调用语言")
-	assert_eq(result.get("context", {}).get("scene_id", ""), "test_scene", "默认ASR结果应保留调用上下文")
-
-	HybridAPI.asr_default_answer_test_enabled = original_enabled
-	HybridAPI.asr_default_test_answers = original_answers
-	HybridAPI._asr_default_test_answer_index = original_index
-
-func test_parallel_asr_returns_default_answer_without_http() -> void:
-	var original_enabled := HybridAPI.asr_default_answer_test_enabled
-	var original_answers := HybridAPI.asr_default_test_answers.duplicate()
-	var original_index := HybridAPI._asr_default_test_answer_index
-	HybridAPI.set_asr_default_answer_test_enabled(true, ["sunny"])
-
-	var result: Dictionary = await HybridAPI.recognize_speech_parallel("abc123", 1500)
-
-	assert_eq(result.get("text", ""), "sunny", "并行ASR测试模式应不依赖HTTP返回")
-	assert_eq(result.get("detected_language", ""), "auto", "并行ASR默认结果应标记自动语言")
-	assert_true(result.get("context", {}).get("parallel", false), "并行ASR默认结果应保留并行上下文")
-
-	HybridAPI.asr_default_answer_test_enabled = original_enabled
-	HybridAPI.asr_default_test_answers = original_answers
-	HybridAPI._asr_default_test_answer_index = original_index
+	assert_false(fake_override_seen, "测试模式不应再短路 emit 带 test_override 的假结果")

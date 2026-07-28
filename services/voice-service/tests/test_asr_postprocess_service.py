@@ -73,6 +73,348 @@ async def test_postprocessor_preserves_already_correct_answer(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_postprocessor_surfaces_delegate_intent(monkeypatch):
+    """Delegate intent: player hands the slot back to the NPC.
+
+    voice-service must surface the LLM's `intent: "delegate"` label without
+    inventing a slot value or a proposal line — completion is the client's job.
+    """
+
+    async def fake_create(**kwargs):
+        return openai.types.chat.ChatCompletion(
+            id="chatcmpl-test",
+            model=kwargs["model"],
+            object="chat.completion",
+            created=0,
+            choices=[
+                openai.types.chat.chat_completion.Choice(
+                    index=0,
+                    finish_reason="stop",
+                    message=openai.types.chat.chat_completion_message.ChatCompletionMessage(
+                        role="assistant",
+                        content=json.dumps(
+                            {
+                                "corrected_text": "你帮我起一个吧",
+                                "correction_applied": False,
+                                "correction_reason": None,
+                                "extracted": {},
+                                "intent_matched": False,
+                                "intent": "delegate",
+                                "guidance": {"npc_line": None},
+                                "confidence": 0.9,
+                            },
+                            ensure_ascii=False,
+                        ),
+                    ),
+                )
+            ],
+        )
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    client = openai.AsyncOpenAI(api_key="test-key", base_url="https://llm.test/v1")
+    client.chat = type("Chat", (), {"completions": type("Completions", (), {"create": AsyncMock(side_effect=fake_create)})()})()
+    postprocessor = ASRPostprocessor(client=client)
+
+    result = await postprocessor.process(
+        text="你帮我起一个吧",
+        asr_confidence=0.9,
+        language="cn_en",
+        context={
+            "npc_question": "你的英文名是什么？",
+            "expected_slots": [{"key": "english_name", "type": "person_name"}],
+            "expected_answer_type": "player_name",
+        },
+    )
+
+    assert result["applied"] is True
+    assert result["intent"] == "delegate"
+    assert result["intent_matched"] is False
+    assert result["extracted"] == {}
+    assert result["guidance"] == {"npc_line": None}
+
+
+@pytest.mark.asyncio
+async def test_postprocessor_sanitizes_delegate_payload(monkeypatch):
+    """Delegate intent never carries invented values or proposal lines."""
+
+    async def fake_create(**kwargs):
+        return openai.types.chat.ChatCompletion(
+            id="chatcmpl-test",
+            model=kwargs["model"],
+            object="chat.completion",
+            created=0,
+            choices=[
+                openai.types.chat.chat_completion.Choice(
+                    index=0,
+                    finish_reason="stop",
+                    message=openai.types.chat.chat_completion_message.ChatCompletionMessage(
+                        role="assistant",
+                        content=json.dumps(
+                            {
+                                "corrected_text": "你帮我起一个吧",
+                                "correction_applied": False,
+                                "correction_reason": None,
+                                "extracted": {"english_name": "Wendy"},
+                                "intent_matched": True,
+                                "intent": "delegate",
+                                "guidance": {"npc_line": "那就叫 Wendy，你觉得怎么样？"},
+                                "confidence": 0.9,
+                            },
+                            ensure_ascii=False,
+                        ),
+                    ),
+                )
+            ],
+        )
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    client = openai.AsyncOpenAI(api_key="test-key", base_url="https://llm.test/v1")
+    client.chat = type("Chat", (), {"completions": type("Completions", (), {"create": AsyncMock(side_effect=fake_create)})()})()
+    postprocessor = ASRPostprocessor(client=client)
+
+    result = await postprocessor.process(
+        text="你帮我起一个吧",
+        asr_confidence=0.9,
+        language="cn_en",
+        context={
+            "npc_question": "你的英文名是什么？",
+            "expected_slots": [{"key": "english_name", "type": "person_name"}],
+            "expected_answer_type": "player_name",
+        },
+    )
+
+    assert result["intent"] == "delegate"
+    assert result["intent_matched"] is False
+    assert result["extracted"] == {}
+    assert result["guidance"] == {"npc_line": None}
+
+
+@pytest.mark.asyncio
+async def test_postprocessor_derive_intent_matched_from_intent(monkeypatch):
+    """`intent_matched` remains equivalent to `intent == "provide"`."""
+
+    async def fake_create(**kwargs):
+        return openai.types.chat.ChatCompletion(
+            id="chatcmpl-test",
+            model=kwargs["model"],
+            object="chat.completion",
+            created=0,
+            choices=[
+                openai.types.chat.chat_completion.Choice(
+                    index=0,
+                    finish_reason="stop",
+                    message=openai.types.chat.chat_completion_message.ChatCompletionMessage(
+                        role="assistant",
+                        content=json.dumps(
+                            {
+                                "corrected_text": "不是这个",
+                                "correction_applied": False,
+                                "correction_reason": None,
+                                "extracted": {"answer": "书架"},
+                                "intent_matched": True,
+                                "intent": "off_topic",
+                                "guidance": {"npc_line": "我们先回答这个家具是什么，好吗？"},
+                                "confidence": 0.7,
+                            },
+                            ensure_ascii=False,
+                        ),
+                    ),
+                )
+            ],
+        )
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    client = openai.AsyncOpenAI(api_key="test-key", base_url="https://llm.test/v1")
+    client.chat = type("Chat", (), {"completions": type("Completions", (), {"create": AsyncMock(side_effect=fake_create)})()})()
+    postprocessor = ASRPostprocessor(client=client)
+
+    result = await postprocessor.process(
+        text="不是这个",
+        asr_confidence=0.9,
+        language="cn_en",
+        context=CONTEXT,
+    )
+
+    assert result["intent"] == "off_topic"
+    assert result["intent_matched"] is False
+    assert result["extracted"] == {}
+    assert result["guidance"] == {"npc_line": "我们先回答这个家具是什么，好吗？"}
+
+
+@pytest.mark.asyncio
+async def test_postprocessor_preserves_expected_slot_extensions_in_prompt(monkeypatch):
+    captured = {}
+
+    async def fake_create(**kwargs):
+        captured["messages"] = kwargs["messages"]
+        return openai.types.chat.ChatCompletion(
+            id="chatcmpl-test",
+            model=kwargs["model"],
+            object="chat.completion",
+            created=0,
+            choices=[
+                openai.types.chat.chat_completion.Choice(
+                    index=0,
+                    finish_reason="stop",
+                    message=openai.types.chat.chat_completion_message.ChatCompletionMessage(
+                        role="assistant",
+                        content=json.dumps(
+                            {
+                                "corrected_text": "你帮我起一个吧",
+                                "correction_applied": False,
+                                "correction_reason": None,
+                                "extracted": {},
+                                "intent_matched": False,
+                                "intent": "delegate",
+                                "guidance": {"npc_line": None},
+                                "confidence": 0.9,
+                            },
+                            ensure_ascii=False,
+                        ),
+                    ),
+                )
+            ],
+        )
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    client = openai.AsyncOpenAI(api_key="test-key", base_url="https://llm.test/v1")
+    client.chat = type("Chat", (), {"completions": type("Completions", (), {"create": AsyncMock(side_effect=fake_create)})()})()
+    postprocessor = ASRPostprocessor(client=client)
+
+    await postprocessor.process(
+        text="你帮我起一个吧",
+        asr_confidence=0.9,
+        language="cn_en",
+        context={
+            "npc_question": "你的英文名是什么？",
+            "expected_slots": [
+                {
+                    "key": "english_name",
+                    "type": "person_name",
+                    "delegateable": True,
+                    "value_pool": ["Wendy", "Tom"],
+                    "pick_strategy": "sequential",
+                    "exclude_recent": 1,
+                }
+            ],
+            "expected_answer_type": "player_name",
+        },
+    )
+
+    user_payload = json.loads(captured["messages"][1]["content"])
+    expected_slot = user_payload["expected_slots"][0]
+    assert expected_slot["delegateable"] is True
+    assert expected_slot["value_pool"] == ["Wendy", "Tom"]
+    assert expected_slot["pick_strategy"] == "sequential"
+    assert expected_slot["exclude_recent"] == 1
+
+
+@pytest.mark.asyncio
+async def test_postprocessor_defaults_intent_to_provide_when_absent(monkeypatch):
+    """Legacy LLM payloads without an `intent` key stay backward compatible."""
+
+    async def fake_create(**kwargs):
+        return openai.types.chat.ChatCompletion(
+            id="chatcmpl-test",
+            model=kwargs["model"],
+            object="chat.completion",
+            created=0,
+            choices=[
+                openai.types.chat.chat_completion.Choice(
+                    index=0,
+                    finish_reason="stop",
+                    message=openai.types.chat.chat_completion_message.ChatCompletionMessage(
+                        role="assistant",
+                        content=json.dumps(
+                            {
+                                "corrected_text": "书架",
+                                "correction_applied": False,
+                                "correction_reason": None,
+                                "extracted": {"answer": "书架"},
+                                "intent_matched": True,
+                                "guidance": {"npc_line": None},
+                                "confidence": 0.95,
+                            },
+                            ensure_ascii=False,
+                        ),
+                    ),
+                )
+            ],
+        )
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    client = openai.AsyncOpenAI(api_key="test-key", base_url="https://llm.test/v1")
+    client.chat = type("Chat", (), {"completions": type("Completions", (), {"create": AsyncMock(side_effect=fake_create)})()})()
+    postprocessor = ASRPostprocessor(client=client)
+
+    result = await postprocessor.process(
+        text="书架",
+        asr_confidence=0.95,
+        language="cn_en",
+        context=CONTEXT,
+    )
+
+    assert result["intent"] == "provide"
+    assert result["intent_matched"] is True
+
+
+@pytest.mark.asyncio
+async def test_postprocessor_system_prompt_instructs_delegate_recognition(monkeypatch):
+    captured = {}
+
+    async def fake_create(**kwargs):
+        captured["messages"] = kwargs["messages"]
+        return openai.types.chat.ChatCompletion(
+            id="chatcmpl-test",
+            model=kwargs["model"],
+            object="chat.completion",
+            created=0,
+            choices=[
+                openai.types.chat.chat_completion.Choice(
+                    index=0,
+                    finish_reason="stop",
+                    message=openai.types.chat.chat_completion_message.ChatCompletionMessage(
+                        role="assistant",
+                        content=json.dumps(
+                            {
+                                "corrected_text": "x",
+                                "correction_applied": False,
+                                "correction_reason": None,
+                                "extracted": {},
+                                "intent_matched": False,
+                                "intent": "delegate",
+                                "guidance": {"npc_line": None},
+                                "confidence": 0.5,
+                            },
+                            ensure_ascii=False,
+                        ),
+                    ),
+                )
+            ],
+        )
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    client = openai.AsyncOpenAI(api_key="test-key", base_url="https://llm.test/v1")
+    client.chat = type("Chat", (), {"completions": type("Completions", (), {"create": AsyncMock(side_effect=fake_create)})()})()
+    postprocessor = ASRPostprocessor(client=client)
+
+    await postprocessor.process(
+        text="你帮我起一个吧",
+        asr_confidence=0.9,
+        language="cn_en",
+        context={
+            "npc_question": "你的英文名是什么？",
+            "expected_slots": [{"key": "english_name", "type": "person_name"}],
+            "expected_answer_type": "player_name",
+        },
+    )
+
+    system_content = captured["messages"][0]["content"]
+    assert "delegate" in system_content.lower()
+    assert "provide" in system_content.lower()
+
+
+@pytest.mark.asyncio
 async def test_postprocessor_disabled_does_not_call_llm(monkeypatch):
     create = AsyncMock()
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
@@ -179,6 +521,87 @@ async def test_postprocessor_timeout_does_not_retry(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_postprocessor_retries_when_llm_truncated_by_length(monkeypatch):
+    """Reasoning models can exhaust max_tokens on reasoning and return finish_reason=length.
+
+    The postprocessor must retry with a larger budget instead of falling back to a
+    wrong `provide` result from truncated JSON.
+    """
+    calls = []
+
+    async def fake_create(**kwargs):
+        calls.append(kwargs.get("max_tokens"))
+        if len(calls) == 1:
+            return openai.types.chat.ChatCompletion(
+                id="chatcmpl-test",
+                model=kwargs["model"],
+                object="chat.completion",
+                created=0,
+                choices=[
+                    openai.types.chat.chat_completion.Choice(
+                        index=0,
+                        finish_reason="length",
+                        message=openai.types.chat.chat_completion_message.ChatCompletionMessage(
+                            role="assistant",
+                            content='{"corrected_text": "帮我起一个吧',
+                        ),
+                    )
+                ],
+            )
+        return openai.types.chat.ChatCompletion(
+            id="chatcmpl-test",
+            model=kwargs["model"],
+            object="chat.completion",
+            created=0,
+            choices=[
+                openai.types.chat.chat_completion.Choice(
+                    index=0,
+                    finish_reason="stop",
+                    message=openai.types.chat.chat_completion_message.ChatCompletionMessage(
+                        role="assistant",
+                        content=json.dumps(
+                            {
+                                "corrected_text": "帮我起一个吧",
+                                "correction_applied": False,
+                                "correction_reason": None,
+                                "extracted": {},
+                                "intent_matched": False,
+                                "intent": "delegate",
+                                "guidance": {"npc_line": None},
+                                "confidence": 0.9,
+                            },
+                            ensure_ascii=False,
+                        ),
+                    ),
+                )
+            ],
+        )
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    client = openai.AsyncOpenAI(api_key="test-key", base_url="https://llm.test/v1")
+    client.chat = type("Chat", (), {"completions": type("Completions", (), {"create": AsyncMock(side_effect=fake_create)})()})()
+    postprocessor = ASRPostprocessor(client=client)
+
+    result = await postprocessor.process(
+        text="帮我起一个吧",
+        asr_confidence=0.9,
+        language="cn_en",
+        context={
+            "npc_question": "你的英文名是什么？",
+            "expected_slots": [{"key": "english_name", "type": "person_name"}],
+            "expected_answer_type": "player_name",
+        },
+    )
+
+    assert result["applied"] is True
+    assert result["intent"] == "delegate"
+    assert result["intent_matched"] is False
+    assert len(calls) == 2
+    assert calls[1] >= calls[0]
+    assert calls[1] >= 2048
+
+
+@pytest.mark.asyncio
 async def test_postprocessor_returns_missing_context_without_llm(monkeypatch):
     create = AsyncMock()
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
@@ -196,7 +619,8 @@ async def test_postprocessor_returns_missing_context_without_llm(monkeypatch):
     assert result["applied"] is False
     assert result["corrected_text"] == "暑假"
     assert result["extracted"] == {}
-    assert result["intent_matched"] is True
+    assert result["intent_matched"] is False
+    assert result["intent"] == "off_topic"
     assert result["guidance"] == {"npc_line": None}
     assert result["fallback_reason"] == "missing_context"
     create.assert_not_awaited()
@@ -266,7 +690,7 @@ async def test_postprocessor_maps_valid_llm_output(monkeypatch):
     assert result["fallback_reason"] is None
     assert result["model"] == "mock-model"
     assert captured["response_format"] == {"type": "json_object"}
-    assert captured["max_tokens"] == 800
+    assert captured["max_tokens"] == 2048
     assert isinstance(captured["messages"], list)
     assert isinstance(captured["messages"][0], dict)
     assert captured["messages"][0]["role"] == "system"
@@ -840,3 +1264,195 @@ async def test_postprocessor_suppresses_repeated_confirmation_guidance(monkeypat
 
     assert result["intent_matched"] is False
     assert result["guidance"] == {"npc_line": None}
+
+
+# ── 单字母 / 封闭题上下文回归（issue: asr 只有一个字母时纠错与意图识别结果不对）──
+
+
+def _candidate_only_context() -> dict:
+    """归卷厅字母精灵场景：客户端只传 candidate_answers + expected_answer_type，
+    没有 npc_question / expected_slots。"""
+    return {
+        "scene_id": "word_spirit_library_archive_hall",
+        "npc_id": "archive_guardian",
+        "player_level": "grade4",
+        "language": "en",
+        "expected_answer_type": "letter_name",
+        "candidate_answers": ["A"],
+    }
+
+
+@pytest.mark.asyncio
+async def test_candidate_answers_without_npc_question_or_slots_goes_to_llm(monkeypatch):
+    """H1: 有 candidate_answers（封闭题）即使缺 npc_question/expected_slots，
+    也不该走 missing_context fallback，应进入 LLM 路径并应用纠错。"""
+
+    async def create(**kwargs):
+        return openai_completion(
+            json.dumps(
+                {
+                    "corrected_text": "A",
+                    "correction_applied": True,
+                    "correction_reason": "候选答案 A 与原始文本匹配，清洗噪声。",
+                    "extracted": {},
+                    "intent_matched": True,
+                    "intent": "provide",
+                    "guidance": {"npc_line": None},
+                    "confidence": 0.9,
+                },
+                ensure_ascii=False,
+            ),
+            "mock-model",
+        )
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    client = openai.AsyncOpenAI(api_key="test-key", base_url="https://llm.test/v1")
+    client.chat = type("Chat", (), {"completions": type("Completions", (), {"create": AsyncMock(side_effect=create)})()})()
+    postprocessor = ASRPostprocessor(client=client)
+
+    result = await postprocessor.process(
+        text=" A....",
+        asr_confidence=0.9,
+        language="en",
+        context=_candidate_only_context(),
+    )
+
+    assert result["applied"] is True
+    assert result["fallback_reason"] is None
+    assert result["corrected_text"] == "A"
+    assert result["intent"] == "provide"
+    assert result["intent_matched"] is True
+
+
+@pytest.mark.asyncio
+async def test_missing_context_fallback_does_not_claim_provide(monkeypatch):
+    """H2: 上下文不充分导致的 missing_context fallback 不应声称玩家提供了槽位值。
+    系统 intent 应为 off_topic / intent_matched=False，与 'applied=False, confidence=0.0' 一致。"""
+    create = AsyncMock()
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    client = openai.AsyncOpenAI(api_key="test-key", base_url="https://llm.test/v1")
+    client.chat = type("Chat", (), {"completions": type("Completions", (), {"create": create})()})()
+    postprocessor = ASRPostprocessor(client=client)
+
+    result = await postprocessor.process(
+        text=" A....",
+        asr_confidence=0.9,
+        language="en",
+        context=None,
+    )
+
+    assert result["applied"] is False
+    assert result["fallback_reason"] == "missing_context"
+    assert result["intent"] == "off_topic"
+    assert result["intent_matched"] is False
+    assert result["confidence"] == 0.0
+    create.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_system_failure_fallback_still_tolerates_provide(monkeypatch):
+    """H2 回归: 系统故障类 fallback（timeout/provider_error 等）保持容错放行，
+    不因 H2 改动而把网络抖动误判为玩家未作答。"""
+    calls = 0
+
+    async def fake_create(**_kwargs):
+        nonlocal calls
+        calls += 1
+        request = httpx.Request("POST", "https://llm.test/v1/chat/completions")
+        raise openai.APITimeoutError(request=request)
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("ASR_POSTPROCESS_TIMEOUT_MS", "1")
+    client = openai.AsyncOpenAI(api_key="test-key", base_url="https://llm.test/v1")
+    client.chat = type("Chat", (), {"completions": type("Completions", (), {"create": AsyncMock(side_effect=fake_create)})()})()
+    postprocessor = ASRPostprocessor(client=client)
+
+    result = await postprocessor.process(
+        text=" A....",
+        asr_confidence=0.9,
+        language="en",
+        context=_candidate_only_context(),
+    )
+
+    assert result["fallback_reason"] == "timeout"
+    # 系统故障时保持容错: 客户端可用原始文本继续, 不误判为 off_topic
+    assert result["intent"] == "provide"
+    assert result["intent_matched"] is True
+
+
+# ── 非对话任务跳过 postprocess（归卷厅：字母识别/朗读/回放自评/指令）──
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "task_mode",
+    ["open_greeting", "letter_recognition", "word_pronunciation", "playback_self_eval", "exit_command"],
+)
+async def test_non_dialogue_task_mode_skips_postprocess(monkeypatch, task_mode):
+    """归卷厅非对话任务由场景声明 task_mode，voice-service 跳过 LLM postprocess，
+    原样透传文本供客户端本地分类。不判 missing_context/off_topic，不调 LLM。"""
+    create = AsyncMock()
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    client = openai.AsyncOpenAI(api_key="test-key", base_url="https://llm.test/v1")
+    client.chat = type("Chat", (), {"completions": type("Completions", (), {"create": create})()})()
+    postprocessor = ASRPostprocessor(client=client)
+
+    result = await postprocessor.process(
+        text=" A.",
+        asr_confidence=0.9,
+        language="en",
+        context={
+            "scene_id": "word_spirit_library_archive_hall",
+            "task_mode": task_mode,
+            "expected_answer_type": "letter_name",
+            "candidate_answers": [],
+        },
+    )
+
+    assert result["applied"] is False
+    assert result["fallback_reason"] == "non_dialogue_task"
+    assert result["corrected_text"] == " A."
+    # 非对话任务 voice-service 不做意图判定，中性放行让客户端用原始文本分类
+    assert result["intent"] == "provide"
+    assert result["intent_matched"] is True
+    create.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_dialogue_task_mode_still_uses_llm(monkeypatch):
+    """显式 task_mode=dialogue 或缺省仍走对话 postprocess（不跳过）。"""
+
+    async def create(**kwargs):
+        return openai_completion(
+            json.dumps(
+                {
+                    "corrected_text": "A",
+                    "correction_applied": True,
+                    "correction_reason": "候选匹配。",
+                    "extracted": {},
+                    "intent_matched": True,
+                    "intent": "provide",
+                    "guidance": {"npc_line": None},
+                    "confidence": 0.9,
+                },
+                ensure_ascii=False,
+            ),
+            "mock-model",
+        )
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    client = openai.AsyncOpenAI(api_key="test-key", base_url="https://llm.test/v1")
+    client.chat = type("Chat", (), {"completions": type("Completions", (), {"create": AsyncMock(side_effect=create)})()})()
+    postprocessor = ASRPostprocessor(client=client)
+
+    ctx = _candidate_only_context()
+    ctx["task_mode"] = "dialogue"
+    result = await postprocessor.process(
+        text=" A....",
+        asr_confidence=0.9,
+        language="en",
+        context=ctx,
+    )
+
+    assert result["applied"] is True
+    assert result["fallback_reason"] is None

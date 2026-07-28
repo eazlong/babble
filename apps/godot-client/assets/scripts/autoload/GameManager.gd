@@ -19,6 +19,8 @@ const SCENE_PATHS: Dictionary = {
 	"spell_library": "res://assets/scenes/SpellLibrary.tscn",
 	"RainbowGarden": "res://assets/scenes/RainbowGarden.tscn",
 	"rainbow_garden": "res://assets/scenes/RainbowGarden.tscn",
+	"WordSpiritLibraryArchiveHall": "res://assets/scenes/WordSpiritLibraryArchiveHall.tscn",
+	"word_spirit_library_archive_hall": "res://assets/scenes/WordSpiritLibraryArchiveHall.tscn",
 }
 
 # 玩家数据
@@ -40,6 +42,10 @@ var spirit_usage_counts: Dictionary[String, int] = {}
 
 # 语言经验值
 var lxp_score: int = 0
+
+# 归卷厅持久化进度（阻塞 5：词灵归卷厅场景所需最小字段）
+var archive_hall_progress: Dictionary = {}
+var ink_shadow_queue: Array[String] = []
 
 # 信号
 signal language_changed(lang: String)
@@ -75,6 +81,15 @@ func _restore_from_save_data(data: Dictionary) -> void:
 	current_lang = str(data.get("current_lang", current_lang))
 	current_scene = str(data.get("current_scene_id", data.get("current_scene", current_scene)))
 	lxp_score = int(data.get("lxp_score", lxp_score))
+
+	# 归卷厅进度恢复
+	archive_hall_progress = data.get("archive_hall_progress", {}).duplicate(true) if data.get("archive_hall_progress", {}) is Dictionary else {}
+	var ink_data: Array = data.get("ink_shadow_queue", [])
+	ink_shadow_queue.clear()
+	for word in ink_data:
+		var word_str := str(word)
+		if not ink_shadow_queue.has(word_str):
+			ink_shadow_queue.append(word_str)
 
 	var areas_data: Array = data.get("unlocked_areas", data.get("unlocked_scenes", ["BeginningFP"]))
 	unlocked_areas.clear()
@@ -171,6 +186,8 @@ func save_progress() -> void:
 		"current_lang": current_lang,
 		"unlocked_areas": unlocked_areas,
 		"lxp_score": lxp_score,
+		"archive_hall_progress": archive_hall_progress,
+		"ink_shadow_queue": ink_shadow_queue,
 		"completed_dialogues": completed_dialogues,
 		"vocabulary_learned": vocabulary_learned,
 		"unlocked_spirits": unlocked_spirits,
@@ -221,6 +238,19 @@ func get_scene_path(scene_id: String = "") -> String:
 func should_resume_to_scene(boot_scene_id: String) -> bool:
 	return save_loaded and current_scene != "" and current_scene != boot_scene_id and get_scene_path(current_scene) != ""
 
+## 归卷厅进度访问器（阻塞 5：场景只读 autoload 状态，不直接改字段）
+func set_archive_hall_progress(progress: Dictionary) -> void:
+	archive_hall_progress = progress.duplicate(true)
+
+func get_archive_hall_progress() -> Dictionary:
+	return archive_hall_progress.duplicate(true)
+
+func set_ink_shadow_queue(queue: Array[String]) -> void:
+	ink_shadow_queue = queue.duplicate()
+
+func get_ink_shadow_queue() -> Array[String]:
+	return ink_shadow_queue.duplicate()
+
 func reset() -> void:
 	player_name = ""
 	player_age = 0
@@ -230,6 +260,8 @@ func reset() -> void:
 	vocabulary_learned.clear()
 	unlocked_spirits.clear()
 	spirit_usage_counts.clear()
+	archive_hall_progress.clear()
+	ink_shadow_queue.clear()
 	save_progress()
 
 func show_spirit_unlock(spirit_id: String) -> void:

@@ -60,14 +60,13 @@ def extract_frames(video_path, output_dir, interval_ms=5000):
 
     # 逐个时间点截图
     for i, ts in enumerate(timestamps, 1):
-        output_file = output_dir / f'frame_{i:04d}.jpg'
+        output_file = output_dir / f'frame_{i:04d}.png'
 
         cmd = [
             'ffmpeg',
             '-ss', str(ts / 1000.0),  # 转换为秒
             '-i', video_path,
             '-vframes', '1',
-            '-q:v', '2',
             '-y',  # 覆盖已有文件
             str(output_file)
         ]

@@ -1,0 +1,99 @@
+[gd_scene format=3 uid="uid://dj4xdbxfsidbf"]
+
+[ext_resource type="Script" uid="uid://3885vxt8c4sd" path="res://assets/scripts/scenes/WordSpiritLibraryArchiveHallController.gd" id="1_controller"]
+[ext_resource type="Script" uid="uid://cgmypvx1mcar" path="res://assets/scripts/components/FeifeiShoulder.gd" id="2_feifei"]
+[ext_resource type="PackedScene" path="res://assets/scenes/ui/VoiceMicIndicator.tscn" id="3_mic_button"]
+
+[node name="WordSpiritLibraryArchiveHall" type="Node2D" unique_id=22091421]
+script = ExtResource("1_controller")
+
+[node name="HUDLayer" type="CanvasLayer" parent="." unique_id=490574674]
+layer = 10
+
+[node name="QuestTracker" type="Control" parent="HUDLayer" unique_id=1500964291]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 38.0
+offset_top = 46.0
+offset_right = 520.0
+offset_bottom = 138.0
+
+[node name="Background" type="ColorRect" parent="HUDLayer/QuestTracker" unique_id=1774351208]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.08, 0.1, 0.62)
+
+[node name="QuestLabel" type="Label" parent="HUDLayer/QuestTracker" unique_id=640320314]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 8.0
+offset_right = -14.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "任务：进入归卷厅"
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="MicLayer" type="CanvasLayer" parent="." unique_id=1805570020]
+layer = 90
+
+[node name="MicButton" parent="MicLayer" unique_id=416236506 instance=ExtResource("3_mic_button")]
+visible = false
+layout_mode = 3
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -48.0
+offset_top = -142.0
+offset_right = 48.0
+offset_bottom = -46.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="FeifeiLayer" type="CanvasLayer" parent="." unique_id=1651939300]
+layer = 20
+
+[node name="FeifeiShoulder" type="Control" parent="FeifeiLayer" unique_id=2029872033]
+layout_mode = 3
+anchors_preset = 0
+offset_left = -100.0
+offset_top = 300.0
+offset_right = 100.0
+offset_bottom = 400.0
+script = ExtResource("2_feifei")
+
+[node name="FeifeiSprite" type="AnimatedSprite2D" parent="FeifeiLayer/FeifeiShoulder" unique_id=688976740]
+position = Vector2(1828, 628)
+scale = Vector2(1.24, 1.33)
+
+[node name="BubblePanel" type="Panel" parent="FeifeiLayer/FeifeiShoulder" unique_id=1471909535]
+visible = false
+layout_mode = 0
+offset_left = 1628.0
+offset_top = 710.0
+offset_right = 1828.0
+offset_bottom = 810.0
+
+[node name="BubbleLabel" type="RichTextLabel" parent="FeifeiLayer/FeifeiShoulder/BubblePanel" unique_id=798488808]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+
+[node name="OverlayLayer" type="CanvasLayer" parent="." unique_id=2012504638]
+layer = 30

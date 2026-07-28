@@ -17,12 +17,13 @@ const MAX_RECORD_DURATION: float = 8.0
 const SILENCE_HINT_DELAY: float = 5.0
 const COACH_SILENCE_MS: int = 15000
 const COACH_RESPONSE_TIMEOUT: float = 8.0
+# 除腓腓教练外，其它 NPC 只能说目标语言；腓腓可用源语言（中文）做提示与引导。
+const FEIFEI_SPEAKER: String = "feifei"
 
 enum LessonState {
 	LOADING,
 	PLAYING_FLOW,
 	AWAITING_VOICE,
-	AWAITING_CLICK,
 	COMPLETED
 }
 
@@ -51,7 +52,6 @@ var mist_overlay: ColorRect
 var step_title_label: Label
 var npc_status_label: Label
 var word_spirit_bar: HBoxContainer
-var sit_targets: Array[Button] = []
 
 func _ready() -> void:
 	var manager: Variant = _game_manager()
@@ -62,6 +62,8 @@ func _ready() -> void:
 	_build_visuals()
 	_setup_voice_failure_intervention()
 	_connect_runtime_signals()
+	
+	HybridAPI.set_asr_default_answer_test_enabled(true, "res://assets/test_audio/", ["good_morning.wav", "my_name_is_carl.wav", "sit_here.wav"])
 	if mic_button:
 		mic_button.visible = false
 	_start_lesson()
@@ -76,9 +78,6 @@ func _process(delta: float) -> void:
 	if voice_pipeline.is_recording:
 		record_duration += delta
 		silence_timer = 0.0
-		if record_duration > MAX_RECORD_DURATION:
-			voice_pipeline.stop_listening()
-			_stop_voice_listening()
 	else:
 		silence_timer += delta
 		record_duration = 0.0
@@ -135,9 +134,6 @@ func _go_to_step(index: int) -> void:
 		"voice":
 			state = LessonState.AWAITING_VOICE
 			_start_voice_listening()
-		"click":
-			state = LessonState.AWAITING_CLICK
-			_set_sit_targets_enabled(true)
 		_:
 			await _reward_step_words()
 			await _go_to_step(current_step_index + 1)
@@ -150,17 +146,6 @@ func _accept_current_voice_step(player_text: String) -> void:
 	var success_flow_id: String = str(current_step.get("success_flow_id", ""))
 	if not success_flow_id.is_empty():
 		await _speak_flow(success_flow_id, 1.5)
-	await _go_to_step(current_step_index + 1)
-
-func _handle_sit_target_pressed(is_correct: bool) -> void:
-	if state != LessonState.AWAITING_CLICK:
-		return
-	if not is_correct:
-		await _speak_flow(str(current_step.get("retry_flow_id", "")), 1.2)
-		return
-	_set_sit_targets_enabled(false)
-	await _reward_step_words()
-	await _speak_flow(str(current_step.get("success_flow_id", "")), 1.5)
 	await _go_to_step(current_step_index + 1)
 
 func _reward_step_words() -> void:
@@ -314,12 +299,25 @@ func _speak_flow(flow_id: String, fallback_seconds: float = 1.8, params: Diction
 	}
 	for key in params.keys():
 		merged_params[key] = params[key]
-	var lines: Array[Dictionary] = dialogue_flow_loader.get_lines(flow_id, _source_language_code(), merged_params)
-	for line in lines:
-		_set_speaker_focus(str(line.get("speaker", "")))
-		await _say_dialogue_line(line, fallback_seconds)
+	var source_lang: String = _source_language_code()
+	var target_lang: String = _special_language_code()
+	var source_lines: Array[Dictionary] = dialogue_flow_loader.get_lines(flow_id, source_lang, merged_params)
+	if source_lang == target_lang:
+		for line in source_lines:
+			_set_speaker_focus(str(line.get("speaker", "")))
+			await _say_dialogue_line(line, source_lang, fallback_seconds)
+		return
+	# 非腓腓 NPC 只说目标语言；腓腓可用源语言。两条列表同序，按说话人逐行选语言。
+	var target_lines: Array[Dictionary] = dialogue_flow_loader.get_lines(flow_id, target_lang, merged_params)
+	for i in range(source_lines.size()):
+		var source_line: Dictionary = source_lines[i]
+		var speaker: String = str(source_line.get("speaker", ""))
+		var lang: String = source_lang if speaker == FEIFEI_SPEAKER else target_lang
+		var spoken_line: Dictionary = source_line if lang == source_lang else target_lines[i]
+		_set_speaker_focus(speaker)
+		await _say_dialogue_line(spoken_line, lang, fallback_seconds)
 
-func _say_dialogue_line(line: Dictionary, fallback_seconds: float = 1.8) -> void:
+func _say_dialogue_line(line: Dictionary, lang: String, fallback_seconds: float = 1.8) -> void:
 	var text: String = str(line.get("text", ""))
 	var voice: String = str(line.get("voice", "spirit"))
 	if text.is_empty():
@@ -327,15 +325,16 @@ func _say_dialogue_line(line: Dictionary, fallback_seconds: float = 1.8) -> void
 	if feifei:
 		feifei.show_hint(text, FeifeiShoulder.STATE_HINT, 0.0)
 	voice_failure_intervention.add_turn("npc", text)
-	var completed := await _synthesize_and_wait_for_tts(text, voice)
+	var completed := await _synthesize_and_wait_for_tts(text, voice, lang)
 	if not completed and fallback_seconds > 0.0:
 		await get_tree().create_timer(fallback_seconds).timeout
 
-func _synthesize_and_wait_for_tts(text: String, voice: String = "spirit", timeout: float = TTS_PLAYBACK_TIMEOUT) -> bool:
+func _synthesize_and_wait_for_tts(text: String, voice: String = "spirit", lang: String = "", timeout: float = TTS_PLAYBACK_TIMEOUT) -> bool:
 	var audio_manager: Variant = _audio_manager()
 	var hybrid_api: Variant = _hybrid_api()
 	if not audio_manager or not hybrid_api:
 		return false
+	var tts_lang: String = lang if not lang.is_empty() else _source_language_code()
 	var starting_playback_id: int = audio_manager.tts_playback_id
 	var state_box := {
 		"finished": false,
@@ -346,7 +345,7 @@ func _synthesize_and_wait_for_tts(text: String, voice: String = "spirit", timeou
 			state_box["finished"] = true
 			state_box["duration"] = duration
 	audio_manager.tts_playback_finished.connect(tts_finished_cb)
-	hybrid_api.synthesize_tts(text, voice, _source_language_code())
+	hybrid_api.synthesize_tts(text, voice, tts_lang)
 	var elapsed := 0.0
 	while not state_box["finished"] and elapsed < timeout:
 		await get_tree().create_timer(0.1).timeout
@@ -402,7 +401,6 @@ func _build_market_view() -> Control:
 	_add_character_card(root, "天机阁执事", Vector2(250, 560), Color(0.18, 0.25, 0.26, 1.0))
 	_add_character_card(root, "阿菱", Vector2(1260, 560), Color(0.32, 0.50, 0.35, 1.0))
 	_add_character_card(root, "昊然", Vector2(1510, 590), Color(0.50, 0.36, 0.20, 1.0))
-	_build_sit_targets(root)
 	return root
 
 func _build_inn_review_view() -> Control:
@@ -449,25 +447,6 @@ func _add_label(parent: Control, node_name: String, text: String, position: Vect
 func _add_character_card(parent: Control, display_name: String, position: Vector2, color: Color) -> void:
 	_add_rect(parent, "%sCard" % display_name, color, position, Vector2(180, 260))
 	_add_label(parent, "%sName" % display_name, display_name, position + Vector2(0, 198), Vector2(180, 48), 24)
-
-func _build_sit_targets(parent: Control) -> void:
-	var positions: Array[Vector2] = [Vector2(750, 780), Vector2(940, 780), Vector2(1130, 780)]
-	for i in range(positions.size()):
-		var button := Button.new()
-		button.name = "SitStone%d" % (i + 1)
-		button.text = "Sit"
-		button.position = positions[i]
-		button.size = Vector2(150, 72)
-		button.disabled = true
-		button.modulate = Color(0.80, 0.72, 0.48, 1.0) if i == 1 else Color(0.46, 0.43, 0.38, 1.0)
-		var is_correct := i == 1
-		button.pressed.connect(func(): _handle_sit_target_pressed(is_correct))
-		parent.add_child(button)
-		sit_targets.append(button)
-
-func _set_sit_targets_enabled(enabled: bool) -> void:
-	for button in sit_targets:
-		button.disabled = not enabled
 
 func _update_step_visuals() -> void:
 	var step_id: String = str(current_step.get("id", ""))
@@ -542,8 +521,8 @@ func _loc(key: String) -> String:
 		"quest_classmate_bond": {"zh": "任务：说出 new classmates", "en": "Quest: Say new classmates"},
 		"quest_baize": {"zh": "任务：聆听白泽的认可", "en": "Quest: Listen to Baize"},
 		"quest_afternoon_review": {"zh": "任务：下午回客栈复盘", "en": "Quest: Afternoon review"},
-		"quest_review_a_ling": {"zh": "任务：说出 Her name is A-Ling", "en": "Quest: Say her name"},
-		"quest_review_haoran": {"zh": "任务：说出 His name is Haoran", "en": "Quest: Say his name"},
+		"quest_review_a_ling": {"zh": "任务：向掌柜介绍阿灵", "en": "Quest: Introduce A-Ling to the innkeeper"},
+		"quest_review_haoran": {"zh": "任务：向掌柜介绍浩然", "en": "Quest: Introduce Haoran to the innkeeper"},
 		"quest_complete": {"zh": "完成：西市晨钟", "en": "Complete: West Market Morning Bell"},
 		"recognizing": {"zh": "正在识别你的声音...", "en": "Listening to your voice..."},
 		"coach_waiting": {"zh": "别着急，腓腓来帮你。", "en": "No rush. Feifei will help."},

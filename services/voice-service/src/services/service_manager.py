@@ -86,6 +86,11 @@ class ServiceManager:
 
         logger.info("All services initialized successfully")
 
+    def _ensure_non_empty_asr_result(self, engine: ASREngine, text: str) -> None:
+        if text.strip():
+            return
+        raise RuntimeError(f"{engine.value} returned empty transcript")
+
     async def transcribe(
         self,
         audio_bytes: bytes,
@@ -111,6 +116,7 @@ class ServiceManager:
                         continue
 
                     result = await xfyun_asr_service.transcribe(audio_bytes, language)
+                    self._ensure_non_empty_asr_result(engine, result.text)
                     logger.info(f"ASR success: engine={engine.value}, text='{result.text[:50]}...'")
 
                     return ASRResult(
@@ -121,6 +127,7 @@ class ServiceManager:
 
                 elif engine == ASREngine.WHISPER:
                     result = await whisper_service.transcribe(audio_bytes, language)
+                    self._ensure_non_empty_asr_result(engine, result.text)
                     logger.info(f"ASR success: engine={engine.value}, text='{result.text[:50]}...'")
 
                     return result

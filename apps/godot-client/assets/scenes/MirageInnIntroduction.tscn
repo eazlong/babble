@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://m3ovclbgm2ke"]
 
 [ext_resource type="Script" uid="uid://8of2kfy3fits" path="res://assets/scripts/scenes/MirageInnIntroductionController.gd" id="1_controller"]
-[ext_resource type="Texture2D" path="res://assets/textures/backgrounds/mirage_inn_hall_bg.png" id="2_6th42"]
-[ext_resource type="Script" path="res://assets/scripts/components/FeifeiShoulder.gd" id="2_feifei"]
+[ext_resource type="Texture2D" uid="uid://mgra0fhak8f8" path="res://assets/textures/backgrounds/mirage_inn_hall_bg.png" id="2_6th42"]
+[ext_resource type="Script" uid="uid://cgmypvx1mcar" path="res://assets/scripts/components/FeifeiShoulder.gd" id="2_feifei"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/feifei/feifei_fly_frames.tres" id="3_frames"]
 [ext_resource type="PackedScene" path="res://assets/scenes/ui/VoiceMicIndicator.tscn" id="4_mic_button"]
 
@@ -53,9 +53,6 @@ centered = false
 [node name="HUDLayer" type="CanvasLayer" parent="." unique_id=904199957]
 layer = 10
 
-[node name="MicLayer" type="CanvasLayer" parent="."]
-layer = 90
-
 [node name="QuestTracker" type="Control" parent="HUDLayer" unique_id=1839670066]
 layout_mode = 3
 anchors_preset = 0
@@ -87,6 +84,9 @@ grow_vertical = 2
 text = "任务：进入蜃影客栈"
 vertical_alignment = 1
 autowrap_mode = 3
+
+[node name="MicLayer" type="CanvasLayer" parent="." unique_id=1919810338]
+layer = 90
 
 [node name="MicButton" parent="MicLayer" unique_id=232720854 instance=ExtResource("4_mic_button")]
 visible = false
