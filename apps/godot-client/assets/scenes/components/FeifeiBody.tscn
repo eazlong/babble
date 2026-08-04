@@ -1,6 +1,4 @@
-[gd_scene load_steps=6 format=3]
-
-[ext_resource type="Texture2D" uid="uid://crhg3jdb5k1qy" path="res://assets/sprites/feifei/feifei_part.png" id="12_5c4x7"]
+[gd_scene format=3]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_5c4x7"]
 radius = 840.0
@@ -407,7 +405,7 @@ tracks/32/keys = {
 tracks/33/type = "value"
 tracks/33/imported = false
 tracks/33/enabled = true
-tracks/33/path = NodePath("../FeifeiLayer2/FeifeiShoulder:rotation")
+tracks/33/path = NodePath("Skeleton2D/body/wing_left1/wing_left2/wing_left3/wing_left4:rotation")
 tracks/33/interp = 1
 tracks/33/loop_wrap = true
 tracks/33/keys = {
@@ -419,7 +417,7 @@ tracks/33/keys = {
 tracks/34/type = "value"
 tracks/34/imported = false
 tracks/34/enabled = true
-tracks/34/path = NodePath("../FeifeiLayer2:rotation")
+tracks/34/path = NodePath("Skeleton2D/body/wing_left1/wing_left2/wing_left3:rotation")
 tracks/34/interp = 1
 tracks/34/loop_wrap = true
 tracks/34/keys = {
@@ -431,7 +429,7 @@ tracks/34/keys = {
 tracks/35/type = "value"
 tracks/35/imported = false
 tracks/35/enabled = true
-tracks/35/path = NodePath("Skeleton2D/body/wing_left1/wing_left2/wing_left3/wing_left4:rotation")
+tracks/35/path = NodePath("Skeleton2D/body/wing_left1/wing_left2:rotation")
 tracks/35/interp = 1
 tracks/35/loop_wrap = true
 tracks/35/keys = {
@@ -443,7 +441,7 @@ tracks/35/keys = {
 tracks/36/type = "value"
 tracks/36/imported = false
 tracks/36/enabled = true
-tracks/36/path = NodePath("Skeleton2D/body/wing_left1/wing_left2/wing_left3:rotation")
+tracks/36/path = NodePath("Skeleton2D/body/leg_right1/leg_right2/leg_right3/leg_right4:rotation")
 tracks/36/interp = 1
 tracks/36/loop_wrap = true
 tracks/36/keys = {
@@ -455,7 +453,7 @@ tracks/36/keys = {
 tracks/37/type = "value"
 tracks/37/imported = false
 tracks/37/enabled = true
-tracks/37/path = NodePath("Skeleton2D/body/wing_left1/wing_left2:rotation")
+tracks/37/path = NodePath("Skeleton2D/body/leg_right1/leg_right2/leg_right3:rotation")
 tracks/37/interp = 1
 tracks/37/loop_wrap = true
 tracks/37/keys = {
@@ -467,7 +465,7 @@ tracks/37/keys = {
 tracks/38/type = "value"
 tracks/38/imported = false
 tracks/38/enabled = true
-tracks/38/path = NodePath("Skeleton2D/body/leg_right1/leg_right2/leg_right3/leg_right4:rotation")
+tracks/38/path = NodePath("Skeleton2D/body/leg_right1/leg_right2:rotation")
 tracks/38/interp = 1
 tracks/38/loop_wrap = true
 tracks/38/keys = {
@@ -479,7 +477,7 @@ tracks/38/keys = {
 tracks/39/type = "value"
 tracks/39/imported = false
 tracks/39/enabled = true
-tracks/39/path = NodePath("Skeleton2D/body/leg_right1/leg_right2/leg_right3:rotation")
+tracks/39/path = NodePath("Skeleton2D/body/leg_left1/leg_left2/leg_left3/leg_left4:rotation")
 tracks/39/interp = 1
 tracks/39/loop_wrap = true
 tracks/39/keys = {
@@ -491,7 +489,7 @@ tracks/39/keys = {
 tracks/40/type = "value"
 tracks/40/imported = false
 tracks/40/enabled = true
-tracks/40/path = NodePath("Skeleton2D/body/leg_right1/leg_right2:rotation")
+tracks/40/path = NodePath("Skeleton2D/body/leg_left1/leg_left2/leg_left3:rotation")
 tracks/40/interp = 1
 tracks/40/loop_wrap = true
 tracks/40/keys = {
@@ -503,7 +501,7 @@ tracks/40/keys = {
 tracks/41/type = "value"
 tracks/41/imported = false
 tracks/41/enabled = true
-tracks/41/path = NodePath("Skeleton2D/body/leg_left1/leg_left2/leg_left3/leg_left4:rotation")
+tracks/41/path = NodePath("Skeleton2D/body/leg_left1/leg_left2:rotation")
 tracks/41/interp = 1
 tracks/41/loop_wrap = true
 tracks/41/keys = {
@@ -515,7 +513,7 @@ tracks/41/keys = {
 tracks/42/type = "value"
 tracks/42/imported = false
 tracks/42/enabled = true
-tracks/42/path = NodePath("Skeleton2D/body/leg_left1/leg_left2/leg_left3:rotation")
+tracks/42/path = NodePath("Skeleton2D/body/hand_right1/hand_right2/hand_right3/hand_right4:rotation")
 tracks/42/interp = 1
 tracks/42/loop_wrap = true
 tracks/42/keys = {
@@ -527,7 +525,7 @@ tracks/42/keys = {
 tracks/43/type = "value"
 tracks/43/imported = false
 tracks/43/enabled = true
-tracks/43/path = NodePath("Skeleton2D/body/leg_left1/leg_left2:rotation")
+tracks/43/path = NodePath("Skeleton2D/body/hand_right1/hand_right2/hand_right3:rotation")
 tracks/43/interp = 1
 tracks/43/loop_wrap = true
 tracks/43/keys = {
@@ -539,7 +537,7 @@ tracks/43/keys = {
 tracks/44/type = "value"
 tracks/44/imported = false
 tracks/44/enabled = true
-tracks/44/path = NodePath("Skeleton2D/body/hand_right1/hand_right2/hand_right3/hand_right4:rotation")
+tracks/44/path = NodePath("Skeleton2D/body/hand_right1/hand_right2:rotation")
 tracks/44/interp = 1
 tracks/44/loop_wrap = true
 tracks/44/keys = {
@@ -551,7 +549,7 @@ tracks/44/keys = {
 tracks/45/type = "value"
 tracks/45/imported = false
 tracks/45/enabled = true
-tracks/45/path = NodePath("Skeleton2D/body/hand_right1/hand_right2/hand_right3:rotation")
+tracks/45/path = NodePath("Skeleton2D/body/hand_left1/hand_left2/hand_left3/hand_left4:rotation")
 tracks/45/interp = 1
 tracks/45/loop_wrap = true
 tracks/45/keys = {
@@ -563,7 +561,7 @@ tracks/45/keys = {
 tracks/46/type = "value"
 tracks/46/imported = false
 tracks/46/enabled = true
-tracks/46/path = NodePath("Skeleton2D/body/hand_right1/hand_right2:rotation")
+tracks/46/path = NodePath("Skeleton2D/body/hand_left1/hand_left2/hand_left3:rotation")
 tracks/46/interp = 1
 tracks/46/loop_wrap = true
 tracks/46/keys = {
@@ -575,7 +573,7 @@ tracks/46/keys = {
 tracks/47/type = "value"
 tracks/47/imported = false
 tracks/47/enabled = true
-tracks/47/path = NodePath("Skeleton2D/body/hand_left1/hand_left2/hand_left3/hand_left4:rotation")
+tracks/47/path = NodePath("Skeleton2D/body/hand_left1/hand_left2:rotation")
 tracks/47/interp = 1
 tracks/47/loop_wrap = true
 tracks/47/keys = {
@@ -587,7 +585,7 @@ tracks/47/keys = {
 tracks/48/type = "value"
 tracks/48/imported = false
 tracks/48/enabled = true
-tracks/48/path = NodePath("Skeleton2D/body/hand_left1/hand_left2/hand_left3:rotation")
+tracks/48/path = NodePath("polygons/ear_right:rotation")
 tracks/48/interp = 1
 tracks/48/loop_wrap = true
 tracks/48/keys = {
@@ -599,7 +597,7 @@ tracks/48/keys = {
 tracks/49/type = "value"
 tracks/49/imported = false
 tracks/49/enabled = true
-tracks/49/path = NodePath("Skeleton2D/body/hand_left1/hand_left2:rotation")
+tracks/49/path = NodePath("polygons/ear_left:rotation")
 tracks/49/interp = 1
 tracks/49/loop_wrap = true
 tracks/49/keys = {
@@ -611,7 +609,7 @@ tracks/49/keys = {
 tracks/50/type = "value"
 tracks/50/imported = false
 tracks/50/enabled = true
-tracks/50/path = NodePath("polygons/ear_right:rotation")
+tracks/50/path = NodePath("polygons/feature:rotation")
 tracks/50/interp = 1
 tracks/50/loop_wrap = true
 tracks/50/keys = {
@@ -623,7 +621,7 @@ tracks/50/keys = {
 tracks/51/type = "value"
 tracks/51/imported = false
 tracks/51/enabled = true
-tracks/51/path = NodePath("polygons/ear_left:rotation")
+tracks/51/path = NodePath("polygons/hand_right:rotation")
 tracks/51/interp = 1
 tracks/51/loop_wrap = true
 tracks/51/keys = {
@@ -635,7 +633,7 @@ tracks/51/keys = {
 tracks/52/type = "value"
 tracks/52/imported = false
 tracks/52/enabled = true
-tracks/52/path = NodePath("polygons/feature:rotation")
+tracks/52/path = NodePath("polygons/hand_left:rotation")
 tracks/52/interp = 1
 tracks/52/loop_wrap = true
 tracks/52/keys = {
@@ -647,19 +645,19 @@ tracks/52/keys = {
 tracks/53/type = "value"
 tracks/53/imported = false
 tracks/53/enabled = true
-tracks/53/path = NodePath("polygons/hand_right:rotation")
+tracks/53/path = NodePath("polygons/tail:rotation")
 tracks/53/interp = 1
 tracks/53/loop_wrap = true
 tracks/53/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [0.0]
+"values": [-1.0471976]
 }
 tracks/54/type = "value"
 tracks/54/imported = false
 tracks/54/enabled = true
-tracks/54/path = NodePath("polygons/hand_left:rotation")
+tracks/54/path = NodePath("polygons/mouth:rotation")
 tracks/54/interp = 1
 tracks/54/loop_wrap = true
 tracks/54/keys = {
@@ -671,19 +669,19 @@ tracks/54/keys = {
 tracks/55/type = "value"
 tracks/55/imported = false
 tracks/55/enabled = true
-tracks/55/path = NodePath("polygons/tail:rotation")
+tracks/55/path = NodePath("polygons/eyes:rotation")
 tracks/55/interp = 1
 tracks/55/loop_wrap = true
 tracks/55/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [-1.0471976]
+"values": [0.0]
 }
 tracks/56/type = "value"
 tracks/56/imported = false
 tracks/56/enabled = true
-tracks/56/path = NodePath("polygons/mouth:rotation")
+tracks/56/path = NodePath("polygons/leg_right:rotation")
 tracks/56/interp = 1
 tracks/56/loop_wrap = true
 tracks/56/keys = {
@@ -695,7 +693,7 @@ tracks/56/keys = {
 tracks/57/type = "value"
 tracks/57/imported = false
 tracks/57/enabled = true
-tracks/57/path = NodePath("polygons/eyes:rotation")
+tracks/57/path = NodePath("polygons/leg_left:rotation")
 tracks/57/interp = 1
 tracks/57/loop_wrap = true
 tracks/57/keys = {
@@ -707,7 +705,7 @@ tracks/57/keys = {
 tracks/58/type = "value"
 tracks/58/imported = false
 tracks/58/enabled = true
-tracks/58/path = NodePath("polygons/leg_right:rotation")
+tracks/58/path = NodePath("polygons/wing_right:rotation")
 tracks/58/interp = 1
 tracks/58/loop_wrap = true
 tracks/58/keys = {
@@ -719,7 +717,7 @@ tracks/58/keys = {
 tracks/59/type = "value"
 tracks/59/imported = false
 tracks/59/enabled = true
-tracks/59/path = NodePath("polygons/leg_left:rotation")
+tracks/59/path = NodePath("polygons/wing_left:rotation")
 tracks/59/interp = 1
 tracks/59/loop_wrap = true
 tracks/59/keys = {
@@ -731,7 +729,7 @@ tracks/59/keys = {
 tracks/60/type = "value"
 tracks/60/imported = false
 tracks/60/enabled = true
-tracks/60/path = NodePath("polygons/wing_right:rotation")
+tracks/60/path = NodePath("polygons/body:rotation")
 tracks/60/interp = 1
 tracks/60/loop_wrap = true
 tracks/60/keys = {
@@ -743,7 +741,7 @@ tracks/60/keys = {
 tracks/61/type = "value"
 tracks/61/imported = false
 tracks/61/enabled = true
-tracks/61/path = NodePath("polygons/wing_left:rotation")
+tracks/61/path = NodePath("polygons/head:rotation")
 tracks/61/interp = 1
 tracks/61/loop_wrap = true
 tracks/61/keys = {
@@ -755,43 +753,43 @@ tracks/61/keys = {
 tracks/62/type = "value"
 tracks/62/imported = false
 tracks/62/enabled = true
-tracks/62/path = NodePath("polygons/body:rotation")
+tracks/62/path = NodePath("Skeleton2D/body/tail1/tail2/tail3:scale")
 tracks/62/interp = 1
 tracks/62/loop_wrap = true
 tracks/62/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [0.0]
+"values": [Vector2(1, 1)]
 }
 tracks/63/type = "value"
 tracks/63/imported = false
 tracks/63/enabled = true
-tracks/63/path = NodePath("polygons/head:rotation")
+tracks/63/path = NodePath("Skeleton2D/body/tail1/tail2:scale")
 tracks/63/interp = 1
 tracks/63/loop_wrap = true
 tracks/63/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [0.0]
+"values": [Vector2(1, 1)]
 }
 tracks/64/type = "value"
 tracks/64/imported = false
 tracks/64/enabled = true
-tracks/64/path = NodePath("../CameraSystem/CameraPositions:rotation")
+tracks/64/path = NodePath("Skeleton2D/body/tail1:scale")
 tracks/64/interp = 1
 tracks/64/loop_wrap = true
 tracks/64/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [0.0]
+"values": [Vector2(0.99999994, 0.99999994)]
 }
 tracks/65/type = "value"
 tracks/65/imported = false
 tracks/65/enabled = true
-tracks/65/path = NodePath("../FeifeiLayer2/FeifeiShoulder:scale")
+tracks/65/path = NodePath("Skeleton2D/body/wing_left1/wing_left2/wing_left3/wing_left4:scale")
 tracks/65/interp = 1
 tracks/65/loop_wrap = true
 tracks/65/keys = {
@@ -803,7 +801,7 @@ tracks/65/keys = {
 tracks/66/type = "value"
 tracks/66/imported = false
 tracks/66/enabled = true
-tracks/66/path = NodePath("../FeifeiLayer2:scale")
+tracks/66/path = NodePath("Skeleton2D/body/wing_left1/wing_left2/wing_left3:scale")
 tracks/66/interp = 1
 tracks/66/loop_wrap = true
 tracks/66/keys = {
@@ -815,7 +813,7 @@ tracks/66/keys = {
 tracks/67/type = "value"
 tracks/67/imported = false
 tracks/67/enabled = true
-tracks/67/path = NodePath("Skeleton2D/body/tail1/tail2/tail3:scale")
+tracks/67/path = NodePath("Skeleton2D/body/wing_left1/wing_left2:scale")
 tracks/67/interp = 1
 tracks/67/loop_wrap = true
 tracks/67/keys = {
@@ -827,7 +825,7 @@ tracks/67/keys = {
 tracks/68/type = "value"
 tracks/68/imported = false
 tracks/68/enabled = true
-tracks/68/path = NodePath("Skeleton2D/body/tail1/tail2:scale")
+tracks/68/path = NodePath("Skeleton2D/body/wing_left1:scale")
 tracks/68/interp = 1
 tracks/68/loop_wrap = true
 tracks/68/keys = {
@@ -839,19 +837,19 @@ tracks/68/keys = {
 tracks/69/type = "value"
 tracks/69/imported = false
 tracks/69/enabled = true
-tracks/69/path = NodePath("Skeleton2D/body/tail1:scale")
+tracks/69/path = NodePath("Skeleton2D/body/wing_right1/wing_right2/wing_right3/wing_right4:scale")
 tracks/69/interp = 1
 tracks/69/loop_wrap = true
 tracks/69/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [Vector2(0.99999994, 0.99999994)]
+"values": [Vector2(1, 1)]
 }
 tracks/70/type = "value"
 tracks/70/imported = false
 tracks/70/enabled = true
-tracks/70/path = NodePath("Skeleton2D/body/wing_left1/wing_left2/wing_left3/wing_left4:scale")
+tracks/70/path = NodePath("Skeleton2D/body/wing_right1/wing_right2/wing_right3:scale")
 tracks/70/interp = 1
 tracks/70/loop_wrap = true
 tracks/70/keys = {
@@ -863,7 +861,7 @@ tracks/70/keys = {
 tracks/71/type = "value"
 tracks/71/imported = false
 tracks/71/enabled = true
-tracks/71/path = NodePath("Skeleton2D/body/wing_left1/wing_left2/wing_left3:scale")
+tracks/71/path = NodePath("Skeleton2D/body/wing_right1/wing_right2:scale")
 tracks/71/interp = 1
 tracks/71/loop_wrap = true
 tracks/71/keys = {
@@ -875,7 +873,7 @@ tracks/71/keys = {
 tracks/72/type = "value"
 tracks/72/imported = false
 tracks/72/enabled = true
-tracks/72/path = NodePath("Skeleton2D/body/wing_left1/wing_left2:scale")
+tracks/72/path = NodePath("Skeleton2D/body/wing_right1:scale")
 tracks/72/interp = 1
 tracks/72/loop_wrap = true
 tracks/72/keys = {
@@ -887,7 +885,7 @@ tracks/72/keys = {
 tracks/73/type = "value"
 tracks/73/imported = false
 tracks/73/enabled = true
-tracks/73/path = NodePath("Skeleton2D/body/wing_left1:scale")
+tracks/73/path = NodePath("Skeleton2D/body/leg_right1/leg_right2/leg_right3/leg_right4:scale")
 tracks/73/interp = 1
 tracks/73/loop_wrap = true
 tracks/73/keys = {
@@ -899,7 +897,7 @@ tracks/73/keys = {
 tracks/74/type = "value"
 tracks/74/imported = false
 tracks/74/enabled = true
-tracks/74/path = NodePath("Skeleton2D/body/wing_right1/wing_right2/wing_right3/wing_right4:scale")
+tracks/74/path = NodePath("Skeleton2D/body/leg_right1/leg_right2/leg_right3:scale")
 tracks/74/interp = 1
 tracks/74/loop_wrap = true
 tracks/74/keys = {
@@ -911,7 +909,7 @@ tracks/74/keys = {
 tracks/75/type = "value"
 tracks/75/imported = false
 tracks/75/enabled = true
-tracks/75/path = NodePath("Skeleton2D/body/wing_right1/wing_right2/wing_right3:scale")
+tracks/75/path = NodePath("Skeleton2D/body/leg_right1/leg_right2:scale")
 tracks/75/interp = 1
 tracks/75/loop_wrap = true
 tracks/75/keys = {
@@ -923,7 +921,7 @@ tracks/75/keys = {
 tracks/76/type = "value"
 tracks/76/imported = false
 tracks/76/enabled = true
-tracks/76/path = NodePath("Skeleton2D/body/wing_right1/wing_right2:scale")
+tracks/76/path = NodePath("Skeleton2D/body/leg_right1:scale")
 tracks/76/interp = 1
 tracks/76/loop_wrap = true
 tracks/76/keys = {
@@ -935,7 +933,7 @@ tracks/76/keys = {
 tracks/77/type = "value"
 tracks/77/imported = false
 tracks/77/enabled = true
-tracks/77/path = NodePath("Skeleton2D/body/wing_right1:scale")
+tracks/77/path = NodePath("Skeleton2D/body/leg_left1/leg_left2/leg_left3/leg_left4:scale")
 tracks/77/interp = 1
 tracks/77/loop_wrap = true
 tracks/77/keys = {
@@ -947,7 +945,7 @@ tracks/77/keys = {
 tracks/78/type = "value"
 tracks/78/imported = false
 tracks/78/enabled = true
-tracks/78/path = NodePath("Skeleton2D/body/leg_right1/leg_right2/leg_right3/leg_right4:scale")
+tracks/78/path = NodePath("Skeleton2D/body/leg_left1/leg_left2/leg_left3:scale")
 tracks/78/interp = 1
 tracks/78/loop_wrap = true
 tracks/78/keys = {
@@ -959,7 +957,7 @@ tracks/78/keys = {
 tracks/79/type = "value"
 tracks/79/imported = false
 tracks/79/enabled = true
-tracks/79/path = NodePath("Skeleton2D/body/leg_right1/leg_right2/leg_right3:scale")
+tracks/79/path = NodePath("Skeleton2D/body/leg_left1/leg_left2:scale")
 tracks/79/interp = 1
 tracks/79/loop_wrap = true
 tracks/79/keys = {
@@ -971,7 +969,7 @@ tracks/79/keys = {
 tracks/80/type = "value"
 tracks/80/imported = false
 tracks/80/enabled = true
-tracks/80/path = NodePath("Skeleton2D/body/leg_right1/leg_right2:scale")
+tracks/80/path = NodePath("Skeleton2D/body/leg_left1:scale")
 tracks/80/interp = 1
 tracks/80/loop_wrap = true
 tracks/80/keys = {
@@ -983,7 +981,7 @@ tracks/80/keys = {
 tracks/81/type = "value"
 tracks/81/imported = false
 tracks/81/enabled = true
-tracks/81/path = NodePath("Skeleton2D/body/leg_right1:scale")
+tracks/81/path = NodePath("Skeleton2D/body/hand_right1/hand_right2/hand_right3/hand_right4:scale")
 tracks/81/interp = 1
 tracks/81/loop_wrap = true
 tracks/81/keys = {
@@ -995,7 +993,7 @@ tracks/81/keys = {
 tracks/82/type = "value"
 tracks/82/imported = false
 tracks/82/enabled = true
-tracks/82/path = NodePath("Skeleton2D/body/leg_left1/leg_left2/leg_left3/leg_left4:scale")
+tracks/82/path = NodePath("Skeleton2D/body/hand_right1/hand_right2/hand_right3:scale")
 tracks/82/interp = 1
 tracks/82/loop_wrap = true
 tracks/82/keys = {
@@ -1007,7 +1005,7 @@ tracks/82/keys = {
 tracks/83/type = "value"
 tracks/83/imported = false
 tracks/83/enabled = true
-tracks/83/path = NodePath("Skeleton2D/body/leg_left1/leg_left2/leg_left3:scale")
+tracks/83/path = NodePath("Skeleton2D/body/hand_right1/hand_right2:scale")
 tracks/83/interp = 1
 tracks/83/loop_wrap = true
 tracks/83/keys = {
@@ -1019,7 +1017,7 @@ tracks/83/keys = {
 tracks/84/type = "value"
 tracks/84/imported = false
 tracks/84/enabled = true
-tracks/84/path = NodePath("Skeleton2D/body/leg_left1/leg_left2:scale")
+tracks/84/path = NodePath("Skeleton2D/body/hand_right1:scale")
 tracks/84/interp = 1
 tracks/84/loop_wrap = true
 tracks/84/keys = {
@@ -1031,7 +1029,7 @@ tracks/84/keys = {
 tracks/85/type = "value"
 tracks/85/imported = false
 tracks/85/enabled = true
-tracks/85/path = NodePath("Skeleton2D/body/leg_left1:scale")
+tracks/85/path = NodePath("Skeleton2D/body/hand_left1/hand_left2/hand_left3/hand_left4:scale")
 tracks/85/interp = 1
 tracks/85/loop_wrap = true
 tracks/85/keys = {
@@ -1043,7 +1041,7 @@ tracks/85/keys = {
 tracks/86/type = "value"
 tracks/86/imported = false
 tracks/86/enabled = true
-tracks/86/path = NodePath("Skeleton2D/body/hand_right1/hand_right2/hand_right3/hand_right4:scale")
+tracks/86/path = NodePath("Skeleton2D/body/hand_left1/hand_left2/hand_left3:scale")
 tracks/86/interp = 1
 tracks/86/loop_wrap = true
 tracks/86/keys = {
@@ -1055,7 +1053,7 @@ tracks/86/keys = {
 tracks/87/type = "value"
 tracks/87/imported = false
 tracks/87/enabled = true
-tracks/87/path = NodePath("Skeleton2D/body/hand_right1/hand_right2/hand_right3:scale")
+tracks/87/path = NodePath("Skeleton2D/body/hand_left1/hand_left2:scale")
 tracks/87/interp = 1
 tracks/87/loop_wrap = true
 tracks/87/keys = {
@@ -1067,7 +1065,7 @@ tracks/87/keys = {
 tracks/88/type = "value"
 tracks/88/imported = false
 tracks/88/enabled = true
-tracks/88/path = NodePath("Skeleton2D/body/hand_right1/hand_right2:scale")
+tracks/88/path = NodePath("Skeleton2D/body/hand_left1:scale")
 tracks/88/interp = 1
 tracks/88/loop_wrap = true
 tracks/88/keys = {
@@ -1079,7 +1077,7 @@ tracks/88/keys = {
 tracks/89/type = "value"
 tracks/89/imported = false
 tracks/89/enabled = true
-tracks/89/path = NodePath("Skeleton2D/body/hand_right1:scale")
+tracks/89/path = NodePath("Skeleton2D/body/feature1/feature2:scale")
 tracks/89/interp = 1
 tracks/89/loop_wrap = true
 tracks/89/keys = {
@@ -1091,7 +1089,7 @@ tracks/89/keys = {
 tracks/90/type = "value"
 tracks/90/imported = false
 tracks/90/enabled = true
-tracks/90/path = NodePath("Skeleton2D/body/hand_left1/hand_left2/hand_left3/hand_left4:scale")
+tracks/90/path = NodePath("Skeleton2D/body/feature1:scale")
 tracks/90/interp = 1
 tracks/90/loop_wrap = true
 tracks/90/keys = {
@@ -1103,7 +1101,7 @@ tracks/90/keys = {
 tracks/91/type = "value"
 tracks/91/imported = false
 tracks/91/enabled = true
-tracks/91/path = NodePath("Skeleton2D/body/hand_left1/hand_left2/hand_left3:scale")
+tracks/91/path = NodePath("Skeleton2D/body:scale")
 tracks/91/interp = 1
 tracks/91/loop_wrap = true
 tracks/91/keys = {
@@ -1115,7 +1113,7 @@ tracks/91/keys = {
 tracks/92/type = "value"
 tracks/92/imported = false
 tracks/92/enabled = true
-tracks/92/path = NodePath("Skeleton2D/body/hand_left1/hand_left2:scale")
+tracks/92/path = NodePath("polygons/ear_right:scale")
 tracks/92/interp = 1
 tracks/92/loop_wrap = true
 tracks/92/keys = {
@@ -1127,7 +1125,7 @@ tracks/92/keys = {
 tracks/93/type = "value"
 tracks/93/imported = false
 tracks/93/enabled = true
-tracks/93/path = NodePath("Skeleton2D/body/hand_left1:scale")
+tracks/93/path = NodePath("polygons/ear_left:scale")
 tracks/93/interp = 1
 tracks/93/loop_wrap = true
 tracks/93/keys = {
@@ -1139,7 +1137,7 @@ tracks/93/keys = {
 tracks/94/type = "value"
 tracks/94/imported = false
 tracks/94/enabled = true
-tracks/94/path = NodePath("Skeleton2D/body/feature1/feature2:scale")
+tracks/94/path = NodePath("polygons/feature:scale")
 tracks/94/interp = 1
 tracks/94/loop_wrap = true
 tracks/94/keys = {
@@ -1151,7 +1149,7 @@ tracks/94/keys = {
 tracks/95/type = "value"
 tracks/95/imported = false
 tracks/95/enabled = true
-tracks/95/path = NodePath("Skeleton2D/body/feature1:scale")
+tracks/95/path = NodePath("polygons/hand_right:scale")
 tracks/95/interp = 1
 tracks/95/loop_wrap = true
 tracks/95/keys = {
@@ -1163,7 +1161,7 @@ tracks/95/keys = {
 tracks/96/type = "value"
 tracks/96/imported = false
 tracks/96/enabled = true
-tracks/96/path = NodePath("Skeleton2D/body:scale")
+tracks/96/path = NodePath("polygons/hand_left:scale")
 tracks/96/interp = 1
 tracks/96/loop_wrap = true
 tracks/96/keys = {
@@ -1175,7 +1173,7 @@ tracks/96/keys = {
 tracks/97/type = "value"
 tracks/97/imported = false
 tracks/97/enabled = true
-tracks/97/path = NodePath("polygons/ear_right:scale")
+tracks/97/path = NodePath("polygons/tail:scale")
 tracks/97/interp = 1
 tracks/97/loop_wrap = true
 tracks/97/keys = {
@@ -1187,7 +1185,7 @@ tracks/97/keys = {
 tracks/98/type = "value"
 tracks/98/imported = false
 tracks/98/enabled = true
-tracks/98/path = NodePath("polygons/ear_left:scale")
+tracks/98/path = NodePath("polygons/mouth:scale")
 tracks/98/interp = 1
 tracks/98/loop_wrap = true
 tracks/98/keys = {
@@ -1199,7 +1197,7 @@ tracks/98/keys = {
 tracks/99/type = "value"
 tracks/99/imported = false
 tracks/99/enabled = true
-tracks/99/path = NodePath("polygons/feature:scale")
+tracks/99/path = NodePath("polygons/eyes:scale")
 tracks/99/interp = 1
 tracks/99/loop_wrap = true
 tracks/99/keys = {
@@ -1211,7 +1209,7 @@ tracks/99/keys = {
 tracks/100/type = "value"
 tracks/100/imported = false
 tracks/100/enabled = true
-tracks/100/path = NodePath("polygons/hand_right:scale")
+tracks/100/path = NodePath("polygons/leg_right:scale")
 tracks/100/interp = 1
 tracks/100/loop_wrap = true
 tracks/100/keys = {
@@ -1223,7 +1221,7 @@ tracks/100/keys = {
 tracks/101/type = "value"
 tracks/101/imported = false
 tracks/101/enabled = true
-tracks/101/path = NodePath("polygons/hand_left:scale")
+tracks/101/path = NodePath("polygons/leg_left:scale")
 tracks/101/interp = 1
 tracks/101/loop_wrap = true
 tracks/101/keys = {
@@ -1235,7 +1233,7 @@ tracks/101/keys = {
 tracks/102/type = "value"
 tracks/102/imported = false
 tracks/102/enabled = true
-tracks/102/path = NodePath("polygons/tail:scale")
+tracks/102/path = NodePath("polygons/wing_right:scale")
 tracks/102/interp = 1
 tracks/102/loop_wrap = true
 tracks/102/keys = {
@@ -1247,7 +1245,7 @@ tracks/102/keys = {
 tracks/103/type = "value"
 tracks/103/imported = false
 tracks/103/enabled = true
-tracks/103/path = NodePath("polygons/mouth:scale")
+tracks/103/path = NodePath("polygons/wing_left:scale")
 tracks/103/interp = 1
 tracks/103/loop_wrap = true
 tracks/103/keys = {
@@ -1259,7 +1257,7 @@ tracks/103/keys = {
 tracks/104/type = "value"
 tracks/104/imported = false
 tracks/104/enabled = true
-tracks/104/path = NodePath("polygons/eyes:scale")
+tracks/104/path = NodePath("polygons/body:scale")
 tracks/104/interp = 1
 tracks/104/loop_wrap = true
 tracks/104/keys = {
@@ -1271,82 +1269,10 @@ tracks/104/keys = {
 tracks/105/type = "value"
 tracks/105/imported = false
 tracks/105/enabled = true
-tracks/105/path = NodePath("polygons/leg_right:scale")
+tracks/105/path = NodePath("polygons/head:scale")
 tracks/105/interp = 1
 tracks/105/loop_wrap = true
 tracks/105/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(1, 1)]
-}
-tracks/106/type = "value"
-tracks/106/imported = false
-tracks/106/enabled = true
-tracks/106/path = NodePath("polygons/leg_left:scale")
-tracks/106/interp = 1
-tracks/106/loop_wrap = true
-tracks/106/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(1, 1)]
-}
-tracks/107/type = "value"
-tracks/107/imported = false
-tracks/107/enabled = true
-tracks/107/path = NodePath("polygons/wing_right:scale")
-tracks/107/interp = 1
-tracks/107/loop_wrap = true
-tracks/107/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(1, 1)]
-}
-tracks/108/type = "value"
-tracks/108/imported = false
-tracks/108/enabled = true
-tracks/108/path = NodePath("polygons/wing_left:scale")
-tracks/108/interp = 1
-tracks/108/loop_wrap = true
-tracks/108/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(1, 1)]
-}
-tracks/109/type = "value"
-tracks/109/imported = false
-tracks/109/enabled = true
-tracks/109/path = NodePath("polygons/body:scale")
-tracks/109/interp = 1
-tracks/109/loop_wrap = true
-tracks/109/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(1, 1)]
-}
-tracks/110/type = "value"
-tracks/110/imported = false
-tracks/110/enabled = true
-tracks/110/path = NodePath("polygons/head:scale")
-tracks/110/interp = 1
-tracks/110/loop_wrap = true
-tracks/110/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(1, 1)]
-}
-tracks/111/type = "value"
-tracks/111/imported = false
-tracks/111/enabled = true
-tracks/111/path = NodePath("../CameraSystem/CameraPositions:scale")
-tracks/111/interp = 1
-tracks/111/loop_wrap = true
-tracks/111/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
@@ -1755,7 +1681,7 @@ tracks/32/keys = {
 tracks/33/type = "value"
 tracks/33/imported = false
 tracks/33/enabled = true
-tracks/33/path = NodePath("../FeifeiLayer2/FeifeiShoulder:rotation")
+tracks/33/path = NodePath("Skeleton2D/body/wing_left1/wing_left2/wing_left3/wing_left4:rotation")
 tracks/33/interp = 1
 tracks/33/loop_wrap = true
 tracks/33/keys = {
@@ -1767,7 +1693,7 @@ tracks/33/keys = {
 tracks/34/type = "value"
 tracks/34/imported = false
 tracks/34/enabled = true
-tracks/34/path = NodePath("../FeifeiLayer2:rotation")
+tracks/34/path = NodePath("Skeleton2D/body/wing_left1/wing_left2/wing_left3:rotation")
 tracks/34/interp = 1
 tracks/34/loop_wrap = true
 tracks/34/keys = {
@@ -1779,7 +1705,7 @@ tracks/34/keys = {
 tracks/35/type = "value"
 tracks/35/imported = false
 tracks/35/enabled = true
-tracks/35/path = NodePath("Skeleton2D/body/wing_left1/wing_left2/wing_left3/wing_left4:rotation")
+tracks/35/path = NodePath("Skeleton2D/body/wing_left1/wing_left2:rotation")
 tracks/35/interp = 1
 tracks/35/loop_wrap = true
 tracks/35/keys = {
@@ -1791,7 +1717,7 @@ tracks/35/keys = {
 tracks/36/type = "value"
 tracks/36/imported = false
 tracks/36/enabled = true
-tracks/36/path = NodePath("Skeleton2D/body/wing_left1/wing_left2/wing_left3:rotation")
+tracks/36/path = NodePath("Skeleton2D/body/leg_right1/leg_right2/leg_right3/leg_right4:rotation")
 tracks/36/interp = 1
 tracks/36/loop_wrap = true
 tracks/36/keys = {
@@ -1803,7 +1729,7 @@ tracks/36/keys = {
 tracks/37/type = "value"
 tracks/37/imported = false
 tracks/37/enabled = true
-tracks/37/path = NodePath("Skeleton2D/body/wing_left1/wing_left2:rotation")
+tracks/37/path = NodePath("Skeleton2D/body/leg_right1/leg_right2/leg_right3:rotation")
 tracks/37/interp = 1
 tracks/37/loop_wrap = true
 tracks/37/keys = {
@@ -1815,7 +1741,7 @@ tracks/37/keys = {
 tracks/38/type = "value"
 tracks/38/imported = false
 tracks/38/enabled = true
-tracks/38/path = NodePath("Skeleton2D/body/leg_right1/leg_right2/leg_right3/leg_right4:rotation")
+tracks/38/path = NodePath("Skeleton2D/body/leg_right1/leg_right2:rotation")
 tracks/38/interp = 1
 tracks/38/loop_wrap = true
 tracks/38/keys = {
@@ -1827,7 +1753,7 @@ tracks/38/keys = {
 tracks/39/type = "value"
 tracks/39/imported = false
 tracks/39/enabled = true
-tracks/39/path = NodePath("Skeleton2D/body/leg_right1/leg_right2/leg_right3:rotation")
+tracks/39/path = NodePath("Skeleton2D/body/leg_left1/leg_left2/leg_left3/leg_left4:rotation")
 tracks/39/interp = 1
 tracks/39/loop_wrap = true
 tracks/39/keys = {
@@ -1839,7 +1765,7 @@ tracks/39/keys = {
 tracks/40/type = "value"
 tracks/40/imported = false
 tracks/40/enabled = true
-tracks/40/path = NodePath("Skeleton2D/body/leg_right1/leg_right2:rotation")
+tracks/40/path = NodePath("Skeleton2D/body/leg_left1/leg_left2/leg_left3:rotation")
 tracks/40/interp = 1
 tracks/40/loop_wrap = true
 tracks/40/keys = {
@@ -1851,7 +1777,7 @@ tracks/40/keys = {
 tracks/41/type = "value"
 tracks/41/imported = false
 tracks/41/enabled = true
-tracks/41/path = NodePath("Skeleton2D/body/leg_left1/leg_left2/leg_left3/leg_left4:rotation")
+tracks/41/path = NodePath("Skeleton2D/body/leg_left1/leg_left2:rotation")
 tracks/41/interp = 1
 tracks/41/loop_wrap = true
 tracks/41/keys = {
@@ -1863,7 +1789,7 @@ tracks/41/keys = {
 tracks/42/type = "value"
 tracks/42/imported = false
 tracks/42/enabled = true
-tracks/42/path = NodePath("Skeleton2D/body/leg_left1/leg_left2/leg_left3:rotation")
+tracks/42/path = NodePath("Skeleton2D/body/hand_right1/hand_right2/hand_right3/hand_right4:rotation")
 tracks/42/interp = 1
 tracks/42/loop_wrap = true
 tracks/42/keys = {
@@ -1875,7 +1801,7 @@ tracks/42/keys = {
 tracks/43/type = "value"
 tracks/43/imported = false
 tracks/43/enabled = true
-tracks/43/path = NodePath("Skeleton2D/body/leg_left1/leg_left2:rotation")
+tracks/43/path = NodePath("Skeleton2D/body/hand_right1/hand_right2/hand_right3:rotation")
 tracks/43/interp = 1
 tracks/43/loop_wrap = true
 tracks/43/keys = {
@@ -1887,7 +1813,7 @@ tracks/43/keys = {
 tracks/44/type = "value"
 tracks/44/imported = false
 tracks/44/enabled = true
-tracks/44/path = NodePath("Skeleton2D/body/hand_right1/hand_right2/hand_right3/hand_right4:rotation")
+tracks/44/path = NodePath("Skeleton2D/body/hand_right1/hand_right2:rotation")
 tracks/44/interp = 1
 tracks/44/loop_wrap = true
 tracks/44/keys = {
@@ -1899,7 +1825,7 @@ tracks/44/keys = {
 tracks/45/type = "value"
 tracks/45/imported = false
 tracks/45/enabled = true
-tracks/45/path = NodePath("Skeleton2D/body/hand_right1/hand_right2/hand_right3:rotation")
+tracks/45/path = NodePath("Skeleton2D/body/hand_left1/hand_left2/hand_left3/hand_left4:rotation")
 tracks/45/interp = 1
 tracks/45/loop_wrap = true
 tracks/45/keys = {
@@ -1911,7 +1837,7 @@ tracks/45/keys = {
 tracks/46/type = "value"
 tracks/46/imported = false
 tracks/46/enabled = true
-tracks/46/path = NodePath("Skeleton2D/body/hand_right1/hand_right2:rotation")
+tracks/46/path = NodePath("Skeleton2D/body/hand_left1/hand_left2/hand_left3:rotation")
 tracks/46/interp = 1
 tracks/46/loop_wrap = true
 tracks/46/keys = {
@@ -1923,7 +1849,7 @@ tracks/46/keys = {
 tracks/47/type = "value"
 tracks/47/imported = false
 tracks/47/enabled = true
-tracks/47/path = NodePath("Skeleton2D/body/hand_left1/hand_left2/hand_left3/hand_left4:rotation")
+tracks/47/path = NodePath("Skeleton2D/body/hand_left1/hand_left2:rotation")
 tracks/47/interp = 1
 tracks/47/loop_wrap = true
 tracks/47/keys = {
@@ -1935,7 +1861,7 @@ tracks/47/keys = {
 tracks/48/type = "value"
 tracks/48/imported = false
 tracks/48/enabled = true
-tracks/48/path = NodePath("Skeleton2D/body/hand_left1/hand_left2/hand_left3:rotation")
+tracks/48/path = NodePath("polygons/ear_right:rotation")
 tracks/48/interp = 1
 tracks/48/loop_wrap = true
 tracks/48/keys = {
@@ -1947,7 +1873,7 @@ tracks/48/keys = {
 tracks/49/type = "value"
 tracks/49/imported = false
 tracks/49/enabled = true
-tracks/49/path = NodePath("Skeleton2D/body/hand_left1/hand_left2:rotation")
+tracks/49/path = NodePath("polygons/ear_left:rotation")
 tracks/49/interp = 1
 tracks/49/loop_wrap = true
 tracks/49/keys = {
@@ -1959,7 +1885,7 @@ tracks/49/keys = {
 tracks/50/type = "value"
 tracks/50/imported = false
 tracks/50/enabled = true
-tracks/50/path = NodePath("polygons/ear_right:rotation")
+tracks/50/path = NodePath("polygons/feature:rotation")
 tracks/50/interp = 1
 tracks/50/loop_wrap = true
 tracks/50/keys = {
@@ -1971,7 +1897,7 @@ tracks/50/keys = {
 tracks/51/type = "value"
 tracks/51/imported = false
 tracks/51/enabled = true
-tracks/51/path = NodePath("polygons/ear_left:rotation")
+tracks/51/path = NodePath("polygons/hand_right:rotation")
 tracks/51/interp = 1
 tracks/51/loop_wrap = true
 tracks/51/keys = {
@@ -1983,7 +1909,7 @@ tracks/51/keys = {
 tracks/52/type = "value"
 tracks/52/imported = false
 tracks/52/enabled = true
-tracks/52/path = NodePath("polygons/feature:rotation")
+tracks/52/path = NodePath("polygons/hand_left:rotation")
 tracks/52/interp = 1
 tracks/52/loop_wrap = true
 tracks/52/keys = {
@@ -1995,19 +1921,19 @@ tracks/52/keys = {
 tracks/53/type = "value"
 tracks/53/imported = false
 tracks/53/enabled = true
-tracks/53/path = NodePath("polygons/hand_right:rotation")
+tracks/53/path = NodePath("polygons/tail:rotation")
 tracks/53/interp = 1
 tracks/53/loop_wrap = true
 tracks/53/keys = {
 "times": PackedFloat32Array(0.25),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [0.0]
+"values": [-1.0471976]
 }
 tracks/54/type = "value"
 tracks/54/imported = false
 tracks/54/enabled = true
-tracks/54/path = NodePath("polygons/hand_left:rotation")
+tracks/54/path = NodePath("polygons/mouth:rotation")
 tracks/54/interp = 1
 tracks/54/loop_wrap = true
 tracks/54/keys = {
@@ -2019,19 +1945,19 @@ tracks/54/keys = {
 tracks/55/type = "value"
 tracks/55/imported = false
 tracks/55/enabled = true
-tracks/55/path = NodePath("polygons/tail:rotation")
+tracks/55/path = NodePath("polygons/eyes:rotation")
 tracks/55/interp = 1
 tracks/55/loop_wrap = true
 tracks/55/keys = {
 "times": PackedFloat32Array(0.25),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [-1.0471976]
+"values": [0.0]
 }
 tracks/56/type = "value"
 tracks/56/imported = false
 tracks/56/enabled = true
-tracks/56/path = NodePath("polygons/mouth:rotation")
+tracks/56/path = NodePath("polygons/leg_right:rotation")
 tracks/56/interp = 1
 tracks/56/loop_wrap = true
 tracks/56/keys = {
@@ -2043,7 +1969,7 @@ tracks/56/keys = {
 tracks/57/type = "value"
 tracks/57/imported = false
 tracks/57/enabled = true
-tracks/57/path = NodePath("polygons/eyes:rotation")
+tracks/57/path = NodePath("polygons/leg_left:rotation")
 tracks/57/interp = 1
 tracks/57/loop_wrap = true
 tracks/57/keys = {
@@ -2055,7 +1981,7 @@ tracks/57/keys = {
 tracks/58/type = "value"
 tracks/58/imported = false
 tracks/58/enabled = true
-tracks/58/path = NodePath("polygons/leg_right:rotation")
+tracks/58/path = NodePath("polygons/wing_right:rotation")
 tracks/58/interp = 1
 tracks/58/loop_wrap = true
 tracks/58/keys = {
@@ -2067,7 +1993,7 @@ tracks/58/keys = {
 tracks/59/type = "value"
 tracks/59/imported = false
 tracks/59/enabled = true
-tracks/59/path = NodePath("polygons/leg_left:rotation")
+tracks/59/path = NodePath("polygons/wing_left:rotation")
 tracks/59/interp = 1
 tracks/59/loop_wrap = true
 tracks/59/keys = {
@@ -2079,7 +2005,7 @@ tracks/59/keys = {
 tracks/60/type = "value"
 tracks/60/imported = false
 tracks/60/enabled = true
-tracks/60/path = NodePath("polygons/wing_right:rotation")
+tracks/60/path = NodePath("polygons/body:rotation")
 tracks/60/interp = 1
 tracks/60/loop_wrap = true
 tracks/60/keys = {
@@ -2091,7 +2017,7 @@ tracks/60/keys = {
 tracks/61/type = "value"
 tracks/61/imported = false
 tracks/61/enabled = true
-tracks/61/path = NodePath("polygons/wing_left:rotation")
+tracks/61/path = NodePath("polygons/head:rotation")
 tracks/61/interp = 1
 tracks/61/loop_wrap = true
 tracks/61/keys = {
@@ -2103,43 +2029,43 @@ tracks/61/keys = {
 tracks/62/type = "value"
 tracks/62/imported = false
 tracks/62/enabled = true
-tracks/62/path = NodePath("polygons/body:rotation")
+tracks/62/path = NodePath("Skeleton2D/body/tail1/tail2/tail3:scale")
 tracks/62/interp = 1
 tracks/62/loop_wrap = true
 tracks/62/keys = {
 "times": PackedFloat32Array(0.25),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [0.0]
+"values": [Vector2(1, 1)]
 }
 tracks/63/type = "value"
 tracks/63/imported = false
 tracks/63/enabled = true
-tracks/63/path = NodePath("polygons/head:rotation")
+tracks/63/path = NodePath("Skeleton2D/body/tail1/tail2:scale")
 tracks/63/interp = 1
 tracks/63/loop_wrap = true
 tracks/63/keys = {
 "times": PackedFloat32Array(0.25),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [0.0]
+"values": [Vector2(1, 1)]
 }
 tracks/64/type = "value"
 tracks/64/imported = false
 tracks/64/enabled = true
-tracks/64/path = NodePath("../CameraSystem/CameraPositions:rotation")
+tracks/64/path = NodePath("Skeleton2D/body/tail1:scale")
 tracks/64/interp = 1
 tracks/64/loop_wrap = true
 tracks/64/keys = {
 "times": PackedFloat32Array(0.25),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [0.0]
+"values": [Vector2(0.99999994, 0.99999994)]
 }
 tracks/65/type = "value"
 tracks/65/imported = false
 tracks/65/enabled = true
-tracks/65/path = NodePath("../FeifeiLayer2/FeifeiShoulder:scale")
+tracks/65/path = NodePath("Skeleton2D/body/wing_left1/wing_left2/wing_left3/wing_left4:scale")
 tracks/65/interp = 1
 tracks/65/loop_wrap = true
 tracks/65/keys = {
@@ -2151,7 +2077,7 @@ tracks/65/keys = {
 tracks/66/type = "value"
 tracks/66/imported = false
 tracks/66/enabled = true
-tracks/66/path = NodePath("../FeifeiLayer2:scale")
+tracks/66/path = NodePath("Skeleton2D/body/wing_left1/wing_left2/wing_left3:scale")
 tracks/66/interp = 1
 tracks/66/loop_wrap = true
 tracks/66/keys = {
@@ -2163,7 +2089,7 @@ tracks/66/keys = {
 tracks/67/type = "value"
 tracks/67/imported = false
 tracks/67/enabled = true
-tracks/67/path = NodePath("Skeleton2D/body/tail1/tail2/tail3:scale")
+tracks/67/path = NodePath("Skeleton2D/body/wing_left1/wing_left2:scale")
 tracks/67/interp = 1
 tracks/67/loop_wrap = true
 tracks/67/keys = {
@@ -2175,7 +2101,7 @@ tracks/67/keys = {
 tracks/68/type = "value"
 tracks/68/imported = false
 tracks/68/enabled = true
-tracks/68/path = NodePath("Skeleton2D/body/tail1/tail2:scale")
+tracks/68/path = NodePath("Skeleton2D/body/wing_left1:scale")
 tracks/68/interp = 1
 tracks/68/loop_wrap = true
 tracks/68/keys = {
@@ -2187,19 +2113,19 @@ tracks/68/keys = {
 tracks/69/type = "value"
 tracks/69/imported = false
 tracks/69/enabled = true
-tracks/69/path = NodePath("Skeleton2D/body/tail1:scale")
+tracks/69/path = NodePath("Skeleton2D/body/wing_right1/wing_right2/wing_right3/wing_right4:scale")
 tracks/69/interp = 1
 tracks/69/loop_wrap = true
 tracks/69/keys = {
 "times": PackedFloat32Array(0.25),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [Vector2(0.99999994, 0.99999994)]
+"values": [Vector2(1, 1)]
 }
 tracks/70/type = "value"
 tracks/70/imported = false
 tracks/70/enabled = true
-tracks/70/path = NodePath("Skeleton2D/body/wing_left1/wing_left2/wing_left3/wing_left4:scale")
+tracks/70/path = NodePath("Skeleton2D/body/wing_right1/wing_right2/wing_right3:scale")
 tracks/70/interp = 1
 tracks/70/loop_wrap = true
 tracks/70/keys = {
@@ -2211,7 +2137,7 @@ tracks/70/keys = {
 tracks/71/type = "value"
 tracks/71/imported = false
 tracks/71/enabled = true
-tracks/71/path = NodePath("Skeleton2D/body/wing_left1/wing_left2/wing_left3:scale")
+tracks/71/path = NodePath("Skeleton2D/body/wing_right1/wing_right2:scale")
 tracks/71/interp = 1
 tracks/71/loop_wrap = true
 tracks/71/keys = {
@@ -2223,7 +2149,7 @@ tracks/71/keys = {
 tracks/72/type = "value"
 tracks/72/imported = false
 tracks/72/enabled = true
-tracks/72/path = NodePath("Skeleton2D/body/wing_left1/wing_left2:scale")
+tracks/72/path = NodePath("Skeleton2D/body/wing_right1:scale")
 tracks/72/interp = 1
 tracks/72/loop_wrap = true
 tracks/72/keys = {
@@ -2235,7 +2161,7 @@ tracks/72/keys = {
 tracks/73/type = "value"
 tracks/73/imported = false
 tracks/73/enabled = true
-tracks/73/path = NodePath("Skeleton2D/body/wing_left1:scale")
+tracks/73/path = NodePath("Skeleton2D/body/leg_right1/leg_right2/leg_right3/leg_right4:scale")
 tracks/73/interp = 1
 tracks/73/loop_wrap = true
 tracks/73/keys = {
@@ -2247,7 +2173,7 @@ tracks/73/keys = {
 tracks/74/type = "value"
 tracks/74/imported = false
 tracks/74/enabled = true
-tracks/74/path = NodePath("Skeleton2D/body/wing_right1/wing_right2/wing_right3/wing_right4:scale")
+tracks/74/path = NodePath("Skeleton2D/body/leg_right1/leg_right2/leg_right3:scale")
 tracks/74/interp = 1
 tracks/74/loop_wrap = true
 tracks/74/keys = {
@@ -2259,7 +2185,7 @@ tracks/74/keys = {
 tracks/75/type = "value"
 tracks/75/imported = false
 tracks/75/enabled = true
-tracks/75/path = NodePath("Skeleton2D/body/wing_right1/wing_right2/wing_right3:scale")
+tracks/75/path = NodePath("Skeleton2D/body/leg_right1/leg_right2:scale")
 tracks/75/interp = 1
 tracks/75/loop_wrap = true
 tracks/75/keys = {
@@ -2271,7 +2197,7 @@ tracks/75/keys = {
 tracks/76/type = "value"
 tracks/76/imported = false
 tracks/76/enabled = true
-tracks/76/path = NodePath("Skeleton2D/body/wing_right1/wing_right2:scale")
+tracks/76/path = NodePath("Skeleton2D/body/leg_right1:scale")
 tracks/76/interp = 1
 tracks/76/loop_wrap = true
 tracks/76/keys = {
@@ -2283,7 +2209,7 @@ tracks/76/keys = {
 tracks/77/type = "value"
 tracks/77/imported = false
 tracks/77/enabled = true
-tracks/77/path = NodePath("Skeleton2D/body/wing_right1:scale")
+tracks/77/path = NodePath("Skeleton2D/body/leg_left1/leg_left2/leg_left3/leg_left4:scale")
 tracks/77/interp = 1
 tracks/77/loop_wrap = true
 tracks/77/keys = {
@@ -2295,7 +2221,7 @@ tracks/77/keys = {
 tracks/78/type = "value"
 tracks/78/imported = false
 tracks/78/enabled = true
-tracks/78/path = NodePath("Skeleton2D/body/leg_right1/leg_right2/leg_right3/leg_right4:scale")
+tracks/78/path = NodePath("Skeleton2D/body/leg_left1/leg_left2/leg_left3:scale")
 tracks/78/interp = 1
 tracks/78/loop_wrap = true
 tracks/78/keys = {
@@ -2307,7 +2233,7 @@ tracks/78/keys = {
 tracks/79/type = "value"
 tracks/79/imported = false
 tracks/79/enabled = true
-tracks/79/path = NodePath("Skeleton2D/body/leg_right1/leg_right2/leg_right3:scale")
+tracks/79/path = NodePath("Skeleton2D/body/leg_left1/leg_left2:scale")
 tracks/79/interp = 1
 tracks/79/loop_wrap = true
 tracks/79/keys = {
@@ -2319,7 +2245,7 @@ tracks/79/keys = {
 tracks/80/type = "value"
 tracks/80/imported = false
 tracks/80/enabled = true
-tracks/80/path = NodePath("Skeleton2D/body/leg_right1/leg_right2:scale")
+tracks/80/path = NodePath("Skeleton2D/body/leg_left1:scale")
 tracks/80/interp = 1
 tracks/80/loop_wrap = true
 tracks/80/keys = {
@@ -2331,7 +2257,7 @@ tracks/80/keys = {
 tracks/81/type = "value"
 tracks/81/imported = false
 tracks/81/enabled = true
-tracks/81/path = NodePath("Skeleton2D/body/leg_right1:scale")
+tracks/81/path = NodePath("Skeleton2D/body/hand_right1/hand_right2/hand_right3/hand_right4:scale")
 tracks/81/interp = 1
 tracks/81/loop_wrap = true
 tracks/81/keys = {
@@ -2343,7 +2269,7 @@ tracks/81/keys = {
 tracks/82/type = "value"
 tracks/82/imported = false
 tracks/82/enabled = true
-tracks/82/path = NodePath("Skeleton2D/body/leg_left1/leg_left2/leg_left3/leg_left4:scale")
+tracks/82/path = NodePath("Skeleton2D/body/hand_right1/hand_right2/hand_right3:scale")
 tracks/82/interp = 1
 tracks/82/loop_wrap = true
 tracks/82/keys = {
@@ -2355,7 +2281,7 @@ tracks/82/keys = {
 tracks/83/type = "value"
 tracks/83/imported = false
 tracks/83/enabled = true
-tracks/83/path = NodePath("Skeleton2D/body/leg_left1/leg_left2/leg_left3:scale")
+tracks/83/path = NodePath("Skeleton2D/body/hand_right1/hand_right2:scale")
 tracks/83/interp = 1
 tracks/83/loop_wrap = true
 tracks/83/keys = {
@@ -2367,7 +2293,7 @@ tracks/83/keys = {
 tracks/84/type = "value"
 tracks/84/imported = false
 tracks/84/enabled = true
-tracks/84/path = NodePath("Skeleton2D/body/leg_left1/leg_left2:scale")
+tracks/84/path = NodePath("Skeleton2D/body/hand_right1:scale")
 tracks/84/interp = 1
 tracks/84/loop_wrap = true
 tracks/84/keys = {
@@ -2379,7 +2305,7 @@ tracks/84/keys = {
 tracks/85/type = "value"
 tracks/85/imported = false
 tracks/85/enabled = true
-tracks/85/path = NodePath("Skeleton2D/body/leg_left1:scale")
+tracks/85/path = NodePath("Skeleton2D/body/hand_left1/hand_left2/hand_left3/hand_left4:scale")
 tracks/85/interp = 1
 tracks/85/loop_wrap = true
 tracks/85/keys = {
@@ -2391,7 +2317,7 @@ tracks/85/keys = {
 tracks/86/type = "value"
 tracks/86/imported = false
 tracks/86/enabled = true
-tracks/86/path = NodePath("Skeleton2D/body/hand_right1/hand_right2/hand_right3/hand_right4:scale")
+tracks/86/path = NodePath("Skeleton2D/body/hand_left1/hand_left2/hand_left3:scale")
 tracks/86/interp = 1
 tracks/86/loop_wrap = true
 tracks/86/keys = {
@@ -2403,7 +2329,7 @@ tracks/86/keys = {
 tracks/87/type = "value"
 tracks/87/imported = false
 tracks/87/enabled = true
-tracks/87/path = NodePath("Skeleton2D/body/hand_right1/hand_right2/hand_right3:scale")
+tracks/87/path = NodePath("Skeleton2D/body/hand_left1/hand_left2:scale")
 tracks/87/interp = 1
 tracks/87/loop_wrap = true
 tracks/87/keys = {
@@ -2415,7 +2341,7 @@ tracks/87/keys = {
 tracks/88/type = "value"
 tracks/88/imported = false
 tracks/88/enabled = true
-tracks/88/path = NodePath("Skeleton2D/body/hand_right1/hand_right2:scale")
+tracks/88/path = NodePath("Skeleton2D/body/hand_left1:scale")
 tracks/88/interp = 1
 tracks/88/loop_wrap = true
 tracks/88/keys = {
@@ -2427,7 +2353,7 @@ tracks/88/keys = {
 tracks/89/type = "value"
 tracks/89/imported = false
 tracks/89/enabled = true
-tracks/89/path = NodePath("Skeleton2D/body/hand_right1:scale")
+tracks/89/path = NodePath("Skeleton2D/body/feature1/feature2:scale")
 tracks/89/interp = 1
 tracks/89/loop_wrap = true
 tracks/89/keys = {
@@ -2439,7 +2365,7 @@ tracks/89/keys = {
 tracks/90/type = "value"
 tracks/90/imported = false
 tracks/90/enabled = true
-tracks/90/path = NodePath("Skeleton2D/body/hand_left1/hand_left2/hand_left3/hand_left4:scale")
+tracks/90/path = NodePath("Skeleton2D/body/feature1:scale")
 tracks/90/interp = 1
 tracks/90/loop_wrap = true
 tracks/90/keys = {
@@ -2451,7 +2377,7 @@ tracks/90/keys = {
 tracks/91/type = "value"
 tracks/91/imported = false
 tracks/91/enabled = true
-tracks/91/path = NodePath("Skeleton2D/body/hand_left1/hand_left2/hand_left3:scale")
+tracks/91/path = NodePath("Skeleton2D/body:scale")
 tracks/91/interp = 1
 tracks/91/loop_wrap = true
 tracks/91/keys = {
@@ -2463,7 +2389,7 @@ tracks/91/keys = {
 tracks/92/type = "value"
 tracks/92/imported = false
 tracks/92/enabled = true
-tracks/92/path = NodePath("Skeleton2D/body/hand_left1/hand_left2:scale")
+tracks/92/path = NodePath("polygons/ear_right:scale")
 tracks/92/interp = 1
 tracks/92/loop_wrap = true
 tracks/92/keys = {
@@ -2475,7 +2401,7 @@ tracks/92/keys = {
 tracks/93/type = "value"
 tracks/93/imported = false
 tracks/93/enabled = true
-tracks/93/path = NodePath("Skeleton2D/body/hand_left1:scale")
+tracks/93/path = NodePath("polygons/ear_left:scale")
 tracks/93/interp = 1
 tracks/93/loop_wrap = true
 tracks/93/keys = {
@@ -2487,7 +2413,7 @@ tracks/93/keys = {
 tracks/94/type = "value"
 tracks/94/imported = false
 tracks/94/enabled = true
-tracks/94/path = NodePath("Skeleton2D/body/feature1/feature2:scale")
+tracks/94/path = NodePath("polygons/feature:scale")
 tracks/94/interp = 1
 tracks/94/loop_wrap = true
 tracks/94/keys = {
@@ -2499,7 +2425,7 @@ tracks/94/keys = {
 tracks/95/type = "value"
 tracks/95/imported = false
 tracks/95/enabled = true
-tracks/95/path = NodePath("Skeleton2D/body/feature1:scale")
+tracks/95/path = NodePath("polygons/hand_right:scale")
 tracks/95/interp = 1
 tracks/95/loop_wrap = true
 tracks/95/keys = {
@@ -2511,7 +2437,7 @@ tracks/95/keys = {
 tracks/96/type = "value"
 tracks/96/imported = false
 tracks/96/enabled = true
-tracks/96/path = NodePath("Skeleton2D/body:scale")
+tracks/96/path = NodePath("polygons/hand_left:scale")
 tracks/96/interp = 1
 tracks/96/loop_wrap = true
 tracks/96/keys = {
@@ -2523,7 +2449,7 @@ tracks/96/keys = {
 tracks/97/type = "value"
 tracks/97/imported = false
 tracks/97/enabled = true
-tracks/97/path = NodePath("polygons/ear_right:scale")
+tracks/97/path = NodePath("polygons/tail:scale")
 tracks/97/interp = 1
 tracks/97/loop_wrap = true
 tracks/97/keys = {
@@ -2535,7 +2461,7 @@ tracks/97/keys = {
 tracks/98/type = "value"
 tracks/98/imported = false
 tracks/98/enabled = true
-tracks/98/path = NodePath("polygons/ear_left:scale")
+tracks/98/path = NodePath("polygons/mouth:scale")
 tracks/98/interp = 1
 tracks/98/loop_wrap = true
 tracks/98/keys = {
@@ -2547,7 +2473,7 @@ tracks/98/keys = {
 tracks/99/type = "value"
 tracks/99/imported = false
 tracks/99/enabled = true
-tracks/99/path = NodePath("polygons/feature:scale")
+tracks/99/path = NodePath("polygons/eyes:scale")
 tracks/99/interp = 1
 tracks/99/loop_wrap = true
 tracks/99/keys = {
@@ -2559,7 +2485,7 @@ tracks/99/keys = {
 tracks/100/type = "value"
 tracks/100/imported = false
 tracks/100/enabled = true
-tracks/100/path = NodePath("polygons/hand_right:scale")
+tracks/100/path = NodePath("polygons/leg_right:scale")
 tracks/100/interp = 1
 tracks/100/loop_wrap = true
 tracks/100/keys = {
@@ -2571,7 +2497,7 @@ tracks/100/keys = {
 tracks/101/type = "value"
 tracks/101/imported = false
 tracks/101/enabled = true
-tracks/101/path = NodePath("polygons/hand_left:scale")
+tracks/101/path = NodePath("polygons/leg_left:scale")
 tracks/101/interp = 1
 tracks/101/loop_wrap = true
 tracks/101/keys = {
@@ -2583,7 +2509,7 @@ tracks/101/keys = {
 tracks/102/type = "value"
 tracks/102/imported = false
 tracks/102/enabled = true
-tracks/102/path = NodePath("polygons/tail:scale")
+tracks/102/path = NodePath("polygons/wing_right:scale")
 tracks/102/interp = 1
 tracks/102/loop_wrap = true
 tracks/102/keys = {
@@ -2595,7 +2521,7 @@ tracks/102/keys = {
 tracks/103/type = "value"
 tracks/103/imported = false
 tracks/103/enabled = true
-tracks/103/path = NodePath("polygons/mouth:scale")
+tracks/103/path = NodePath("polygons/wing_left:scale")
 tracks/103/interp = 1
 tracks/103/loop_wrap = true
 tracks/103/keys = {
@@ -2607,7 +2533,7 @@ tracks/103/keys = {
 tracks/104/type = "value"
 tracks/104/imported = false
 tracks/104/enabled = true
-tracks/104/path = NodePath("polygons/eyes:scale")
+tracks/104/path = NodePath("polygons/body:scale")
 tracks/104/interp = 1
 tracks/104/loop_wrap = true
 tracks/104/keys = {
@@ -2619,82 +2545,10 @@ tracks/104/keys = {
 tracks/105/type = "value"
 tracks/105/imported = false
 tracks/105/enabled = true
-tracks/105/path = NodePath("polygons/leg_right:scale")
+tracks/105/path = NodePath("polygons/head:scale")
 tracks/105/interp = 1
 tracks/105/loop_wrap = true
 tracks/105/keys = {
-"times": PackedFloat32Array(0.25),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(1, 1)]
-}
-tracks/106/type = "value"
-tracks/106/imported = false
-tracks/106/enabled = true
-tracks/106/path = NodePath("polygons/leg_left:scale")
-tracks/106/interp = 1
-tracks/106/loop_wrap = true
-tracks/106/keys = {
-"times": PackedFloat32Array(0.25),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(1, 1)]
-}
-tracks/107/type = "value"
-tracks/107/imported = false
-tracks/107/enabled = true
-tracks/107/path = NodePath("polygons/wing_right:scale")
-tracks/107/interp = 1
-tracks/107/loop_wrap = true
-tracks/107/keys = {
-"times": PackedFloat32Array(0.25),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(1, 1)]
-}
-tracks/108/type = "value"
-tracks/108/imported = false
-tracks/108/enabled = true
-tracks/108/path = NodePath("polygons/wing_left:scale")
-tracks/108/interp = 1
-tracks/108/loop_wrap = true
-tracks/108/keys = {
-"times": PackedFloat32Array(0.25),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(1, 1)]
-}
-tracks/109/type = "value"
-tracks/109/imported = false
-tracks/109/enabled = true
-tracks/109/path = NodePath("polygons/body:scale")
-tracks/109/interp = 1
-tracks/109/loop_wrap = true
-tracks/109/keys = {
-"times": PackedFloat32Array(0.25),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(1, 1)]
-}
-tracks/110/type = "value"
-tracks/110/imported = false
-tracks/110/enabled = true
-tracks/110/path = NodePath("polygons/head:scale")
-tracks/110/interp = 1
-tracks/110/loop_wrap = true
-tracks/110/keys = {
-"times": PackedFloat32Array(0.25),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(1, 1)]
-}
-tracks/111/type = "value"
-tracks/111/imported = false
-tracks/111/enabled = true
-tracks/111/path = NodePath("../CameraSystem/CameraPositions:scale")
-tracks/111/interp = 1
-tracks/111/loop_wrap = true
-tracks/111/keys = {
 "times": PackedFloat32Array(0.25),
 "transitions": PackedFloat32Array(1),
 "update": 0,
@@ -2707,8 +2561,7 @@ _data = {
 &"fly": SubResource("Animation_bal7h")
 }
 
-
-[node name="FeifeiLayer" type="CharacterBody2D"]
+[node name="FeifeiLayer" type="CharacterBody2D" unique_id=1696592032]
 
 [node name="polygons" type="Polygon2D" parent="." unique_id=1670664228]
 
@@ -2716,21 +2569,18 @@ _data = {
 z_index = 1
 position = Vector2(-1432, -376)
 offset = Vector2(-920, -704)
-texture = ExtResource("12_5c4x7")
 polygon = PackedVector2Array(800, 463.99994, 712, 584.00006, 696, 664.00006, 688, 735.99994, 680, 807.99994, 696, 855.99994, 800, 911.99994, 928, 944.00006, 1048, 911.99994, 1192, 871.99994, 1168, 840.00006, 1232, 823.99994, 1216, 792.00006, 1272, 751.99994, 1264, 727.99994, 1232, 719.99994, 1280, 655.99994, 1272, 623.99994, 1224, 607.99994, 1184, 575.99994, 1184, 551.99994, 1136, 504, 1151.9998, 480, 1072, 463.99994, 1008, 448, 1024, 424, 944, 431.99994, 960, 400, 928, 400, 840, 448, 808, 448)
 uv = PackedVector2Array(800, 463.99994, 712, 584.00006, 696, 664.00006, 688, 735.99994, 680, 807.99994, 696, 855.99994, 800, 911.99994, 928, 944.00006, 1048, 911.99994, 1192, 871.99994, 1168, 840.00006, 1232, 823.99994, 1216, 792.00006, 1272, 751.99994, 1264, 727.99994, 1232, 719.99994, 1280, 655.99994, 1272, 623.99994, 1224, 607.99994, 1184, 575.99994, 1184, 551.99994, 1136, 504, 1151.9998, 480, 1072, 463.99994, 1008, 448, 1024, 424, 944, 431.99994, 960, 400, 928, 400, 840, 448, 808, 448)
 bones = ["Bone2D", PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), "Bone2D/Bone2D", PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)]
 
 [node name="body" type="Polygon2D" parent="polygons" unique_id=1958069456]
 position = Vector2(-3008, -1594)
-texture = ExtResource("12_5c4x7")
 polygon = PackedVector2Array(1520, 1408, 1488, 1464, 1488, 1488, 1488, 1656, 1520, 1768, 1608, 1848.0001, 1720, 1864, 1832, 1840.0001, 1904.0005, 1776, 1912.0005, 1664, 1856, 1568, 1808, 1480, 1768, 1400.0001, 1752, 1368, 1696, 1344, 1616, 1360, 1552, 1376)
 uv = PackedVector2Array(1520, 1408, 1488, 1464, 1488, 1488, 1488, 1656, 1520, 1768, 1608, 1848.0001, 1720, 1864, 1832, 1840.0001, 1904.0005, 1776, 1912.0005, 1664, 1856, 1568, 1808, 1480, 1768, 1400.0001, 1752, 1368, 1696, 1344, 1616, 1360, 1552, 1376)
 
 [node name="wing_left" type="Polygon2D" parent="polygons" unique_id=1563006366]
 position = Vector2(-1536, -64)
 offset = Vector2(-768, -1088)
-texture = ExtResource("12_5c4x7")
 skeleton = NodePath("../../Skeleton2D")
 polygon = PackedVector2Array(176, 376, 128, 392, 128, 440, 152, 592, 200, 695.99994, 167.99988, 695.99994, 160, 743.99994, 200, 839.99994, 256.00012, 887.99994, 223.99988, 903.99994, 232, 944, 287.99988, 999.99994, 343.99988, 1032, 319.99988, 1072, 367.99988, 1128, 463.99988, 1128, 447.99988, 1168, 479.99988, 1208, 543.9999, 1184, 535.9999, 1216, 551.9999, 1224, 583.9999, 1232, 623.9999, 1200, 623.9999, 1240, 655.9999, 1240, 695.9999, 1224, 743.9999, 1160, 791.9999, 1136, 807.9999, 1096, 799.9999, 1056, 680.0001, 999.99994, 615.9999, 935.99994, 591.9999, 863.99994, 551.9999, 783.99994, 496.00012, 719.99994, 383.99988, 640, 383.99988, 640, 319.99988, 560)
 uv = PackedVector2Array(176, 376, 135.99988, 399.99997, 128, 440, 152, 592, 200, 695.99994, 167.99988, 695.99994, 160, 743.99994, 200, 839.99994, 256.00012, 887.99994, 223.99988, 903.99994, 232, 944, 287.99988, 999.99994, 343.99988, 1032, 319.99988, 1072, 367.99988, 1128, 463.99988, 1128, 447.99988, 1168, 479.99988, 1208, 543.9999, 1184, 535.9999, 1216, 551.9999, 1224, 583.9999, 1232, 623.9999, 1200, 623.9999, 1240, 655.9999, 1240, 695.9999, 1224, 743.9999, 1160, 791.9999, 1136, 807.9999, 1096, 799.9999, 1056, 680.0001, 999.99994, 615.9999, 935.99994, 591.9999, 863.99994, 551.9999, 783.99994, 496.00012, 719.99994, 383.99988, 640, 383.99988, 640, 319.99988, 560)
@@ -2739,7 +2589,6 @@ bones = ["body", PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 [node name="wing_right" type="Polygon2D" parent="polygons" unique_id=1130881230]
 position = Vector2(-1152, -112)
 offset = Vector2(-1136, -1104)
-texture = ExtResource("12_5c4x7")
 skeleton = NodePath("../../Skeleton2D")
 polygon = PackedVector2Array(1112.0001, 1040.0001, 1232.0001, 952.0001, 1320.0001, 816.00006, 1392.0001, 744.00006, 1744.0004, 488, 1888.0004, 344, 1928.0004, 368.00006, 1928.0004, 456, 1912.0004, 568.00006, 1816.0001, 680.00006, 1872.0004, 656.00006, 1896.0004, 656.00006, 1904.0004, 672.00006, 1904.0004, 728.00006, 1840.0001, 816.00006, 1776.0004, 864.00006, 1832.0001, 880, 1832.0001, 912.0001, 1792.0004, 952.0001, 1712.0001, 1000.00006, 1664.0004, 1016.00006, 1648.0001, 1024.0002, 1680.0004, 1032.0001, 1704.0001, 1064.0001, 1680.0004, 1104.0001, 1616.0001, 1128.0001, 1536.0001, 1128.0001, 1552.0001, 1160.0001, 1504.0001, 1192.0001, 1456.0004, 1192.0001, 1416.0001, 1192.0001, 1432.0001, 1216.0001, 1392.0001, 1240.0002, 1328.0001, 1224.0001, 1288.0001, 1200.0002, 1296.0001, 1240.0002, 1224.0001, 1232.0001, 1168.0004, 1184.0001, 1128.0001, 1152.0001, 1088.0001, 1136.0002, 1080.0001, 1072.0001, 1096.0004, 1040.0001)
 uv = PackedVector2Array(1112.0001, 1040.0001, 1232.0001, 952.0001, 1320.0001, 816.00006, 1392.0001, 744.00006, 1744.0004, 488, 1888.0004, 344, 1928.0004, 368.00006, 1928.0004, 456, 1912.0004, 568.00006, 1816.0001, 680.00006, 1872.0004, 656.00006, 1896.0004, 656.00006, 1904.0004, 672.00006, 1904.0004, 728.00006, 1840.0001, 816.00006, 1776.0004, 864.00006, 1832.0001, 880, 1832.0001, 912.0001, 1792.0004, 952.0001, 1712.0001, 1000.00006, 1664.0004, 1016.00006, 1648.0001, 1024.0002, 1680.0004, 1032.0001, 1704.0001, 1064.0001, 1680.0004, 1104.0001, 1616.0001, 1128.0001, 1536.0001, 1128.0001, 1552.0001, 1160.0001, 1504.0001, 1192.0001, 1456.0004, 1192.0001, 1416.0001, 1192.0001, 1432.0001, 1216.0001, 1392.0001, 1240.0002, 1328.0001, 1224.0001, 1288.0001, 1200.0002, 1296.0001, 1240.0002, 1224.0001, 1232.0001, 1168.0004, 1184.0001, 1128.0001, 1152.0001, 1088.0001, 1136.0002, 1080.0001, 1072.0001, 1096.0004, 1040.0001)
@@ -2747,14 +2596,12 @@ bones = ["body", PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
 [node name="leg_left" type="Polygon2D" parent="polygons" unique_id=1192415167]
 position = Vector2(-1680, -1490)
-texture = ExtResource("12_5c4x7")
 skeleton = NodePath("../../Skeleton2D")
 polygon = PackedVector2Array(200.00012, 1648.0001, 240.00012, 1640.0001, 280.00012, 1656.0001, 312.00012, 1688.0001, 328, 1712.0001, 328, 1744.0001, 328, 1792.0001, 352.00012, 1808.0001, 328, 1864.0001, 280.00012, 1928.0002, 240.00012, 1912.0001, 224, 1888.0001, 240.00012, 1840.0001, 192, 1808.0001, 168.00012, 1744.0001, 176, 1688.0001, 192, 1664.0001)
 uv = PackedVector2Array(200.00012, 1648.0001, 240.00012, 1640.0001, 280.00012, 1656.0001, 312.00012, 1688.0001, 328, 1712.0001, 328, 1744.0001, 328, 1792.0001, 352.00012, 1808.0001, 328, 1864.0001, 280.00012, 1928.0002, 240.00012, 1912.0001, 224, 1888.0001, 240.00012, 1840.0001, 192, 1808.0001, 168.00012, 1744.0001, 176, 1688.0001, 192, 1664.0001)
 
 [node name="leg_right" type="Polygon2D" parent="polygons" unique_id=1183387496]
 position = Vector2(-1712, -1538)
-texture = ExtResource("12_5c4x7")
 skeleton = NodePath("../../Skeleton2D")
 polygon = PackedVector2Array(528, 1640, 439.99988, 1728, 447.99988, 1840, 504, 1872, 528, 1952, 640, 1952, 672, 1800, 680, 1664, 584, 1624)
 uv = PackedVector2Array(528, 1640, 439.99988, 1728, 447.99988, 1840, 504, 1872, 528, 1952, 640, 1952, 672, 1800, 680, 1664, 584, 1624)
@@ -2762,14 +2609,12 @@ uv = PackedVector2Array(528, 1640, 439.99988, 1728, 447.99988, 1840, 504, 1872, 
 [node name="eyes" type="Polygon2D" parent="polygons" unique_id=1307754636]
 z_index = 2
 position = Vector2(-2544, -618)
-texture = ExtResource("12_5c4x7")
 polygon = PackedVector2Array(1040, 103.99999, 880, 176, 928, 304, 1072, 320, 1128, 240, 1264, 328, 1320, 320, 1360, 256, 1360, 176, 1240, 111.99999, 1176, 152)
 uv = PackedVector2Array(1040, 103.99999, 880, 176, 928, 304, 1072, 320, 1128, 240, 1264, 328, 1320, 320, 1360, 256, 1360, 176, 1240, 111.99999, 1176, 152)
 
 [node name="mouth" type="Polygon2D" parent="polygons" unique_id=1245490746]
 z_index = 2
 position = Vector2(-2960, -538)
-texture = ExtResource("12_5c4x7")
 polygon = PackedVector2Array(1536, 200, 1512, 232, 1496, 232, 1496, 272, 1568, 296, 1624, 264, 1576, 240, 1584, 216)
 uv = PackedVector2Array(1536, 200, 1512, 232, 1496, 232, 1496, 272, 1568, 296, 1624, 264, 1576, 240, 1584, 216)
 
@@ -2778,7 +2623,6 @@ z_index = -1
 position = Vector2(-1328, 192)
 rotation = -1.0471976
 offset = Vector2(-1352, -1464)
-texture = ExtResource("12_5c4x7")
 skeleton = NodePath("../../Skeleton2D")
 polygon = PackedVector2Array(1272, 1480, 1176, 1520, 1056, 1456, 1024, 1496, 1080, 1608.0001, 1160, 1648.0001, 1088, 1712.0001, 992, 1720.0001, 960, 1744.0001, 1064, 1816.0001, 1208, 1816.0001, 1304, 1832.0001, 1384, 1784.0001, 1440, 1728.0001, 1400, 1576.0001, 1384, 1472)
 uv = PackedVector2Array(1272, 1480, 1176, 1520, 1056, 1456, 1024, 1496, 1080, 1608.0001, 1160, 1648.0001, 1088, 1712.0001, 992, 1720.0001, 960, 1744.0001, 1064, 1816.0001, 1208, 1816.0001, 1304, 1832.0001, 1384, 1784.0001, 1440, 1728.0001, 1400, 1576.0001, 1384, 1472)
@@ -2787,7 +2631,6 @@ uv = PackedVector2Array(1272, 1480, 1176, 1520, 1056, 1456, 1024, 1496, 1080, 16
 z_index = 1
 position = Vector2(-776, -642)
 offset = Vector2(-920, -704)
-texture = ExtResource("12_5c4x7")
 skeleton = NodePath("../../Skeleton2D")
 polygon = PackedVector2Array(160, 1248, 136, 1464, 232, 1600, 328, 1544, 304, 1408, 272, 1256)
 uv = PackedVector2Array(160, 1248, 136, 1464, 232, 1600, 328, 1544, 304, 1408, 272, 1256)
@@ -2796,7 +2639,6 @@ uv = PackedVector2Array(160, 1248, 136, 1464, 232, 1600, 328, 1544, 304, 1408, 2
 z_index = 1
 position = Vector2(-864, -690)
 offset = Vector2(-920, -704)
-texture = ExtResource("12_5c4x7")
 polygon = PackedVector2Array(455.99988, 1312, 399.99988, 1456, 415.99988, 1584, 576, 1584, 616, 1520, 648, 1352, 528, 1264)
 uv = PackedVector2Array(455.99988, 1312, 399.99988, 1456, 415.99988, 1584, 576, 1584, 616, 1520, 648, 1352, 528, 1264)
 
@@ -2804,19 +2646,16 @@ uv = PackedVector2Array(455.99988, 1312, 399.99988, 1456, 415.99988, 1584, 576, 
 z_index = 1
 position = Vector2(-1408, -658)
 offset = Vector2(-920, -704)
-texture = ExtResource("12_5c4x7")
 polygon = PackedVector2Array(912, 1136, 768, 1216, 768, 1376, 904, 1432, 1112, 1408, 1160, 1288, 1096, 1160)
 uv = PackedVector2Array(912, 1136, 768, 1216, 768, 1376, 904, 1432, 1112, 1408, 1160, 1288, 1096, 1160)
 
 [node name="ear_left" type="Polygon2D" parent="polygons" unique_id=1565800086]
 position = Vector2(-1888, -856)
-texture = ExtResource("12_5c4x7")
 polygon = PackedVector2Array(264, 248, 232, 328, 312, 384, 424, 312, 464, 184, 447.99994, 96, 352, 104)
 uv = PackedVector2Array(264, 248, 232, 328, 312, 384, 424, 312, 464, 184, 447.99994, 96, 352, 104)
 
 [node name="ear_right" type="Polygon2D" parent="polygons" unique_id=866756293]
 position = Vector2(-1840, -888)
-texture = ExtResource("12_5c4x7")
 polygon = PackedVector2Array(568, 160, 480, 280, 632, 400, 784, 344, 800, 232, 808, 72, 688, 120)
 uv = PackedVector2Array(568, 160, 480, 280, 632, 400, 784, 344, 800, 232, 808, 72, 688, 120)
 
@@ -2959,4 +2798,3 @@ shape = SubResource("CapsuleShape2D_5c4x7")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=826700665]
 libraries/ = SubResource("AnimationLibrary_ilgvn")
-
