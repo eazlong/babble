@@ -1,0 +1,42 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" uid="uid://cgmypvx1mcar" path="res://assets/scripts/components/FeifeiShoulder.gd" id="1_feifei_shoulder"]
+[ext_resource type="SpriteFrames" uid="uid://dvi5h3uwc03ih" path="res://assets/sprites/feifei/feifei_frames.tres" id="2_feifei_frames"]
+
+[node name="FeifeiCompanion" type="Node2D"]
+
+[node name="FeifeiShoulder" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = -100.0
+offset_top = 300.0
+offset_right = 100.0
+offset_bottom = 400.0
+script = ExtResource("1_feifei_shoulder")
+metadata/_edit_use_anchors_ = true
+
+[node name="FeifeiSprite" type="AnimatedSprite2D" parent="FeifeiShoulder"]
+position = Vector2(604, 548)
+scale = Vector2(1.2, 1.2)
+sprite_frames = ExtResource("2_feifei_frames")
+animation = &"idle"
+frame_progress = 0.9884671
+
+[node name="BubblePanel" type="Panel" parent="FeifeiShoulder"]
+visible = false
+layout_mode = 0
+offset_left = 1628.0
+offset_top = 710.0
+offset_right = 1828.0
+offset_bottom = 810.0
+
+[node name="BubbleLabel" type="RichTextLabel" parent="FeifeiShoulder/BubblePanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
