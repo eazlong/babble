@@ -47,6 +47,10 @@ var lxp_score: int = 0
 var archive_hall_progress: Dictionary = {}
 var ink_shadow_queue: Array[String] = []
 
+# 掌握度本地缓存（summary-service 权威源的本地快照，供离线展示）。
+# key = knowledge_item_id, value = {score, last_seen, half_life, band}
+var mastery_cache: Dictionary = {}
+
 # 信号
 signal language_changed(lang: String)
 signal player_info_updated(name: String, age: int)
@@ -90,6 +94,9 @@ func _restore_from_save_data(data: Dictionary) -> void:
 		var word_str := str(word)
 		if not ink_shadow_queue.has(word_str):
 			ink_shadow_queue.append(word_str)
+
+	# 掌握度本地缓存恢复
+	mastery_cache = data.get("mastery_cache", {}).duplicate(true) if data.get("mastery_cache", {}) is Dictionary else {}
 
 	var areas_data: Array = data.get("unlocked_areas", data.get("unlocked_scenes", ["BeginningFP"]))
 	unlocked_areas.clear()
@@ -192,6 +199,7 @@ func save_progress() -> void:
 		"vocabulary_learned": vocabulary_learned,
 		"unlocked_spirits": unlocked_spirits,
 		"spirit_usage_counts": spirit_usage_counts,
+		"mastery_cache": mastery_cache,
 		"magic_echo": _magic_echo_save_data()
 	}
 	var save_system = get_node("/root/SaveSystem")

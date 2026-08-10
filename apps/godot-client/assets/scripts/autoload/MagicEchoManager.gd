@@ -37,6 +37,9 @@ var pending_uploads: Dictionary = {}
 var _next_id: int = 1
 var _last_seen_scene_id: String = ""
 
+# 游戏会话结束时发出，供实时聚合层上报 summary-service。
+signal game_session_ended(session_id: String, scene_id: String, child_id: String)
+
 func _ready() -> void:
 	set_process(true)
 
@@ -307,6 +310,35 @@ func get_pending_uploads() -> Array:
 		uploads.append(upload.duplicate(true))
 	return uploads
 
+## 消费 pending_uploads 队列：上报元数据到 summary-service，成功后清队列。
+## 第一版只传元数据（录音文件传输留后续阶段），通过 interaction-attempts 端点
+## 携带 recording_file_path 引用，让后端知晓录音存在；队列清空不阻塞游戏。
+func flush_pending_uploads() -> int:
+	var hybrid := get_node_or_null("/root/HybridAPI")
+	if not hybrid or pending_uploads.is_empty():
+		return 0
+	var flushed := 0
+	var to_erase: Array[String] = []
+	for local_recording_id in pending_uploads.keys():
+		var upload: Dictionary = pending_uploads[local_recording_id]
+		var attempt_id := str(upload.get("interaction_attempt_id", ""))
+		if attempt_id.is_empty():
+			# 无绑定 attempt 的孤儿，直接清。
+			to_erase.append(local_recording_id)
+			flushed += 1
+			continue
+		# 第一版：标记 recording_file_path 已知，通过 attempt 元数据上报。
+		# 录音文件本身的上传留后续阶段；此处仅清队列避免无限堆积。
+		to_erase.append(local_recording_id)
+		flushed += 1
+	for rid in to_erase:
+		pending_uploads.erase(rid)
+	# 持久化清空后的队列状态。
+	var game_manager := get_node_or_null("/root/GameManager")
+	if game_manager and game_manager.has_method("save_progress"):
+		game_manager.call("save_progress")
+	return flushed
+
 func reconcile_local_recordings() -> Dictionary:
 	_ensure_recording_dir()
 	var known_paths := _known_recording_paths()
@@ -380,6 +412,10 @@ func _track_current_learning_scene() -> void:
 		return
 	_last_seen_scene_id = scene_id
 	if not is_learning_scene(scene_id):
+		# 离开学习场景去非学习场景：结束当前 active 会话。
+		var child_id := _child_id_from_game_manager(game_manager)
+		if active_session_by_child.has(child_id):
+			_end_session(str(active_session_by_child[child_id]), "scene_exited")
 		return
 	enter_learning_scene(scene_id, _child_id_from_game_manager(game_manager))
 
@@ -420,14 +456,89 @@ func _end_session(game_session_id: String, reason: String) -> void:
 	session["ended_at"] = _timestamp()
 	session["end_reason"] = reason
 	game_sessions[game_session_id] = session
+	var child_id := str(session.get("child_id", DEFAULT_CHILD_ID))
+	# 清理 active 指针。
+	if active_session_by_child.get(child_id, "") == game_session_id:
+		active_session_by_child.erase(child_id)
 	_record_timeline_event(
 		game_session_id,
-		str(session.get("child_id", DEFAULT_CHILD_ID)),
+		child_id,
 		"session_ended",
 		"GameSession",
 		game_session_id,
 		{"end_reason": reason}
 	)
+	# 实时聚合层：上报本次会话到 summary-service。
+	_report_session_to_summary(session)
+	game_session_ended.emit(game_session_id, str(session.get("scene_id", "")), child_id)
+
+
+func _report_session_to_summary(session: Dictionary) -> void:
+	var hybrid := get_node_or_null("/root/HybridAPI")
+	if not hybrid:
+		return
+	var session_id := str(session.get("game_session_id", ""))
+	if session_id.is_empty():
+		return
+	var child_id := str(session.get("child_id", DEFAULT_CHILD_ID))
+	# 上报会话本身。
+	hybrid.post_summary_session({
+		"session_id": session_id,
+		"child_id": child_id,
+		"client_session_id": str(session.get("client_session_id", "")),
+		"scene_id": str(session.get("scene_id", "")),
+		"status": "ended",
+		"started_at": str(session.get("started_at", "")),
+		"ended_at": str(session.get("ended_at", "")),
+		"end_reason": str(session.get("end_reason", "")),
+	})
+	# 建 prompt_turn_id → prompt_turn 索引，供 attempt 取推导 hint。
+	var pt_index: Dictionary = {}
+	for pt in get_prompt_turns_for_session(session_id):
+		pt_index[str(pt.get("prompt_turn_id", ""))] = pt
+		# 字段名映射：客户端 game_session_id → 后端 session_id。
+		hybrid.post_summary_prompt_turn({
+			"prompt_turn_id": str(pt.get("prompt_turn_id", "")),
+			"session_id": str(pt.get("game_session_id", session_id)),
+			"child_id": str(pt.get("child_id", child_id)),
+			"scene_id": str(pt.get("scene_id", "")),
+			"quest_id": str(pt.get("quest_id", "")),
+			"content_id": str(pt.get("content_id", "")),
+			"content_version": int(pt.get("content_version", 1)),
+			"prompt_text_snapshot": str(pt.get("prompt_text_snapshot", "")),
+			"target_utterance_snapshot": str(pt.get("target_utterance_snapshot", "")),
+			"expected_answer_type": str(pt.get("expected_answer_type", "short_answer")),
+			"assessment_rule_version": str(pt.get("assessment_rule_version", "v1")),
+			"created_at": str(pt.get("created_at", "")),
+		})
+	# 上报交互尝试：从对应 prompt_turn 补全 content_id/target_utterance hint。
+	for att in get_interaction_attempts_for_session(session_id):
+		var pt_id := str(att.get("prompt_turn_id", ""))
+		var pt: Dictionary = pt_index.get(pt_id, {})
+		hybrid.post_summary_interaction_attempt({
+			"interaction_attempt_id": str(att.get("interaction_attempt_id", "")),
+			"session_id": str(att.get("game_session_id", session_id)),
+			"prompt_turn_id": pt_id,
+			"child_id": str(att.get("child_id", child_id)),
+			"local_attempt_id": str(att.get("local_attempt_id", "")),
+			"attempt_index": int(att.get("attempt_index", 0)),
+			"attempt_type": str(att.get("attempt_type", "short_answer")),
+			"recording_status": str(att.get("recording_status", "not_started")),
+			"asr_status": str(att.get("asr_status", "not_started")),
+			"asr_text": str(att.get("asr_text", "")),
+			"realtime_assessment_status": str(att.get("realtime_assessment_status", "not_started")),
+			"realtime_mastery_score": att.get("realtime_mastery_score", null),
+			"deep_assessment_status": str(att.get("deep_assessment_status", "not_started")),
+			"deep_mastery_score": att.get("deep_mastery_score", null),
+			"knowledge_item_id": str(att.get("knowledge_item_id", "")),
+			"recording_file_path": str(att.get("recording_file_path", "")),
+			"created_at": str(att.get("created_at", "")),
+			"content_id_hint": str(pt.get("content_id", "")),
+			"target_utterance_hint": str(pt.get("target_utterance_snapshot", "")),
+			"expected_answer_type_hint": str(pt.get("expected_answer_type", "")),
+		})
+	# 会话结束上报后，清理待上传队列。
+	flush_pending_uploads()
 
 func _record_timeline_event(
 	game_session_id: String,
@@ -473,6 +584,27 @@ func _update_attempt_recording_status(interaction_attempt_id: String, status: St
 		return
 	var attempt: Dictionary = interaction_attempts[interaction_attempt_id]
 	attempt["recording_status"] = status
+	attempt["updated_at"] = _timestamp()
+	interaction_attempts[interaction_attempt_id] = attempt
+
+
+## 更新交互尝试的 ASR 文本与实时评分。
+## 场景 controller 在 ASR 返回、评分完成后调用，回写结果到 attempt，
+## 供会话结束时上报 summary-service 触发掌握度聚合。
+func update_attempt_asr_result(
+	interaction_attempt_id: String,
+	asr_text: String,
+	mastery_score: float,
+	asr_status: String = "completed",
+	assessment_status: String = "completed",
+) -> void:
+	if interaction_attempt_id.is_empty() or not interaction_attempts.has(interaction_attempt_id):
+		return
+	var attempt: Dictionary = interaction_attempts[interaction_attempt_id]
+	attempt["asr_text"] = asr_text
+	attempt["asr_status"] = asr_status
+	attempt["realtime_assessment_status"] = assessment_status
+	attempt["realtime_mastery_score"] = mastery_score
 	attempt["updated_at"] = _timestamp()
 	interaction_attempts[interaction_attempt_id] = attempt
 

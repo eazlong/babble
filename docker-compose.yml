@@ -54,6 +54,20 @@ services:
       REDIS_URL: redis://redis:6379
     depends_on: [redis]
 
+  summary-service:
+    build: ./services/summary-service
+    ports: ["8303:8303"]
+    env_file:
+      - ./services/summary-service/.env
+    environment:
+      SUPABASE_URL: ${SUPABASE_URL:-http://host.docker.internal:5433}
+      SUPABASE_KEY: ${SUPABASE_KEY:-}
+      ASSESSMENT_SERVICE_URL: ${ASSESSMENT_SERVICE_URL:-http://host.docker.internal:8308}
+      VOICE_SERVICE_URL: ${VOICE_SERVICE_URL:-http://voice-service:8301}
+    volumes:
+      - ./services/summary-service/src:/app/src:ro
+    depends_on: [postgres]
+
 volumes:
   pgdata:
   whisper_cache:

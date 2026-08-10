@@ -71,6 +71,8 @@ var ink_shadow_queue: Array[String] = []
 
 var _voice_listening: bool = false
 var _asr_request_active: bool = false
+## 当前录音绑定的交互尝试 ID，ASR 评分后回写 MagicEchoManager 供掌握度聚合。
+var _current_attempt_id: String = ""
 var _silence_timer: float = 0.0
 var _letter_cooldown_timer: float = 0.0
 var _confirm_letter: String = ""  ## 守灵复述确认中的字母
@@ -383,7 +385,8 @@ func _on_reading_voice_ended(result: Dictionary) -> void:
 		return
 	# 判定（设计文档 §6.3）
 	if _normalize_word(corrected) == _normalize_word(target):
-		# 匹配：按共鸣度分层
+		# 匹配：按共鸣度分层。confidence 即掌握度代理（0-1）。
+		_report_attempt_mastery(corrected, confidence)
 		if confidence >= 0.85:
 			_inscribe_word(3)
 		elif confidence >= 0.65:
@@ -395,8 +398,18 @@ func _on_reading_voice_ended(result: Dictionary) -> void:
 			# 需要帮助：Spark 示范模式（不计入连续失败计数，§10.5）
 			_trigger_demo_mode()
 	else:
-		# 识别文本与目标词不匹配 → 消耗一次朗读机会
+		# 识别文本与目标词不匹配 → 低掌握度，消耗一次朗读机会
+		_report_attempt_mastery(corrected, min(confidence, 0.3))
 		_consume_reading_attempt()
+
+## 回写 ASR 文本与实时掌握度到当前交互尝试，供 summary-service 聚合。
+func _report_attempt_mastery(asr_text: String, mastery_score: float) -> void:
+	if _current_attempt_id.is_empty():
+		return
+	var magic_echo: Variant = get_node_or_null("/root/MagicEchoManager")
+	if magic_echo and magic_echo.has_method("update_attempt_asr_result"):
+		magic_echo.call("update_attempt_asr_result", _current_attempt_id, asr_text, mastery_score)
+	_current_attempt_id = ""
 
 func _consume_reading_attempt() -> void:
 	reading_attempts += 1
@@ -602,6 +615,10 @@ func _on_voice_ended(audio_data: PackedByteArray) -> void:
 	if audio_data.is_empty():
 		_handle_no_speech()
 		return
+	# 缓存当前 attempt_id，ASR 返回后回写评分（envelope 在 finalize 后会被清空）。
+	var voice_pipeline: Variant = _voice_pipeline()
+	if voice_pipeline:
+		_current_attempt_id = str(voice_pipeline.get("current_recording_envelope").get("interaction_attempt_id", ""))
 	_asr_request_active = true
 	# 按 phase 分派 ASR 请求
 	var asr_context: Dictionary = _build_asr_request_context()
