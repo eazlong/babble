@@ -4,6 +4,7 @@ const API_BASE_URL = "http://localhost:8301"
 const QUEST_SERVICE_URL = "http://localhost:8306"
 const ASSESSMENT_SERVICE_URL = "http://localhost:8308"
 const REWARD_SERVICE_URL = "http://localhost:8307"
+const SUMMARY_SERVICE_URL = "http://localhost:8303"
 # ASR 测试模式：跳过麦克风，直接用 res://assets/test_audio/ 下的 wav 文件做真实 ASR。
 const DEFAULT_ASR_TEST_AUDIO_DIR: String = "res://assets/test_audio/"
 
@@ -20,10 +21,12 @@ signal quest_status_received(result: Dictionary)
 signal quest_report_received(result: Dictionary)
 signal assessment_score_received(result: Dictionary)
 signal api_error(error: String)
+signal summary_report_received(result: Dictionary)
 
 var coach_http_request: HTTPRequest
 var tts_http_request: HTTPRequest
 var parallel_asr_http_request: HTTPRequest
+var summary_http_request: HTTPRequest
 var _ping_in_progress: bool = false
 var services_ready_done: bool = false
 var asr_default_answer_test_enabled: bool = false
@@ -55,6 +58,11 @@ func _ready() -> void:
 	parallel_asr_http_request = HTTPRequest.new()
 	add_child(parallel_asr_http_request)
 	parallel_asr_http_request.request_completed.connect(_on_parallel_asr_request_completed)
+
+	# summary-service 上报/报告独立请求，避免 ERR_BUSY
+	summary_http_request = HTTPRequest.new()
+	add_child(summary_http_request)
+	summary_http_request.request_completed.connect(_on_summary_request_completed)
 
 	# Create error notification UI
 	_create_error_ui()
@@ -768,3 +776,52 @@ func _on_services_ready() -> void:
 		var user_id = GameManager.player_name if GameManager.player_name != "" else "anonymous"
 		quest_ws.connect_for_user(user_id)
 		print("[HybridAPI] Quest WebSocket connecting for user: ", user_id)
+
+# ── summary-service 上报与报告 ─────────────────────────────────────
+
+func post_summary_session(payload: Dictionary) -> void:
+	var body := JSON.stringify(payload)
+	var headers := ["Content-Type: application/json"]
+	summary_http_request.request(
+		SUMMARY_SERVICE_URL + "/api/v1/summary/sessions",
+		headers, HTTPClient.METHOD_POST, body
+	)
+
+func post_summary_prompt_turn(payload: Dictionary) -> void:
+	var body := JSON.stringify(payload)
+	var headers := ["Content-Type: application/json"]
+	summary_http_request.request(
+		SUMMARY_SERVICE_URL + "/api/v1/summary/prompt-turns",
+		headers, HTTPClient.METHOD_POST, body
+	)
+
+func post_summary_interaction_attempt(payload: Dictionary) -> void:
+	var body := JSON.stringify(payload)
+	var headers := ["Content-Type: application/json"]
+	summary_http_request.request(
+		SUMMARY_SERVICE_URL + "/api/v1/summary/interaction-attempts",
+		headers, HTTPClient.METHOD_POST, body
+	)
+
+func fetch_summary_report(child_id: String, session_id: String = "") -> void:
+	if not services_ready_done:
+		await services_ready
+	var query := "?child_id=%s" % child_id.uri_encode()
+	if not session_id.is_empty():
+		query += "&session_id=%s" % session_id.uri_encode()
+	summary_http_request.request(
+		SUMMARY_SERVICE_URL + "/api/v1/summary/report/player" + query,
+		[], HTTPClient.METHOD_GET
+	)
+
+func _on_summary_request_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	if result != HTTPRequest.RESULT_SUCCESS or response_code < 200 or response_code >= 300:
+		# 上报失败不阻塞游戏流程，仅记录。
+		print("[HybridAPI] summary request failed: result=", result, " code=", response_code)
+		return
+	# GET 报告请求才有意义解析 body；POST 上报的响应忽略。
+	if body.size() == 0:
+		return
+	var parsed = JSON.parse_string(body.get_string_from_utf8())
+	if parsed is Dictionary and parsed.has("child_id"):
+		summary_report_received.emit(parsed)

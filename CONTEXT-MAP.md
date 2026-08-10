@@ -13,6 +13,7 @@ This monorepo uses per-service CONTEXT.md files for domain-specific knowledge.
 | quest-service | [services/quest-service/CONTEXT.md](../services/quest-service/CONTEXT.md) |
 | reward-service | [services/reward-service/CONTEXT.md](../services/reward-service/CONTEXT.md) |
 | assessment-service | [services/assessment-service/CONTEXT.md](../services/assessment-service/CONTEXT.md) |
+| summary-service | [services/summary-service/CONTEXT.md](../services/summary-service/CONTEXT.md) |
 | godot-client | [apps/godot-client/CONTEXT.md](../apps/godot-client/CONTEXT.md) |
 | parent-dashboard | [apps/parent-dashboard/CONTEXT.md](../apps/parent-dashboard/CONTEXT.md) |
 
