@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { getParentDashboard, getChildProgress, updateTimeLimit, deleteChildData } from '../../lib/api'
+import { getParentDashboard, updateTimeLimit, deleteChildData } from '../../lib/api'
 import { getAuthToken, getParentId } from '../../lib/auth'
 import Navbar from '../../components/Navbar'
 
@@ -76,6 +76,7 @@ function ChildCard({ child }: { child: ChildData }) {
         <h2 className="text-xl font-semibold text-gray-800">{child.display_name}</h2>
         <span className="text-sm text-gray-500">
           Time today: {child.total_time_today}/{child.daily_time_limit_minutes} min
+          <span className="block text-xs text-gray-400">（软提醒，暂不强制）</span>
         </span>
       </div>
 
