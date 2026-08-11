@@ -7,13 +7,6 @@ export async function getParentDashboard(token: string, parentId: string) {
   return res.json()
 }
 
-export async function getChildProgress(token: string, childId: string) {
-  const res = await fetch(`${API_BASE}/parent/children/${childId}/progress`, {
-    headers: { Authorization: `Bearer ${token}` }
-  })
-  return res.json()
-}
-
 export async function updateTimeLimit(token: string, childId: string, minutes: number) {
   const res = await fetch(`${API_BASE}/parent/children/${childId}/time-limit`, {
     method: 'PUT',
@@ -59,21 +52,10 @@ export async function getReports(token: string, parentId: string) {
   return res.json()
 }
 
-export async function getContentSettings(token: string, childId: string) {
-  const res = await fetch(`${API_BASE}/parent/children/${childId}/content-settings`, {
+// 诊断层经 auth-service 代理消费（ADR-0008）。与 getReports 同签名（H1 按 parentId）。
+export async function getDiagnosis(token: string, parentId: string) {
+  const res = await fetch(`${API_BASE}/parent/${parentId}/diagnosis`, {
     headers: { Authorization: `Bearer ${token}` }
-  })
-  return res.json()
-}
-
-export async function updateContentSettings(token: string, childId: string, settings: any) {
-  const res = await fetch(`${API_BASE}/parent/children/${childId}/content-settings`, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(settings)
   })
   return res.json()
 }

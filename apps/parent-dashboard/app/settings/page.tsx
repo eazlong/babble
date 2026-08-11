@@ -47,6 +47,7 @@ export default function SettingsPage() {
               onChange={e => setTimeLimit(parseInt(e.target.value, 10))}
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
+            <span className="text-xs text-gray-400">此设置暂不强制执行，仅作记录。</span>
           </label>
 
           <button

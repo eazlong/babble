@@ -2,18 +2,13 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { z } from 'zod'
 import { authenticate, authenticateWithReply } from '../middleware/auth.js'
 
+// summary-service 地址（ADR-0008 诊断代理）。默认与 summary-service docker 端口一致。
+// 已知坑：auth-service 本地也监听 8303，开发时需错开端口或改此 env。
+const SUMMARY_SERVICE_URL = process.env.SUMMARY_SERVICE_URL || 'http://localhost:8303'
+
 // Zod schemas for request validation
 const timeLimitSchema = z.object({
   daily_time_limit_minutes: z.number().int().min(1).max(480)
-})
-
-const contentSettingsSchema = z.object({
-  scenes: z.object({
-    spiritForest: z.boolean().optional(),
-    spellLibrary: z.boolean().optional(),
-    rainbowGarden: z.boolean().optional()
-  }).optional(),
-  filterLevel: z.enum(['strict', 'moderate', 'relaxed']).optional()
 })
 
 export async function registerParentDashboardRoutes(app: FastifyInstance) {
@@ -281,91 +276,62 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
   })
 
   // ============================================================
-  // GET /api/v1/parent/children/:childId/content-settings
-  // Get content settings for a child
+  // GET /api/v1/parent/:parentId/diagnosis
+  // 代理 summary-service 诊断层，裁剪为家长可见诊断（ADR-0008）。
+  // 故障隔离：summary-service 不可用时降级，不 500。
   // ============================================================
-  app.get('/api/v1/parent/children/:childId/content-settings', {
+  app.get('/api/v1/parent/:parentId/diagnosis', {
     preHandler: async (request, reply) => {
-      await authenticate(request, reply, app)
+      const userId = await authenticateWithReply(request, reply, app)
+      if (!userId) return
+      const { parentId } = request.params as { parentId: string }
+      if (userId !== parentId) {
+        reply.status(403).send({ error: { code: 'FORBIDDEN', message: 'Not authorized to access this parent account' } })
+      }
     }
   }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const { childId } = request.params as { childId: string }
+    const { parentId } = request.params as { parentId: string }
 
-    // Verify authorization
-    const userId = (request as any).userId
-    const { data: link, error: linkError } = await app.supabase
+    // 单孩锁定（G1）：从 parent 解出唯一 child
+    const { data: childAccount, error: caError } = await app.supabase
       .from('child_data.child_accounts')
-      .select('parent_id, content_filter_level, scene_access')
-      .eq('child_id', childId)
+      .select('child_id')
+      .eq('parent_id', parentId)
+      .limit(1)
       .single()
 
-    if (linkError || !link) {
-      return reply.status(404).send({ error: { code: 'CHILD_NOT_FOUND', message: 'Child account not found' } })
+    if (caError || !childAccount) {
+      return reply.send({ diagnosis: null, status: 'no_child' })
     }
 
-    if (link.parent_id !== userId) {
-      return reply.status(403).send({ error: { code: 'FORBIDDEN', message: 'Not authorized to view this child\'s settings' } })
+    const childId = childAccount.child_id
+
+    // 调 summary-service 诊断端点（无认证，靠网络边界 + 本代理监护校验保护）
+    let summaryResp: any
+    try {
+      const res = await fetch(
+        `${SUMMARY_SERVICE_URL}/api/v1/summary/report/diagnosis?child_id=${encodeURIComponent(childId)}`,
+        { signal: AbortSignal.timeout(5000) }
+      )
+      if (!res.ok) {
+        return reply.send({ diagnosis: null, status: 'generating' })
+      }
+      summaryResp = await res.json()
+    } catch {
+      // summary-service 不可用：降级，不 500（ADR-0008 故障隔离）
+      return reply.send({ diagnosis: null, status: 'generating' })
     }
 
-    const sceneAccess = link.scene_access as Record<string, boolean> | null
-
+    // D1 裁剪：剥掉内部状态，只留家长可见字段
     return reply.send({
-      scenes: {
-        spiritForest: sceneAccess?.spiritForest ?? true,
-        spellLibrary: sceneAccess?.spellLibrary ?? true,
-        rainbowGarden: sceneAccess?.rainbowGarden ?? true
+      diagnosis: {
+        child_id: childId,
+        summary: summaryResp.diagnosis,
+        mastery_breakdown: trimBreakdown(summaryResp.mastery_breakdown),
+        weak_items_ranked: trimItems(summaryResp.weak_items_ranked)
       },
-      filterLevel: link.content_filter_level || 'moderate'
+      status: 'ok'
     })
-  })
-
-  // ============================================================
-  // PUT /api/v1/parent/children/:childId/content-settings
-  // Update content settings for a child
-  // ============================================================
-  app.put('/api/v1/parent/children/:childId/content-settings', {
-    preHandler: async (request, reply) => {
-      await authenticate(request, reply, app)
-    }
-  }, async (request: FastifyRequest, reply: FastifyReply) => {
-    const { childId } = request.params as { childId: string }
-    const body = contentSettingsSchema.parse(request.body)
-    const { scenes, filterLevel } = body
-
-    // Verify authorization
-    const userId = (request as any).userId
-    const { data: link, error: linkError } = await app.supabase
-      .from('child_data.child_accounts')
-      .select('parent_id')
-      .eq('child_id', childId)
-      .single()
-
-    if (linkError || !link) {
-      return reply.status(404).send({ error: { code: 'CHILD_NOT_FOUND', message: 'Child account not found' } })
-    }
-
-    if (link.parent_id !== userId) {
-      return reply.status(403).send({ error: { code: 'FORBIDDEN', message: 'Not authorized to modify this child\'s settings' } })
-    }
-
-    const updates: Record<string, unknown> = {}
-    if (filterLevel) updates.content_filter_level = filterLevel
-    if (scenes) updates.scene_access = scenes
-
-    if (Object.keys(updates).length === 0) {
-      return reply.status(400).send({ error: { code: 'NO_UPDATES', message: 'No settings provided to update' } })
-    }
-
-    const { error: updateError } = await app.supabase
-      .from('child_data.child_accounts')
-      .update(updates)
-      .eq('child_id', childId)
-
-    if (updateError) {
-      return reply.status(500).send({ error: { code: 'UPDATE_FAILED', message: updateError.message } })
-    }
-
-    return reply.send({ success: true, ...updates })
   })
 
   // ============================================================
@@ -424,6 +390,37 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
 
     return reply.send({ success: true, message: 'All child data deleted and account deactivated' })
   })
+}
+
+/**
+ * D1 裁剪（ADR-0008 / CONTEXT 家长可见诊断）：
+ * 剥掉保留强度数值、半衰期、上次掌握分（半衰期模型内部状态），
+ * 只留知识项 ID / 类型 / 掌握档位 / 考查次数 / 上次考查时间。
+ * weak_items_ranked 的顺序由 summary-service 已按 retention_strength 升序排好，代理只剥数值。
+ */
+function trimItem(state: any) {
+  if (!state) return null
+  return {
+    knowledge_item_id: state.knowledge_item_id ?? '',
+    item_type: state.item_type ?? '',
+    mastery_band: state.mastery_band ?? '',
+    assessment_count: state.assessment_count ?? 0,
+    last_assessed_at: state.last_assessed_at ?? ''
+  }
+}
+
+function trimItems(items: any[] | undefined): any[] {
+  if (!Array.isArray(items)) return []
+  return items.map(trimItem).filter(Boolean)
+}
+
+function trimBreakdown(breakdown: any) {
+  if (!breakdown) return null
+  return {
+    mastered: trimItems(breakdown.mastered),
+    partial: trimItems(breakdown.partial),
+    unmastered: trimItems(breakdown.unmastered)
+  }
 }
 
 /**
