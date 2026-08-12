@@ -4,17 +4,16 @@
 [ext_resource type="Texture2D" uid="uid://0cjv05xtk23v" path="res://assets/textures/backgrounds/fog.png" id="2_1mnpl"]
 [ext_resource type="Script" uid="uid://duxmi4k0ivnmu" path="res://assets/scripts/components/FirstPersonNavigator.gd" id="2_navigator"]
 [ext_resource type="Texture2D" uid="uid://cuc684aiutksr" path="res://assets/textures/backgrounds/fog_mid.png" id="3_5c4x7"]
-[ext_resource type="Script" uid="uid://cgmypvx1mcar" path="res://assets/scripts/components/FeifeiShoulder.gd" id="3_feifei"]
 [ext_resource type="Texture2D" uid="uid://o72pfohmsj4x" path="res://assets/textures/ui/fp/ui_starbar_bg.png" id="6_81tbv"]
 [ext_resource type="Texture2D" uid="uid://gb3mxpl06b2e" path="res://assets/textures/objects/inn/inn_no_title.png" id="6_bal7h"]
 [ext_resource type="Texture2D" uid="uid://cx11cvl7rdcn3" path="res://assets/textures/ui/fp/ui_starbar_fill.png" id="8_star_fill"]
 [ext_resource type="Texture2D" uid="uid://pjkoh3hv2q6l" path="res://assets/textures/ui/fp/ui_quest_tracker_bg.png" id="9_quest_bg"]
-[ext_resource type="SpriteFrames" uid="uid://dvi5h3uwc03ih" path="res://assets/sprites/feifei/feifei_frames.tres" id="10_peub6"]
 [ext_resource type="PackedScene" path="res://assets/scenes/ui/VoiceMicIndicator.tscn" id="11_mic_button"]
 [ext_resource type="Texture2D" uid="uid://b1o63kftolank" path="res://assets/textures/ui/fp/ui_compass_bg.png" id="12_compass_bg"]
 [ext_resource type="Texture2D" uid="uid://cmhb0yd2kjidi" path="res://assets/textures/ui/fp/ui_compass_arrow.png" id="13_compass_arrow"]
 [ext_resource type="Texture2D" uid="uid://b1al4bt4wn5jh" path="res://assets/textures/ui/badge_beginning.png" id="15_badge"]
 [ext_resource type="Texture2D" uid="uid://b1dwmwygplrui" path="res://assets/textures/hotel/grass.png" id="17_bal7h"]
+[ext_resource type="PackedScene" uid="uid://cdbswl26swcee" path="res://assets/scenes/components/FeifeiBody.tscn" id="19_feifei_body"]
 
 [node name="BeginningFP" type="Node2D" unique_id=1070436742]
 script = ExtResource("1_scene_ctrl")
@@ -72,7 +71,7 @@ z_index = 10
 
 [node name="InnLayer" type="Sprite2D" parent="InnLayer" unique_id=655375147]
 z_index = 15
-position = Vector2(1800, 752.00006)
+position = Vector2(1752.0001, 752.00006)
 scale = Vector2(0.42331326, 0.49355265)
 texture = ExtResource("6_bal7h")
 
@@ -100,7 +99,7 @@ position = Vector2(400, 600)
 position = Vector2(960, 540)
 
 [node name="CameraPositions" type="Node2D" parent="CameraSystem" unique_id=803615509]
-position = Vector2(-104, -152)
+position = Vector2(-112, -200)
 
 [node name="WideShot" type="Marker2D" parent="CameraSystem/CameraPositions" unique_id=803615510]
 position = Vector2(960, 540)
@@ -234,43 +233,9 @@ offset_bottom = -50.0
 grow_horizontal = 2
 grow_vertical = 0
 
-[node name="FeifeiLayer" type="CanvasLayer" parent="." unique_id=840794365]
-layer = 20
-
-[node name="FeifeiShoulder" type="Control" parent="FeifeiLayer" unique_id=152531704]
-layout_mode = 3
-anchors_preset = 0
-offset_left = -100.0
-offset_top = 300.0
-offset_right = 100.0
-offset_bottom = 400.0
-script = ExtResource("3_feifei")
-
-[node name="FeifeiSprite" type="AnimatedSprite2D" parent="FeifeiLayer/FeifeiShoulder" unique_id=2024235979]
-position = Vector2(1103, 378)
-scale = Vector2(1.2, 1.2)
-sprite_frames = ExtResource("10_peub6")
-animation = &"fly"
-frame_progress = 0.8496853
-
-[node name="BubblePanel" type="Panel" parent="FeifeiLayer/FeifeiShoulder" unique_id=1903076905]
-visible = false
-layout_mode = 0
-offset_left = 1628.0
-offset_top = 710.0
-offset_right = 1828.0
-offset_bottom = 810.0
-
-[node name="BubbleLabel" type="RichTextLabel" parent="FeifeiLayer/FeifeiShoulder/BubblePanel" unique_id=322898506]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_right = -20.0
-offset_bottom = -20.0
-grow_horizontal = 2
-grow_vertical = 2
-bbcode_enabled = true
+[node name="FeifeiLayer" parent="." unique_id=489726390 instance=ExtResource("19_feifei_body")]
+position = Vector2(770.0001, 704.00006)
+scale = Vector2(0.1, 0.1)
 
 [node name="OverlayLayer" type="CanvasLayer" parent="." unique_id=9216045]
 layer = 30

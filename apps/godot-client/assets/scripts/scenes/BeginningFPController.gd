@@ -51,7 +51,7 @@ const SPECIAL_NAME_POOL: Array[String] = [
 	"Luna",
 ]
 
-@onready var feifei: FeifeiShoulder = $FeifeiLayer/FeifeiShoulder
+@onready var feifei: FeifeiBody = $FeifeiLayer
 @onready var quest_tracker: Control = $HUDLayer/QuestTracker
 @onready var mic_button: Control = $MicLayer/MicButton
 @onready var mic_button_icon: TextureRect = $MicLayer/MicButton/Button

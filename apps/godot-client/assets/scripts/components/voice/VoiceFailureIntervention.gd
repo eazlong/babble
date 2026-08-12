@@ -49,7 +49,7 @@ func configure(config: Dictionary) -> void:
 	response_timeout = float(config.get("response_timeout", response_timeout))
 
 
-func set_feifei(value: FeifeiShoulder) -> void:
+func set_feifei(value: Node) -> void:
 	set_hint_presenter(value)
 
 
@@ -180,7 +180,7 @@ func _show_intervention_text(text: String) -> void:
 func _show_hint(text: String) -> void:
 	if text.is_empty() or not hint_presenter or not hint_presenter.has_method("show_hint"):
 		return
-	if hint_presenter is FeifeiShoulder:
+	if hint_presenter is FeifeiShoulder or hint_presenter is FeifeiBody:
 		hint_presenter.show_hint(text, hint_state, 0.0)
 	else:
 		hint_presenter.show_hint(text, hint_state)
