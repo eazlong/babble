@@ -1,146 +1,146 @@
 [
   {
-    "id": "spirit_sun_001",
-    "name": {"zh_CN": "阳光", "en": "Sunshine"},
-    "category": "自然",
-    "rarity": "common",
-    "vocab_words": ["sun", "sunshine", "sunny"],
-    "description": "温暖的阳光，照亮了每一个角落。它告诉我们，即使在最黑暗的日子里，也总有光明在等待。",
-    "associated_npc_id": "npc_grandma"
+	"id": "spirit_sun_001",
+	"name": {"zh_CN": "阳光", "en": "Sunshine"},
+	"category": "自然",
+	"rarity": "common",
+	"vocab_words": ["sun", "sunshine", "sunny"],
+	"description": "温暖的阳光，照亮了每一个角落。它告诉我们，即使在最黑暗的日子里，也总有光明在等待。",
+	"associated_npc_id": "npc_grandma"
   },
   {
-    "id": "spirit_rain_001",
-    "name": {"zh_CN": "雨水", "en": "Raindrop"},
-    "category": "自然",
-    "rarity": "common",
-    "vocab_words": ["rain", "rainy", "rainbow"],
-    "description": "雨滴从天空落下，滋润着大地。每一次雨后，世界都变得更加清新。",
-    "associated_npc_id": "npc_teacher"
+	"id": "spirit_rain_001",
+	"name": {"zh_CN": "雨水", "en": "Raindrop"},
+	"category": "自然",
+	"rarity": "common",
+	"vocab_words": ["rain", "rainy", "rainbow"],
+	"description": "雨滴从天空落下，滋润着大地。每一次雨后，世界都变得更加清新。",
+	"associated_npc_id": "npc_teacher"
   },
   {
-    "id": "spirit_fire_001",
-    "name": {"zh_CN": "火焰", "en": "Flame"},
-    "category": "自然",
-    "rarity": "rare",
-    "vocab_words": ["fire", "flame", "burn", "hot"],
-    "description": "火焰跳动着，带来温暖也带来危险。学会控制它，就学会了力量。",
-    "associated_npc_id": "npc_guardian"
+	"id": "spirit_fire_001",
+	"name": {"zh_CN": "火焰", "en": "Flame"},
+	"category": "自然",
+	"rarity": "rare",
+	"vocab_words": ["fire", "flame", "burn", "hot"],
+	"description": "火焰跳动着，带来温暖也带来危险。学会控制它，就学会了力量。",
+	"associated_npc_id": "npc_guardian"
   },
   {
-    "id": "spirit_bread_001",
-    "name": {"zh_CN": "面包", "en": "Bread"},
-    "category": "食物",
-    "rarity": "common",
-    "vocab_words": ["bread", "toast", "bake"],
-    "description": "刚出炉的面包散发着香气，是家的味道。简单却充满温暖。",
-    "associated_npc_id": "npc_grandma"
+	"id": "spirit_bread_001",
+	"name": {"zh_CN": "面包", "en": "Bread"},
+	"category": "食物",
+	"rarity": "common",
+	"vocab_words": ["bread", "toast", "bake"],
+	"description": "刚出炉的面包散发着香气，是家的味道。简单却充满温暖。",
+	"associated_npc_id": "npc_grandma"
   },
   {
-    "id": "spirit_rice_001",
-    "name": {"zh_CN": "米饭", "en": "Rice"},
-    "category": "食物",
-    "rarity": "common",
-    "vocab_words": ["rice", "bowl", "grain"],
-    "description": "一碗白米饭，是最朴素的味道，也是最踏实的幸福。",
-    "associated_npc_id": "npc_grandma"
+	"id": "spirit_rice_001",
+	"name": {"zh_CN": "米饭", "en": "Rice"},
+	"category": "食物",
+	"rarity": "common",
+	"vocab_words": ["rice", "bowl", "grain"],
+	"description": "一碗白米饭，是最朴素的味道，也是最踏实的幸福。",
+	"associated_npc_id": "npc_grandma"
   },
   {
-    "id": "spirit_cat_001",
-    "name": {"zh_CN": "小猫", "en": "Kitten"},
-    "category": "动物",
-    "rarity": "common",
-    "vocab_words": ["cat", "kitten", "meow", "purr"],
-    "description": "小猫咪咪叫着蹭你的腿，毛茸茸的身体让人感到温暖。它是最好的伙伴。",
-    "associated_npc_id": "npc_friend"
+	"id": "spirit_cat_001",
+	"name": {"zh_CN": "小猫", "en": "Kitten"},
+	"category": "动物",
+	"rarity": "common",
+	"vocab_words": ["cat", "kitten", "meow", "purr"],
+	"description": "小猫咪咪叫着蹭你的腿，毛茸茸的身体让人感到温暖。它是最好的伙伴。",
+	"associated_npc_id": "npc_friend"
   },
   {
-    "id": "spirit_bird_001",
-    "name": {"zh_CN": "小鸟", "en": "Songbird"},
-    "category": "动物",
-    "rarity": "rare",
-    "vocab_words": ["bird", "sing", "fly", "wing", "feather"],
-    "description": "小鸟在枝头歌唱，自由的歌声传遍整个森林。它象征着无拘无束的梦想。",
-    "associated_npc_id": "npc_friend"
+	"id": "spirit_bird_001",
+	"name": {"zh_CN": "小鸟", "en": "Songbird"},
+	"category": "动物",
+	"rarity": "rare",
+	"vocab_words": ["bird", "sing", "fly", "wing", "feather"],
+	"description": "小鸟在枝头歌唱，自由的歌声传遍整个森林。它象征着无拘无束的梦想。",
+	"associated_npc_id": "npc_friend"
   },
   {
-    "id": "spirit_dragon_001",
-    "name": {"zh_CN": "龙", "en": "Dragon"},
-    "category": "奇幻",
-    "rarity": "legendary",
-    "vocab_words": ["dragon", "mythical", "legend", "magic"],
-    "description": "传说中的巨龙翱翔在云端，鳞片闪烁着古老的光芒。它守护着被遗忘的记忆。",
-    "associated_npc_id": "npc_guardian"
+	"id": "spirit_dragon_001",
+	"name": {"zh_CN": "龙", "en": "Dragon"},
+	"category": "奇幻",
+	"rarity": "legendary",
+	"vocab_words": ["dragon", "mythical", "legend", "magic"],
+	"description": "传说中的巨龙翱翔在云端，鳞片闪烁着古老的光芒。它守护着被遗忘的记忆。",
+	"associated_npc_id": "npc_guardian"
   },
   {
-    "id": "spirit_love_001",
-    "name": {"zh_CN": "爱", "en": "Love"},
-    "category": "情感",
-    "rarity": "legendary",
-    "vocab_words": ["love", "heart", "care", "cherish"],
-    "description": "爱是世界上最强大的力量。它看不见摸不着，却能改变一切。",
-    "associated_npc_id": "npc_grandma"
+	"id": "spirit_love_001",
+	"name": {"zh_CN": "爱", "en": "Love"},
+	"category": "情感",
+	"rarity": "legendary",
+	"vocab_words": ["love", "heart", "care", "cherish"],
+	"description": "爱是世界上最强大的力量。它看不见摸不着，却能改变一切。",
+	"associated_npc_id": "npc_grandma"
   },
   {
-    "id": "spirit_courage_001",
-    "name": {"zh_CN": "勇气", "en": "Courage"},
-    "category": "情感",
-    "rarity": "rare",
-    "vocab_words": ["courage", "brave", "fearless", "bold"],
-    "description": "勇气不是没有恐惧，而是在恐惧面前依然选择前行。每一次勇敢都是一次成长。",
-    "associated_npc_id": "npc_guardian"
+	"id": "spirit_courage_001",
+	"name": {"zh_CN": "勇气", "en": "Courage"},
+	"category": "情感",
+	"rarity": "rare",
+	"vocab_words": ["courage", "brave", "fearless", "bold"],
+	"description": "勇气不是没有恐惧，而是在恐惧面前依然选择前行。每一次勇敢都是一次成长。",
+	"associated_npc_id": "npc_guardian"
   },
   {
-    "id": "spirit_book_001",
-    "name": {"zh_CN": "书本", "en": "Book"},
-    "category": "学校",
-    "rarity": "common",
-    "vocab_words": ["book", "read", "page", "story"],
-    "description": "翻开一本书，就打开了一个新世界。每一页都藏着知识和冒险。",
-    "associated_npc_id": "npc_teacher"
+	"id": "spirit_book_001",
+	"name": {"zh_CN": "书本", "en": "Book"},
+	"category": "学校",
+	"rarity": "common",
+	"vocab_words": ["book", "read", "page", "story"],
+	"description": "翻开一本书，就打开了一个新世界。每一页都藏着知识和冒险。",
+	"associated_npc_id": "npc_teacher"
   },
   {
-    "id": "spirit_star_001",
-    "name": {"zh_CN": "星星", "en": "Star"},
-    "category": "自然",
-    "rarity": "rare",
-    "vocab_words": ["star", "night", "sky", "twinkle"],
-    "description": "夜空中的星星闪烁着，每一颗都是一个遥远的故事。仰望星空，感受宇宙的浩瀚。",
-    "associated_npc_id": "npc_guardian"
+	"id": "spirit_star_001",
+	"name": {"zh_CN": "星星", "en": "Star"},
+	"category": "自然",
+	"rarity": "rare",
+	"vocab_words": ["star", "night", "sky", "twinkle"],
+	"description": "夜空中的星星闪烁着，每一颗都是一个遥远的故事。仰望星空，感受宇宙的浩瀚。",
+	"associated_npc_id": "npc_guardian"
   },
   {
-    "id": "spirit_dream_001",
-    "name": {"zh_CN": "梦想", "en": "Dream"},
-    "category": "情感",
-    "rarity": "legendary",
-    "vocab_words": ["dream", "hope", "wish", "imagine"],
-    "description": "梦想是心中最美好的画面。追逐它，即使路途遥远，终点的光芒也值得一切努力。",
-    "associated_npc_id": "npc_friend"
+	"id": "spirit_dream_001",
+	"name": {"zh_CN": "梦想", "en": "Dream"},
+	"category": "情感",
+	"rarity": "legendary",
+	"vocab_words": ["dream", "hope", "wish", "imagine"],
+	"description": "梦想是心中最美好的画面。追逐它，即使路途遥远，终点的光芒也值得一切努力。",
+	"associated_npc_id": "npc_friend"
   },
   {
-    "id": "spirit_hand_001",
-    "name": {"zh_CN": "双手", "en": "Hands"},
-    "category": "身体",
-    "rarity": "common",
-    "vocab_words": ["hand", "finger", "touch", "hold"],
-    "description": "我们的双手能创造无限可能。写字、画画、拥抱——每一双手都有自己的故事。",
-    "associated_npc_id": "npc_teacher"
+	"id": "spirit_hand_001",
+	"name": {"zh_CN": "双手", "en": "Hands"},
+	"category": "身体",
+	"rarity": "common",
+	"vocab_words": ["hand", "finger", "touch", "hold"],
+	"description": "我们的双手能创造无限可能。写字、画画、拥抱——每一双手都有自己的故事。",
+	"associated_npc_id": "npc_teacher"
   },
   {
-    "id": "spirit_unicorn_001",
-    "name": {"zh_CN": "独角兽", "en": "Unicorn"},
-    "category": "奇幻",
-    "rarity": "legendary",
-    "vocab_words": ["unicorn", "horn", "pure", "magical"],
-    "description": "纯洁的独角兽出没于梦幻森林，只有心地纯净的人才能看到它的身影。",
-    "associated_npc_id": "npc_guardian"
+	"id": "spirit_unicorn_001",
+	"name": {"zh_CN": "独角兽", "en": "Unicorn"},
+	"category": "奇幻",
+	"rarity": "legendary",
+	"vocab_words": ["unicorn", "horn", "pure", "magical"],
+	"description": "纯洁的独角兽出没于梦幻森林，只有心地纯净的人才能看到它的身影。",
+	"associated_npc_id": "npc_guardian"
   },
   {
-    "id": "spirit_light",
-    "name": {"zh_CN": "光芒", "en": "Light"},
-    "category": "自然",
-    "rarity": "common",
-    "vocab_words": ["light", "shine", "glow", "bright"],
-    "description": "温暖的光芒，驱散了黑暗。它是希望与勇气的象征。",
-    "associated_npc_id": "npc_forest_guide"
+	"id": "spirit_light",
+	"name": {"zh_CN": "光芒", "en": "Light"},
+	"category": "自然",
+	"rarity": "common",
+	"vocab_words": ["light", "shine", "glow", "bright"],
+	"description": "温暖的光芒，驱散了黑暗。它是希望与勇气的象征。",
+	"associated_npc_id": "npc_forest_guide"
   }
 ]

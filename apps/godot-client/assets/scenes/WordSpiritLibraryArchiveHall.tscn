@@ -17,6 +17,7 @@ offset_left = 38.0
 offset_top = 46.0
 offset_right = 520.0
 offset_bottom = 138.0
+metadata/_edit_use_anchors_ = true
 
 [node name="Background" type="ColorRect" parent="HUDLayer/QuestTracker" unique_id=1774351208]
 layout_mode = 1
@@ -26,6 +27,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.08, 0.08, 0.1, 0.62)
+metadata/_edit_use_anchors_ = true
 
 [node name="QuestLabel" type="Label" parent="HUDLayer/QuestTracker" unique_id=640320314]
 layout_mode = 1
@@ -41,6 +43,7 @@ grow_vertical = 2
 text = "任务：进入归卷厅"
 vertical_alignment = 1
 autowrap_mode = 3
+metadata/_edit_use_anchors_ = true
 
 [node name="MicLayer" type="CanvasLayer" parent="." unique_id=1805570020]
 layer = 90
@@ -71,6 +74,7 @@ offset_top = 300.0
 offset_right = 100.0
 offset_bottom = 400.0
 script = ExtResource("2_feifei")
+metadata/_edit_use_anchors_ = true
 
 [node name="FeifeiSprite" type="AnimatedSprite2D" parent="FeifeiLayer/FeifeiShoulder" unique_id=688976740]
 position = Vector2(1828, 628)

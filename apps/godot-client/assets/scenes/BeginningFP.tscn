@@ -13,8 +13,7 @@
 [ext_resource type="Texture2D" uid="uid://cmhb0yd2kjidi" path="res://assets/textures/ui/fp/ui_compass_arrow.png" id="13_compass_arrow"]
 [ext_resource type="Texture2D" uid="uid://b1al4bt4wn5jh" path="res://assets/textures/ui/badge_beginning.png" id="15_badge"]
 [ext_resource type="Texture2D" uid="uid://b1dwmwygplrui" path="res://assets/textures/hotel/grass.png" id="17_bal7h"]
-[ext_resource type="PackedScene" path="res://assets/scenes/components/FeifeiCompanion.tscn" id="18_feifei_comp"]
-[ext_resource type="PackedScene" path="res://assets/scenes/components/FeifeiBody.tscn" id="19_feifei_body"]
+[ext_resource type="PackedScene" uid="uid://cdbswl26swcee" path="res://assets/scenes/components/FeifeiBody.tscn" id="19_feifei_body"]
 
 [node name="BeginningFP" type="Node2D" unique_id=1070436742]
 script = ExtResource("1_scene_ctrl")
@@ -234,10 +233,9 @@ offset_bottom = -50.0
 grow_horizontal = 2
 grow_vertical = 0
 
-[node name="FeifeiLayer" parent="." instance=ExtResource("19_feifei_body")]
-
-[node name="FeifeiLayer2" parent="." unique_id=1688262897 instance=ExtResource("18_feifei_comp")]
-position = Vector2(-720, 176)
+[node name="FeifeiLayer" parent="." unique_id=489726390 instance=ExtResource("19_feifei_body")]
+position = Vector2(770.0001, 704.00006)
+scale = Vector2(0.1, 0.1)
 
 [node name="OverlayLayer" type="CanvasLayer" parent="." unique_id=9216045]
 layer = 30
