@@ -4,15 +4,22 @@
 面向儿童的语言学习 RPG 游戏。Godot 4.6 客户端 + Node.js/Fastify 微服务 + Python 语音/AI 服务 + Supabase 数据存储。
 
 ## 当前状态
-已完成的场景与系统：
-- 3 个场景全部完成 ✅ (SpiritForest, SpellLibrary, RainbowGarden)
-- 场景导航系统 ✅ (MainMenu 动态选择 → 3 场景互跳)
-- quest-service 事件驱动同步 ✅
-- assessment-service 真实评估集成 ✅ (规则打分：关键词匹配、文本长度、词汇多样性)
-- reward-service 联动 ✅ (reward-client with fallback)
-- 日常任务完整实现 ✅ (8 个日常任务池、动态生成、每日重置、GET/POST 接口)
+> 注：旧三大场景（SpiritForest / SpellLibrary / RainbowGarden）与 MainMenu 已正式废弃，
+> 主场景迁移为 `WordSpiritLibraryArchiveHall`（归卷厅）。下方以实际代码为准。
 
-下一步：测试覆盖补充、Supabase 迁移执行、端到端联调。
+已完成的场景与系统：
+- 场景已现代化 ✅：`WordSpiritLibraryArchiveHall`（主/归卷厅）+ `BeginningFP` + `ChangAnMarket` + `MirageInnIntroduction`（旧场景已 retire，`apps/godot-client/assets/scenes/` 为准）
+- 场景导航系统 ✅ (主场景动态选择 → 场景互跳)
+- quest-service 事件驱动同步 ✅ (QuestEngine 幂等上报、离线韧性)
+- assessment-service 真实评估集成 ✅ (规则打分：关键词匹配、文本长度、词汇多样性；36 测试通过)
+- reward-service 联动 ✅ (reward-client with fallback)
+- 日常任务完整实现 ✅ (任务池、动态生成、每日重置、GET/POST 接口)
+- spirit-coach-service LLM 教练 ✅ (LLMCoach + PromptBuilder + StreakTracker + CoachQualityJudge + Metrics；160 测试通过，含 10 个集成用例)
+
+下一步：
+- 进行中：`feat/summary-service-mastery`（学习总结与掌握度体系，summary-service 未合并 main）
+- 测试覆盖补充、Supabase 迁移执行（018/019）、端到端联调
+- 待修复：voice-service 测试失败（`src.api.routes.*` 模块路径漂移，10 failed / 84 passed）
 
 家长控制台 MVP 已完成 ✅：
 - 前端：登录/注册、AuthGuard 路由守卫、响应式 Navbar、Dashboard/Reports/Content Control/Settings 页面
