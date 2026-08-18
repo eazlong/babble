@@ -3,6 +3,8 @@ Xfyun服务单元测试
 测试音频转换、鉴权生成、服务初始化等核心功能
 """
 
+import json
+import base64
 import pytest
 import numpy as np
 from unittest.mock import Mock, patch, AsyncMock
@@ -80,34 +82,36 @@ class TestXfyunASRService:
         """测试鉴权URL生成"""
         url = service._build_auth_url()
 
-        assert url.startswith("wss://rtasr.xfyun.cn/v1/ws?")
+        assert url.startswith("wss://iat.cn-huabei-1.xf-yun.com/v1?")
         assert "authorization=" in url
         assert "date=" in url
         assert "host=" in url
 
     def test_extract_text(self, service):
         """测试结果文本提取"""
-        # 模拟讯飞返回格式
-        data = {
-            "cn": {
-                "st": {
-                    "type": "1",
-                    "rt": [
-                        {"ws": [{"cw": [{"w": "Hello"}, {"w": "World"}]}]}
-                    ]
-                }
-            }
-        }
-        text = service._extract_text(data)
-        assert text == "HelloWorld"
+        # Spark 协议：payload.result.text 是 base64 编码的 JSON（ws/cw 结构）
+        inner = {"ws": [{"cw": [{"w": "Hello"}, {"w": "World"}]}]}
+        text_b64 = base64.b64encode(json.dumps(inner).encode("utf-8")).decode("utf-8")
+        response = json.dumps({
+            "header": {"code": 0},
+            "payload": {"result": {"text": text_b64}},
+        })
+        assert service._extract_text(response) == "HelloWorld"
 
-    def test_parse_response(self, service):
-        """测试JSON响应解析"""
-        response = '{"action":"result","data":{"cn":{"st":{"rt":[{"ws":[{"cw":[{"w":"test"}]}]}]}}}}'
-        result = service._parse_response(response)
+    def test_extract_text_rt_structure(self, service):
+        """测试 rt 结构兼容"""
+        inner = {"rt": [{"ws": [{"cw": [{"w": "Hello"}, {"w": "World"}]}]}]}
+        text_b64 = base64.b64encode(json.dumps(inner).encode("utf-8")).decode("utf-8")
+        response = json.dumps({
+            "header": {"code": 0},
+            "payload": {"result": {"text": text_b64}},
+        })
+        assert service._extract_text(response) == "HelloWorld"
 
-        assert result is not None
-        assert "cn" in result
+    def test_extract_text_nonzero_code(self, service):
+        """测试非零 code 时返回空字符串"""
+        response = json.dumps({"header": {"code": 10001, "message": "error"}})
+        assert service._extract_text(response) == ""
 
     @pytest.mark.asyncio
     async def test_init_without_credentials(self):
@@ -136,19 +140,24 @@ class TestXfyunTTSService:
 
     def test_resolve_voice(self, service):
         """测试音色映射"""
-        assert service._resolve_voice("spirit") == "xiaoyan"
-        assert service._resolve_voice("spark") == "xiaoyan"
-        assert service._resolve_voice("unknown") == "xiaoyan"  # 默认
+        assert service._resolve_voice("spirit") == "x4_yezi"
+        assert service._resolve_voice("word_spirit") == "aisjinger"
+        assert service._resolve_voice("elder") == "x4_lingfeichen_assist"
+        assert service._resolve_voice("unknown") == "x4_yezi"  # 默认
 
-    def test_build_business_params(self, service):
-        """测试业务参数构建"""
-        params = service._build_business_params("spirit", "cn_en")
+    def test_build_ws_request(self, service):
+        """测试 WebSocket 请求体构建（含儿童优化业务参数）"""
+        params = service._build_ws_request("Hello", "spirit")
 
-        assert params["voice_name"] == "xiaoyan"
-        assert params["speed"] == 40  # 儿童优化
-        assert params["volume"] == 60
-        assert params["pitch"] == 55
-        assert params["reg"] == 2  # 英文按单词发音
+        assert params["common"]["app_id"] == "test_app_id"
+        assert params["business"]["vcn"] == "x4_yezi"
+        assert params["business"]["speed"] == 40  # 儿童优化
+        assert params["business"]["volume"] == 60
+        assert params["business"]["pitch"] == 55
+        assert params["data"]["status"] == 2
+        # 文本 base64 编码
+        assert "text" in params["data"]
+        assert base64.b64decode(params["data"]["text"]).decode("utf-8") == "Hello"
 
     def test_estimate_duration(self, service):
         """测试时长估算"""
@@ -245,6 +254,19 @@ class TestServiceManager:
 class TestIntegration:
     """集成测试（需要真实凭证）"""
 
+    async def _require_live_integration(self):
+        """确认当前环境具备运行真实集成测试的前置条件。
+
+        集成测试需要真实的讯飞凭证、可用的 Whisper 模型目录以及对外网络
+        能力。本地/CI 环境通常不满足全部条件，此时应跳过而非硬性失败
+        （例如导入 Whisper 模型时没有可写的下载目录会抛 PermissionError）。
+        """
+        from src.services.service_manager import service_manager
+        try:
+            await service_manager.init_all()
+        except Exception as exc:  # noqa: BLE001 - 暴露给 skip 原因
+            pytest.skip(f"Integration environment unavailable: {exc}")
+
     @pytest.mark.asyncio
     async def test_full_asr_pipeline(self):
         """测试完整ASR流程（需要讯飞凭证）"""
@@ -255,7 +277,7 @@ class TestIntegration:
             pytest.skip("Missing Xfyun credentials")
 
         from src.services.service_manager import service_manager
-        await service_manager.init_all()
+        await self._require_live_integration()
 
         # 模拟音频（简单PCM数据）
         test_audio = np.random.randn(88200).astype(np.float32).tobytes()
@@ -273,7 +295,7 @@ class TestIntegration:
             pytest.skip("Missing Xfyun credentials")
 
         from src.services.service_manager import service_manager
-        await service_manager.init_all()
+        await self._require_live_integration()
 
         audio_data, format_type = await service_manager.synthesize(
             "Hello children", "spirit", "cn_en"

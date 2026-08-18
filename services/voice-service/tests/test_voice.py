@@ -7,7 +7,7 @@ from src.services.whisper import ASRResult
 
 @pytest.mark.asyncio
 async def test_asr_endpoint():
-    with patch('src.api.routes.asr.whisper_service.transcribe', new_callable=AsyncMock) as mock_transcribe:
+    with patch('src.api.routes.asr.service_manager.transcribe', new_callable=AsyncMock) as mock_transcribe:
         mock_transcribe.return_value = ASRResult(text="Hello world", confidence=0.95, language="en")
 
         transport = ASGITransport(app=app)
@@ -26,7 +26,7 @@ async def test_asr_endpoint():
 
 @pytest.mark.asyncio
 async def test_tts_endpoint():
-    with patch('src.api.routes.tts.tts_service.synthesize_audio', new_callable=AsyncMock) as mock_synthesize:
+    with patch('src.api.routes.tts.service_manager.synthesize', new_callable=AsyncMock) as mock_synthesize:
         mock_synthesize.return_value = ("base64encodedaudio", "wav")
 
         transport = ASGITransport(app=app)
