@@ -4,11 +4,13 @@
 
 extends GutTest
 
-var dialogue_box: DialogueBox
+const DialogueBoxScript = preload("res://assets/scripts/autoload/DialogueBox.gd")
+
+var dialogue_box
 
 func before_each():
-	# 创建DialogueBox实例（Autoload）
-	dialogue_box = DialogueBox.new()
+	# DialogueBox is an autoload without class_name; instantiate the script directly
+	dialogue_box = DialogueBoxScript.new()
 	add_child(dialogue_box)
 
 func after_each():

@@ -49,7 +49,8 @@ func _ready() -> void:
 
 	# 连接QuestWebSocket信号
 	if _quest_websocket:
-		_quest_websocket.quest_updated.connect(_on_quest_updated)
+		if _quest_websocket.has_signal("quest_updated"):
+			_quest_websocket.quest_updated.connect(_on_quest_updated)
 		_quest_websocket.quest_completed.connect(_on_quest_completed_signal)
 
 	visible = false  # 默认隐藏

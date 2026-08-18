@@ -52,6 +52,9 @@ docker-compose.override.yml
 # ==================== Godot ====================
 # Godot import metadata (regenerated on import)
 .import/
+# Local headless Godot copy + redirected user dirs (sandbox verification loop)
+.dsh-godot/
+.godot-home/
 # Godot exported templates (large binaries)
 *.apk
 *.aab

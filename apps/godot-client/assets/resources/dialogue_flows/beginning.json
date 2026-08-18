@@ -64,6 +64,13 @@
 		  }
 		},
 		{
+		  "key": "feifei_how_are_you",
+		  "text": {
+			"en": "How are you feeling today, my new friend?",
+			"zh": "你今天感觉怎么样，我的新朋友？"
+		  }
+		},
+		{
 		  "key": "feifei_okay_response",
 		  "text": {
 			"en": "Glad to hear that! Let me tell you where we are.",

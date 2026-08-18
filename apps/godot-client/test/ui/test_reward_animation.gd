@@ -4,22 +4,25 @@
 
 extends GutTest
 
+const VFXManagerScript = preload("res://assets/scripts/autoload/VFXManager.gd")
+const AudioManagerScript = preload("res://assets/scripts/autoload/AudioManager.gd")
+
 var reward_anim: RewardAnimation
-var mock_vfx_manager: VFXManager
-var mock_audio_manager: AudioManager
+var mock_vfx_manager
+var mock_audio_manager
 
 func before_each():
 	# 创建RewardAnimation实例
 	reward_anim = RewardAnimation.new()
 	add_child(reward_anim)
 
-	# 创建模拟VFXManager
-	mock_vfx_manager = double(VFXManager).new()
+	# 创建模拟VFXManager（autoload 无 class_name，用 preload 脚本 double）
+	mock_vfx_manager = double(VFXManagerScript).new()
 	mock_vfx_manager.name = "VFXManager"
 	add_child_autofree(mock_vfx_manager)
 
 	# 创建模拟AudioManager
-	mock_audio_manager = double(AudioManager).new()
+	mock_audio_manager = double(AudioManagerScript).new()
 	mock_audio_manager.name = "AudioManager"
 	add_child_autofree(mock_audio_manager)
 

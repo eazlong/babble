@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://80k03tfvg7ci" path="res://assets/scripts/scenes/ChangAnMarketController.gd" id="1_controller"]
 [ext_resource type="Script" uid="uid://cgmypvx1mcar" path="res://assets/scripts/components/FeifeiShoulder.gd" id="2_feifei"]
-[ext_resource type="SpriteFrames" path="res://assets/sprites/feifei/feifei_fly_frames.tres" id="3_frames"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/feifei/feifei_frames.tres" id="3_frames"]
 [ext_resource type="PackedScene" path="res://assets/scenes/ui/VoiceMicIndicator.tscn" id="4_mic_button"]
 
 [node name="ChangAnMarket" type="Node2D" unique_id=1559488916]

@@ -35,6 +35,7 @@ func _ready() -> void:
 
 	silence_timer = Timer.new()
 	silence_timer.one_shot = true
+	silence_timer.wait_time = 15.0
 	silence_timer.timeout.connect(_on_silence_timeout)
 	add_child(silence_timer)
 
