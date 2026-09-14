@@ -375,6 +375,48 @@
 					}
 				}
 			]
+		},
+		{
+			"flow_id": "inn_introduction.hub_depart_prompt",
+			"speaker": "feifei",
+			"voice": "spirit",
+			"lines": [
+				{
+					"key": "inn_intro_hub_depart_prompt",
+					"text": {
+						"en": "Ready to set off? Tell feifei: Let's go!",
+						"zh": "准备好出发了吗？对腓腓说：Let's go！"
+					}
+				}
+			]
+		},
+		{
+			"flow_id": "inn_introduction.hub_depart_ack",
+			"speaker": "feifei",
+			"voice": "spirit",
+			"lines": [
+				{
+					"key": "inn_intro_hub_depart_ack",
+					"text": {
+						"en": "Then let's go. Stay close—the road ahead is waiting.",
+						"zh": "那我们出发吧。跟紧我——前面的路在等着我们。"
+					}
+				}
+			]
+		},
+		{
+			"flow_id": "inn_introduction.hub_stay",
+			"speaker": "feifei",
+			"voice": "spirit",
+			"lines": [
+				{
+					"key": "inn_intro_hub_stay",
+					"text": {
+						"en": "That is all for today. The inn door is always open for you.",
+						"zh": "今天就到这里。客栈的门随时为你开着。"
+					}
+				}
+			]
 		}
 	]
 }

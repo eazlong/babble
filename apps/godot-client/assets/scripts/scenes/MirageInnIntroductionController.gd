@@ -16,6 +16,7 @@ enum InnIntroState {
 	FORMATION_ROOM,
 	GUEST_ROOM_PREVIEW,
 	SUMMARY,
+	HUB_AWAIT_DEPART,
 	COMPLETED
 }
 
@@ -27,6 +28,11 @@ const COACH_SILENCE_MS: int = 15000
 const COACH_RESPONSE_TIMEOUT: float = 8.0
 const TARGET_SCENE_PATH: String = "res://assets/scenes/MirageInnHub.tscn"
 const VIEW_SIZE: Vector2 = Vector2(1920, 1080)
+## hub 语音出发口令。ASR 候选白名单与本地匹配必须共用这一份，避免两处漂移。
+const HUB_DEPART_MARKERS: Array[String] = [
+	"let's go", "lets go", "let us go", "let s go",
+	"出发", "走吧", "启程", "下一课", "next lesson", "set off", "go now",
+]
 
 const HALL_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_hall_bg.png")
 const FORMATION_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_formation_room_bg.png")
@@ -125,7 +131,7 @@ func _start_intro() -> void:
 	await _speak_flow("inn_introduction.bookshelf_voice_prompt", 2.0)
 	_start_voice_listening()
 
-## 客栈 hub（复访）：复盘 + 出发。
+## 客栈 hub（复访）：复盘 + 语音出发。
 func _start_hub() -> void:
 	await _show_view(hall_view)
 	var manager: Variant = _game_manager()
@@ -135,19 +141,16 @@ func _start_hub() -> void:
 	if feifei:
 		feifei.visible = true
 		feifei.show_hint(_hub_words_hint(), FeifeiShoulder.STATE_HINT, 0.0)
-	_build_depart_button()
 
-func _build_depart_button() -> void:
-	var depart := Button.new()
-	depart.name = "DepartButton"
-	depart.position = Vector2(760, 820)
-	depart.size = Vector2(400, 96)
-	depart.add_theme_font_size_override("font_size", 34)
-	var next_path: String = _next_lesson_path()
-	depart.text = "出发 · 下一课" if not next_path.is_empty() else "今日到此"
-	depart.disabled = next_path.is_empty()
-	depart.pressed.connect(_on_depart_pressed)
-	hall_view.add_child(depart)
+	if _next_lesson_path().is_empty():
+		_set_quest_text(_loc("hub_stay"))
+		await _speak_flow("inn_introduction.hub_stay", 2.5)
+		return
+
+	state = InnIntroState.HUB_AWAIT_DEPART
+	_set_quest_text(_loc("quest_depart"))
+	await _speak_flow("inn_introduction.hub_depart_prompt", 2.5)
+	_start_voice_listening()
 
 func _hub_summary_text() -> String:
 	return "蜃影客栈 · %s" % _bell_progress_text()
@@ -178,11 +181,13 @@ func _next_lesson_path() -> String:
 		return ""
 	return GameManager.get_scene_path(str(manager.get_next_lesson()))
 
-func _on_depart_pressed() -> void:
+func _depart_for_next_lesson() -> void:
 	var next_path: String = _next_lesson_path()
 	if next_path.is_empty():
-		_set_quest_text("今日就到这里。客栈的门随时为你开着。")
+		_set_quest_text(_loc("hub_stay"))
+		await _speak_flow("inn_introduction.hub_stay", 2.5)
 		return
+	_stop_voice_listening()
 	await _fade_to_black()
 	var change_result := get_tree().change_scene_to_file(next_path)
 	if change_result != OK:
@@ -448,7 +453,8 @@ func _start_voice_listening() -> void:
 	record_duration = 0.0
 	if mic_button:
 		mic_button.visible = true
-	_set_bookshelf_awake(true)
+	if state == InnIntroState.AWAIT_BOOKSHELF_CALL:
+		_set_bookshelf_awake(true)
 	var voice_pipeline: Variant = _voice_pipeline()
 	if voice_pipeline:
 		voice_pipeline.start_listening()
@@ -476,15 +482,23 @@ func _on_voice_ended(audio_data: PackedByteArray) -> void:
 		feifei.show_hint(_loc("recognizing"), FeifeiShoulder.STATE_HINT, 0.0)
 	var hybrid_api: Variant = _hybrid_api()
 	if hybrid_api:
-		hybrid_api.recognize_speech(audio_data, _source_language_code(), _build_bookshelf_asr_context())
+		var asr_context: Dictionary = (
+			_build_hub_depart_asr_context()
+			if state == InnIntroState.HUB_AWAIT_DEPART
+			else _build_bookshelf_asr_context()
+		)
+		hybrid_api.recognize_speech(audio_data, _source_language_code(), asr_context)
 
 func _on_asr_received(result: Dictionary) -> void:
+	if state == InnIntroState.HUB_AWAIT_DEPART:
+		await _handle_hub_depart_asr(result)
+		return
 	if state != InnIntroState.AWAIT_BOOKSHELF_CALL:
 		return
 	if result.has("error"):
 		await _handle_voice_attempt_failed("asr_error")
 		return
-	var text := _asr_text_for_bookshelf_call(result)
+	var text := _asr_answer_text(result)
 	if _is_bookshelf_call(text):
 		voice_failure_intervention.reset_failures()
 		voice_failure_intervention.add_turn("player", text)
@@ -493,22 +507,47 @@ func _on_asr_received(result: Dictionary) -> void:
 
 	await _handle_voice_attempt_failed("wrong_answer")
 
+func _handle_hub_depart_asr(result: Dictionary) -> void:
+	if result.has("error"):
+		await _handle_voice_attempt_failed("asr_error")
+		return
+	var text := _asr_answer_text(result)
+	if _is_depart_call(text):
+		voice_failure_intervention.reset_failures()
+		voice_failure_intervention.add_turn("player", text)
+		_stop_voice_listening()
+		await _speak_flow("inn_introduction.hub_depart_ack", 2.0)
+		await _depart_for_next_lesson()
+		return
+
+	await _handle_voice_attempt_failed("wrong_answer")
+
 func _handle_voice_attempt_failed(reason: String) -> void:
-	if state != InnIntroState.AWAIT_BOOKSHELF_CALL:
+	if state not in [InnIntroState.AWAIT_BOOKSHELF_CALL, InnIntroState.HUB_AWAIT_DEPART]:
 		return
 	if voice_failure_intervention.register_failure(reason):
 		await get_tree().create_timer(0.45).timeout
 		_start_voice_listening()
 		return
 
+	var retry_text: String = _loc("hub_depart_retry") if state == InnIntroState.HUB_AWAIT_DEPART else _loc("bookshelf_retry")
 	if feifei:
-		feifei.show_hint(_loc("bookshelf_retry"), FeifeiShoulder.STATE_HINT, 0.0)
+		feifei.show_hint(retry_text, FeifeiShoulder.STATE_HINT, 0.0)
 	await get_tree().create_timer(0.35).timeout
 	_start_voice_listening()
 
 func _is_bookshelf_call(text: String) -> bool:
 	var lower := text.to_lower()
 	return lower.contains("书架") or lower.contains("bookshelf") or lower.contains("book shelf")
+
+func _is_depart_call(text: String) -> bool:
+	var normalized := text.strip_edges().to_lower()
+	if normalized.is_empty():
+		return false
+	for marker in HUB_DEPART_MARKERS:
+		if normalized.contains(marker):
+			return true
+	return false
 
 func _set_quest_text(text: String) -> void:
 	if quest_label:
@@ -526,6 +565,9 @@ func _loc(key: String) -> String:
 		"quest_guest_room": {"zh": "任务：查看客房", "en": "Quest: Preview the guest room"},
 		"quest_summary": {"zh": "任务：记住客栈的三个房间", "en": "Quest: Remember the three rooms"},
 		"quest_complete": {"zh": "客栈介绍完成：前往长安西市", "en": "Inn introduction complete: Go to Chang'an Market"},
+		"quest_depart": {"zh": "任务：对腓腓说出发", "en": "Quest: Tell feifei you are ready to go"},
+		"hub_stay": {"zh": "今日已结束", "en": "All done for today"},
+		"hub_depart_retry": {"zh": "准备好出发，就对腓腓说：“Let's go!” 或者“出发”。", "en": "When you are ready, say to feifei: \"Let's go!\" or \"出发\"."},
 		"bookshelf_retry": {"zh": "对着书架说“书架”，它就会听见你。", "en": "Say \"bookshelf\" to the bookshelf, and it will hear you."},
 		"recognizing": {"zh": "正在识别你的声音...", "en": "Listening to your voice..."},
 		"coach_waiting": {"zh": "别着急，腓腓来帮你。", "en": "No rush. Feifei will help."},
@@ -541,7 +583,7 @@ func _source_language_code() -> String:
 		return str(manager.SOURCE_LANGUAGE_CODE)
 	return "zh"
 
-func _asr_text_for_bookshelf_call(result: Dictionary) -> String:
+func _asr_answer_text(result: Dictionary) -> String:
 	var hybrid_api: Variant = _hybrid_api()
 	if hybrid_api:
 		var extracted_answer := str(hybrid_api.get_asr_extracted_value(result, "answer", "")).strip_edges()
@@ -555,7 +597,7 @@ func _setup_voice_failure_intervention() -> void:
 	voice_failure_intervention.name = "VoiceFailureIntervention"
 	add_child(voice_failure_intervention)
 	voice_failure_intervention.set_feifei(feifei)
-	voice_failure_intervention.set_failure_text_resolver(Callable(self, "_bookshelf_failure_turn_text"))
+	voice_failure_intervention.set_failure_text_resolver(Callable(self, "_failure_turn_text"))
 	voice_failure_intervention.set_tts_language_resolver(Callable(self, "_source_language_code"))
 	voice_failure_intervention.configure({
 		"scene_id": "mirage_inn_introduction",
@@ -567,7 +609,18 @@ func _setup_voice_failure_intervention() -> void:
 	})
 	voice_failure_intervention.start_session("mirage-inn-intro")
 
-func _bookshelf_failure_turn_text(reason: String) -> String:
+func _failure_turn_text(reason: String) -> String:
+	if state == InnIntroState.HUB_AWAIT_DEPART:
+		match reason:
+			"silence":
+				return "[no_voice_detected] Player did not respond to feifei's departure prompt."
+			"asr_error":
+				return "[asr_error] Voice service returned an error during the departure prompt."
+			"wrong_answer":
+				return "[wrong_answer] Player should say Let's go/出发 to depart."
+			_:
+				return "[voice_retry] Player needs help with the departure phrase."
+
 	match reason:
 		"silence":
 			return "[no_voice_detected] Player did not speak during the bookshelf voice prompt."
@@ -594,6 +647,27 @@ func _build_bookshelf_asr_context() -> Dictionary:
 		],
 		"expected_answer_type": "keyword",
 		"candidate_answers": ["书架", "bookshelf", "book shelf"],
+		"recent_turns": voice_failure_intervention.get_recent_turns(),
+		"player_level": _player_level(),
+		"language": _source_language_code(),
+	}
+
+func _build_hub_depart_asr_context() -> Dictionary:
+	return {
+		"session_id": voice_failure_intervention.get_session_id(),
+		"user_id": _player_name(),
+		"npc_id": "feifei_mirage_inn",
+		"scene_id": "mirage_inn_hub",
+		"npc_question": _loc("hub_depart_retry"),
+		"expected_slots": [
+			{
+				"key": "answer",
+				"type": "keyword",
+				"description": "玩家对腓腓说出的出发意图：Let's go / 出发 / 下一课",
+			}
+		],
+		"expected_answer_type": "keyword",
+		"candidate_answers": HUB_DEPART_MARKERS.duplicate(),
 		"recent_turns": voice_failure_intervention.get_recent_turns(),
 		"player_level": _player_level(),
 		"language": _source_language_code(),

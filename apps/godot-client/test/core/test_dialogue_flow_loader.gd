@@ -131,6 +131,9 @@ func test_mirage_inn_intro_uses_owner_room_and_hall_flows():
 	var lines: Array[Dictionary] = loader.get_lines("inn_introduction.owner_room", "zh")
 	assert_eq(lines.size(), 3)
 	assert_true(str(lines[0]["text"]).contains("你醒来的地方"), "owner_room 应从醒来地点接续")
+	assert_true(loader.has_flow("inn_introduction.hub_depart_prompt"), "hub 出发提示 flow 应存在")
+	assert_true(loader.has_flow("inn_introduction.hub_depart_ack"), "hub 出发确认 flow 应存在")
+	assert_true(loader.has_flow("inn_introduction.hub_stay"), "hub 无下一课时停留 flow 应存在")
 
 func test_mirage_inn_intro_flow_order_matches_canon():
 	var file := FileAccess.open("res://assets/resources/dialogue_flows/inn_introduction.json", FileAccess.READ)
@@ -150,6 +153,9 @@ func test_mirage_inn_intro_flow_order_matches_canon():
 		"inn_introduction.formation_room",
 		"inn_introduction.guest_room_preview",
 		"inn_introduction.summary",
+		"inn_introduction.hub_depart_prompt",
+		"inn_introduction.hub_depart_ack",
+		"inn_introduction.hub_stay",
 	]
 	assert_eq(ids, expected, "导览 flow 顺序应为主人房→书柜→书阁→衣橱→大厅→阵法→客房→总结")
 
