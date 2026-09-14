@@ -1,54 +1,12 @@
 [gd_scene format=3 uid="uid://m3ovclbgm2ke"]
 
 [ext_resource type="Script" uid="uid://8of2kfy3fits" path="res://assets/scripts/scenes/MirageInnIntroductionController.gd" id="1_controller"]
-[ext_resource type="Texture2D" uid="uid://mgra0fhak8f8" path="res://assets/textures/backgrounds/mirage_inn_hall_bg.png" id="2_6th42"]
 [ext_resource type="Script" uid="uid://cgmypvx1mcar" path="res://assets/scripts/components/FeifeiShoulder.gd" id="2_feifei"]
-[ext_resource type="SpriteFrames" path="res://assets/sprites/feifei/feifei_fly_frames.tres" id="3_frames"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/feifei/feifei_frames.tres" id="3_frames"]
 [ext_resource type="PackedScene" path="res://assets/scenes/ui/VoiceMicIndicator.tscn" id="4_mic_button"]
 
 [node name="MirageInnIntroduction" type="Node2D" unique_id=906173929]
 script = ExtResource("1_controller")
-
-[node name="ParallaxBackground" type="ParallaxBackground" parent="." unique_id=924753990]
-
-[node name="InnHallBackground" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1366166303]
-z_index = -100
-motion_scale = Vector2(0.1, 0.1)
-motion_mirroring = Vector2(1920, 0)
-
-[node name="Hall" type="Sprite2D" parent="ParallaxBackground/InnHallBackground" unique_id=43513119]
-texture = ExtResource("2_6th42")
-centered = false
-
-[node name="FarTreeLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1011304631]
-z_index = -60
-motion_scale = Vector2(0.35, 0.35)
-motion_mirroring = Vector2(1920, 0)
-
-[node name="TreesFar" type="Sprite2D" parent="ParallaxBackground/FarTreeLayer" unique_id=2091856055]
-position = Vector2(0, 744)
-scale = Vector2(0.8629445, 0.38268793)
-centered = false
-
-[node name="MidTreeLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=344716866]
-z_index = -40
-motion_scale = Vector2(0.55, 0.55)
-motion_mirroring = Vector2(1920, 0)
-
-[node name="TreesMid" type="Sprite2D" parent="ParallaxBackground/MidTreeLayer" unique_id=2056027179]
-position = Vector2(680.00006, 240)
-scale = Vector2(0.7401497, 0.81178945)
-centered = false
-
-[node name="GroundLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=2142025001]
-z_index = -20
-motion_scale = Vector2(0.8, 0.8)
-motion_mirroring = Vector2(1920, 0)
-
-[node name="Ground" type="Sprite2D" parent="ParallaxBackground/GroundLayer" unique_id=63355508]
-position = Vector2(-3.410605e-13, 936)
-scale = Vector2(1.13, 0.4)
-centered = false
 
 [node name="HUDLayer" type="CanvasLayer" parent="." unique_id=904199957]
 layer = 10
@@ -81,7 +39,7 @@ offset_right = -14.0
 offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "任务：进入蜃影客栈"
+text = "任务：认识自己的房间"
 vertical_alignment = 1
 autowrap_mode = 3
 

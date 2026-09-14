@@ -1,19 +1,19 @@
-## 蜃影客栈首次介绍场景
+## 蜃影客栈首次导览场景（第三幕：大本营导览）
 ##
-## 语音推进的导览场景：阵法房间建立主线，玩家房间开启词灵书阁，
-## 衣橱和客房只做预告，避免首次进入时信息过载。
+## 语音推进的导览场景：从主人房接续醒来，先认识自己的房间与词灵书阁，
+## 再经过大厅、阵法房间、客房预告，最后总结。不再包含“走进客栈”演出。
 extends Node2D
 
 const DialogueFlowLoaderScript = preload("res://assets/scripts/core/dialogue_flow_loader.gd")
 const VoiceFailureInterventionScript = preload("res://assets/scripts/components/voice/VoiceFailureIntervention.gd")
 
 enum InnIntroState {
-	ENTRY,
-	FORMATION_ROOM,
-	PLAYER_ROOM,
+	OWNER_ROOM,
 	AWAIT_BOOKSHELF_CALL,
 	WORD_SPIRIT_LIBRARY,
 	WARDROBE_PREVIEW,
+	HALL,
+	FORMATION_ROOM,
 	GUEST_ROOM_PREVIEW,
 	SUMMARY,
 	COMPLETED
@@ -25,12 +25,12 @@ const MAX_RECORD_DURATION: float = 8.0
 const SILENCE_HINT_DELAY: float = 5.0
 const COACH_SILENCE_MS: int = 15000
 const COACH_RESPONSE_TIMEOUT: float = 8.0
-const TARGET_SCENE_PATH: String = "res://assets/scenes/ChangAnMarket.tscn"
+const TARGET_SCENE_PATH: String = "res://assets/scenes/MirageInnHub.tscn"
 const VIEW_SIZE: Vector2 = Vector2(1920, 1080)
 
 const HALL_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_hall_bg.png")
 const FORMATION_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_formation_room_bg.png")
-const PLAYER_ROOM_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_player_room_bg.png")
+const OWNER_ROOM_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_owner_room_bg.png")
 const WORD_SPIRIT_LIBRARY_BACKGROUND = preload("res://assets/textures/backgrounds/word_spirit_library_bg.png")
 const GUEST_ROOM_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_guest_room_bg.png")
 const ARTIFACT_SEAT_EMPTY = preload("res://assets/textures/objects/inn/artifact_seat_empty.png")
@@ -41,11 +41,20 @@ const WARDROBE_EMPTY = preload("res://assets/textures/objects/inn/wardrobe_empty
 const WORD_SPIRIT_HELLO = preload("res://assets/textures/objects/inn/word_spirit_hello.png")
 const GUEST_ROOM_DISTANT_LIGHT = preload("res://assets/textures/objects/inn/guest_room_distant_light.png")
 
+## 第 1 学期（东皇钟）八响进度：每完成一课记一响。
+const LESSON_COMPLETION_IDS: Array[String] = [
+	"changan_gate_01_complete",
+	"changan_eaves_02_complete",
+]
+
+## hub 模式：跳过序章剧情，直接进入复盘与出发的客栈大厅。
+@export var hub_mode: bool = false
+
 @onready var feifei: FeifeiShoulder = $FeifeiLayer/FeifeiShoulder
 @onready var mic_button: Control = $MicLayer/MicButton
 @onready var quest_label: Label = $HUDLayer/QuestTracker/QuestLabel
 
-var state: InnIntroState = InnIntroState.ENTRY
+var state: InnIntroState = InnIntroState.OWNER_ROOM
 var dialogue_flow_loader: Variant = DialogueFlowLoaderScript.new()
 var voice_failure_intervention: VoiceFailureIntervention
 var voice_listening: bool = false
@@ -56,7 +65,7 @@ var world_layer: CanvasLayer
 var visual_root: Control
 var hall_view: Control
 var formation_view: Control
-var player_room_view: Control
+var owner_room_view: Control
 var library_view: Control
 var guest_view: Control
 var fade_overlay: ColorRect
@@ -68,14 +77,17 @@ var wardrobe_empty: TextureRect
 func _ready() -> void:
 	var manager: Variant = _game_manager()
 	if manager:
-		manager.set_checkpoint("MirageInnIntroduction")
+		manager.set_checkpoint("MirageInnHub" if hub_mode else "MirageInnIntroduction")
 	_load_dialogue_flows()
 	_build_visuals()
 	_setup_voice_failure_intervention()
 	_connect_runtime_signals()
 	if mic_button:
 		mic_button.visible = false
-	_start_intro()
+	if hub_mode:
+		_start_hub()
+	else:
+		_start_intro()
 
 func _process(delta: float) -> void:
 	_animate_first_light(delta)
@@ -103,25 +115,78 @@ func _start_intro() -> void:
 		await feifei.play_entry_fly_in()
 		await feifei.settle_to_shoulder()
 
-	state = InnIntroState.ENTRY
-	_set_quest_text(_loc("quest_entry"))
-	await _show_view(hall_view)
-	await _speak_flow("inn_introduction.entry", 2.0)
-
-	state = InnIntroState.FORMATION_ROOM
-	_set_quest_text(_loc("quest_formation"))
-	await _show_view(formation_view)
-	await _speak_flow("inn_introduction.formation_room", 2.0)
-
-	state = InnIntroState.PLAYER_ROOM
-	_set_quest_text(_loc("quest_player_room"))
-	await _show_view(player_room_view)
-	await _speak_flow("inn_introduction.player_room", 2.0)
+	state = InnIntroState.OWNER_ROOM
+	_set_quest_text(_loc("quest_owner_room"))
+	await _show_view(owner_room_view)
+	await _speak_flow("inn_introduction.owner_room", 2.0)
 
 	state = InnIntroState.AWAIT_BOOKSHELF_CALL
 	_set_quest_text(_loc("quest_bookshelf"))
 	await _speak_flow("inn_introduction.bookshelf_voice_prompt", 2.0)
 	_start_voice_listening()
+
+## 客栈 hub（复访）：复盘 + 出发。
+func _start_hub() -> void:
+	await _show_view(hall_view)
+	var manager: Variant = _game_manager()
+	if manager:
+		manager.set_checkpoint("MirageInnHub")
+	_set_quest_text(_hub_summary_text())
+	if feifei:
+		feifei.visible = true
+		feifei.show_hint(_hub_words_hint(), FeifeiShoulder.STATE_HINT, 0.0)
+	_build_depart_button()
+
+func _build_depart_button() -> void:
+	var depart := Button.new()
+	depart.name = "DepartButton"
+	depart.position = Vector2(760, 820)
+	depart.size = Vector2(400, 96)
+	depart.add_theme_font_size_override("font_size", 34)
+	var next_path: String = _next_lesson_path()
+	depart.text = "出发 · 下一课" if not next_path.is_empty() else "今日到此"
+	depart.disabled = next_path.is_empty()
+	depart.pressed.connect(_on_depart_pressed)
+	hall_view.add_child(depart)
+
+func _hub_summary_text() -> String:
+	return "蜃影客栈 · %s" % _bell_progress_text()
+
+func _hub_words_hint() -> String:
+	var manager: Variant = _game_manager()
+	var words: Array = manager.vocabulary_learned if manager else []
+	if words.is_empty():
+		return "欢迎回到蜃影客栈。今天还没有学到新词。"
+	var recent: Array = words.slice(maxi(words.size() - 8, 0), words.size())
+	var parts: PackedStringArray = []
+	for word in recent:
+		parts.append(str(word))
+	return "欢迎回到蜃影客栈。今天学过的词：%s" % "  ".join(parts)
+
+func _bell_progress_text() -> String:
+	var manager: Variant = _game_manager()
+	var done: int = 0
+	if manager:
+		for completion_id in LESSON_COMPLETION_IDS:
+			if manager.completed_dialogues.has(completion_id):
+				done += 1
+	return "东皇钟 · 第 %d 响 / 8" % done
+
+func _next_lesson_path() -> String:
+	var manager: Variant = _game_manager()
+	if not manager:
+		return ""
+	return GameManager.get_scene_path(str(manager.get_next_lesson()))
+
+func _on_depart_pressed() -> void:
+	var next_path: String = _next_lesson_path()
+	if next_path.is_empty():
+		_set_quest_text("今日就到这里。客栈的门随时为你开着。")
+		return
+	await _fade_to_black()
+	var change_result := get_tree().change_scene_to_file(next_path)
+	if change_result != OK:
+		push_error("[MirageInnHub] Failed to change scene: %s" % error_string(change_result))
 
 func _continue_after_bookshelf_call() -> void:
 	_stop_voice_listening()
@@ -138,9 +203,19 @@ func _continue_after_bookshelf_call() -> void:
 
 	state = InnIntroState.WARDROBE_PREVIEW
 	_set_quest_text(_loc("quest_wardrobe"))
-	await _show_view(player_room_view)
+	await _show_view(owner_room_view)
 	await _focus_wardrobe()
 	await _speak_flow("inn_introduction.wardrobe_preview", 2.0)
+
+	state = InnIntroState.HALL
+	_set_quest_text(_loc("quest_hall"))
+	await _show_view(hall_view)
+	await _speak_flow("inn_introduction.hall", 2.0)
+
+	state = InnIntroState.FORMATION_ROOM
+	_set_quest_text(_loc("quest_formation"))
+	await _show_view(formation_view)
+	await _speak_flow("inn_introduction.formation_room", 2.0)
 
 	state = InnIntroState.GUEST_ROOM_PREVIEW
 	_set_quest_text(_loc("quest_guest_room"))
@@ -164,12 +239,13 @@ func _complete_intro() -> void:
 			manager.unlocked_areas.append("ChangAnMarket")
 		if not manager.completed_dialogues.has("mirage_inn_introduction_complete"):
 			manager.completed_dialogues.append("mirage_inn_introduction_complete")
-		manager.set_checkpoint("ChangAnMarket")
+		manager.set_next_lesson("ChangAnMarket")
+		manager.set_checkpoint("MirageInnHub")
 
 	await _fade_to_black()
 	var change_result := get_tree().change_scene_to_file(TARGET_SCENE_PATH)
 	if change_result != OK:
-		push_error("[MirageInnIntroduction] Failed to change to ChangAnMarket: %s" % error_string(change_result))
+		push_error("[MirageInnIntroduction] Failed to change to MirageInnHub: %s" % error_string(change_result))
 
 func _build_visuals() -> void:
 	world_layer = CanvasLayer.new()
@@ -185,11 +261,11 @@ func _build_visuals() -> void:
 
 	hall_view = _build_hall_view()
 	formation_view = _build_formation_view()
-	player_room_view = _build_player_room_view()
+	owner_room_view = _build_owner_room_view()
 	library_view = _build_library_view()
 	guest_view = _build_guest_view()
 
-	for view in [hall_view, formation_view, player_room_view, library_view, guest_view]:
+	for view in [hall_view, formation_view, owner_room_view, library_view, guest_view]:
 		view.visible = false
 		view.modulate.a = 0.0
 		visual_root.add_child(view)
@@ -215,8 +291,8 @@ func _build_formation_view() -> Control:
 	first_light = _add_texture(root, "FirstArtifactLight", ARTIFACT_FIRST_LIGHT, center - Vector2(48, 48), Vector2(96, 96))
 	return root
 
-func _build_player_room_view() -> Control:
-	var root := _new_full_view("PlayerRoomView", PLAYER_ROOM_BACKGROUND)
+func _build_owner_room_view() -> Control:
+	var root := _new_full_view("OwnerRoomView", OWNER_ROOM_BACKGROUND)
 	bookshelf_closed = _add_texture(root, "BookshelfClosed", BOOKSHELF_CLOSED, Vector2(318, 315), Vector2(420, 520))
 	bookshelf_awake = _add_texture(root, "BookshelfAwake", BOOKSHELF_AWAKE, Vector2(318, 315), Vector2(420, 520))
 	bookshelf_awake.visible = false
@@ -320,11 +396,16 @@ func _say_text(text: String, fallback_seconds: float = 2.0, voice: String = "spi
 		return
 	if feifei:
 		feifei.show_hint(text, FeifeiShoulder.STATE_HINT, 0.0)
+		# TTS 播报态：飞飞音（spirit）时身体 idle + 嘴部 talk_mouth 循环（其他 voice 不动嘴）
+		if voice == "spirit":
+			feifei.talk_speaking_start()
 	voice_failure_intervention.add_turn("npc", text)
 	var completed := await _synthesize_and_wait_for_tts(text, voice)
 	if not completed and fallback_seconds > 0.0:
 		push_warning("[MirageInnIntroduction] TTS playback wait timed out; using fallback pacing.")
 		await get_tree().create_timer(fallback_seconds).timeout
+	if feifei and voice == "spirit":
+		feifei.talk_speaking_end()
 
 func _synthesize_and_wait_for_tts(text: String, voice: String = "spirit", timeout: float = TTS_PLAYBACK_TIMEOUT) -> bool:
 	var audio_manager: Variant = _audio_manager()
@@ -436,9 +517,9 @@ func _set_quest_text(text: String) -> void:
 func _loc(key: String) -> String:
 	var is_zh := _source_language_code() == "zh"
 	var strings := {
-		"quest_entry": {"zh": "任务：进入蜃影客栈", "en": "Quest: Enter Mirage Inn"},
+		"quest_owner_room": {"zh": "任务：认识自己的房间", "en": "Quest: Learn about your room"},
 		"quest_formation": {"zh": "任务：查看阵法房间", "en": "Quest: Inspect the formation room"},
-		"quest_player_room": {"zh": "任务：认识你的房间", "en": "Quest: Learn about your room"},
+		"quest_hall": {"zh": "任务：认识客栈大厅", "en": "Quest: Learn about the hall"},
 		"quest_bookshelf": {"zh": "任务：说“书架”", "en": "Quest: Say \"bookshelf\""},
 		"quest_library": {"zh": "任务：进入词灵书阁", "en": "Quest: Enter the Word Spirit Library"},
 		"quest_wardrobe": {"zh": "任务：查看衣橱", "en": "Quest: Preview the wardrobe"},

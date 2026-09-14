@@ -1,119 +1,32 @@
 [gd_scene format=3 uid="uid://c5idka2f4x3qy"]
 
 [ext_resource type="Script" uid="uid://bdmcfu3wvt8we" path="res://assets/scripts/scenes/BeginningFPController.gd" id="1_scene_ctrl"]
-[ext_resource type="Texture2D" uid="uid://0cjv05xtk23v" path="res://assets/textures/backgrounds/fog.png" id="2_1mnpl"]
-[ext_resource type="Script" uid="uid://duxmi4k0ivnmu" path="res://assets/scripts/components/FirstPersonNavigator.gd" id="2_navigator"]
-[ext_resource type="Texture2D" uid="uid://cuc684aiutksr" path="res://assets/textures/backgrounds/fog_mid.png" id="3_5c4x7"]
+[ext_resource type="Texture2D" uid="uid://daxfiiqdw513g" path="res://assets/textures/backgrounds/mirage_inn_owner_room_bg.png" id="2_tov5l"]
 [ext_resource type="Texture2D" uid="uid://o72pfohmsj4x" path="res://assets/textures/ui/fp/ui_starbar_bg.png" id="6_81tbv"]
-[ext_resource type="Texture2D" uid="uid://gb3mxpl06b2e" path="res://assets/textures/objects/inn/inn_no_title.png" id="6_bal7h"]
 [ext_resource type="Texture2D" uid="uid://cx11cvl7rdcn3" path="res://assets/textures/ui/fp/ui_starbar_fill.png" id="8_star_fill"]
 [ext_resource type="Texture2D" uid="uid://pjkoh3hv2q6l" path="res://assets/textures/ui/fp/ui_quest_tracker_bg.png" id="9_quest_bg"]
 [ext_resource type="PackedScene" path="res://assets/scenes/ui/VoiceMicIndicator.tscn" id="11_mic_button"]
 [ext_resource type="Texture2D" uid="uid://b1o63kftolank" path="res://assets/textures/ui/fp/ui_compass_bg.png" id="12_compass_bg"]
 [ext_resource type="Texture2D" uid="uid://cmhb0yd2kjidi" path="res://assets/textures/ui/fp/ui_compass_arrow.png" id="13_compass_arrow"]
 [ext_resource type="Texture2D" uid="uid://b1al4bt4wn5jh" path="res://assets/textures/ui/badge_beginning.png" id="15_badge"]
-[ext_resource type="Texture2D" uid="uid://b1dwmwygplrui" path="res://assets/textures/hotel/grass.png" id="17_bal7h"]
 [ext_resource type="PackedScene" uid="uid://cdbswl26swcee" path="res://assets/scenes/components/FeifeiBody.tscn" id="19_feifei_body"]
 
 [node name="BeginningFP" type="Node2D" unique_id=1070436742]
 script = ExtResource("1_scene_ctrl")
 
-[node name="ParallaxBackground" type="ParallaxBackground" parent="." unique_id=257890102]
-
-[node name="SkyLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1336656371]
+[node name="OwnerRoomBackground" type="Sprite2D" parent="." unique_id=257890102]
 z_index = -100
-motion_scale = Vector2(0.1, 0.1)
-motion_mirroring = Vector2(1920, 0)
-
-[node name="Sky" type="Sprite2D" parent="ParallaxBackground/SkyLayer" unique_id=1319279931]
-texture = ExtResource("2_1mnpl")
-centered = false
-
-[node name="FogLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=325140530]
-z_index = -80
-motion_scale = Vector2(0.4, 0.4)
-motion_mirroring = Vector2(1920, 0)
-
-[node name="FogA" type="Sprite2D" parent="ParallaxBackground/FogLayer" unique_id=1433998338]
-scale = Vector2(1.0646068, 0.5725001)
-texture = ExtResource("3_5c4x7")
-centered = false
-
-[node name="FogB" type="Sprite2D" parent="ParallaxBackground/FogLayer" unique_id=1967426306]
-position = Vector2(1928, 5)
-scale = Vector2(1.0646068, 0.5725001)
-texture = ExtResource("3_5c4x7")
-centered = false
-
-[node name="GroundFarLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1059813652]
-z_index = -60
-motion_scale = Vector2(0.35, 0.35)
-motion_mirroring = Vector2(1920, 0)
-
-[node name="GroundFar" type="Sprite2D" parent="ParallaxBackground/GroundFarLayer" unique_id=1247467076]
-position = Vector2(0, 744)
-scale = Vector2(0.8629445, 0.38268793)
-texture = ExtResource("17_bal7h")
-centered = false
-
-[node name="GroundLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=961399393]
-z_index = -20
-motion_scale = Vector2(0.8, 0.8)
-motion_mirroring = Vector2(1920, 0)
-
-[node name="Ground" type="Sprite2D" parent="ParallaxBackground/GroundLayer" unique_id=1140490182]
-position = Vector2(-3.410605e-13, 936)
-scale = Vector2(1.13, 0.4)
+scale = Vector2(0.75, 0.675)
+texture = ExtResource("2_tov5l")
 centered = false
 
 [node name="InnLayer" type="Node2D" parent="." unique_id=766447333]
 z_index = 10
 
-[node name="InnLayer" type="Sprite2D" parent="InnLayer" unique_id=655375147]
-z_index = 15
-position = Vector2(1752.0001, 752.00006)
-scale = Vector2(0.42331326, 0.49355265)
-texture = ExtResource("6_bal7h")
-
-[node name="FeifeiPaths" type="Node2D" parent="." unique_id=803615501]
-visible = false
-
-[node name="EntryPoint" type="Marker2D" parent="FeifeiPaths" unique_id=803615502]
-position = Vector2(-100, 300)
-
-[node name="CenterPoint" type="Marker2D" parent="FeifeiPaths" unique_id=803615503]
-position = Vector2(960, 540)
-
-[node name="ShoulderPoint" type="Marker2D" parent="FeifeiPaths" unique_id=803615504]
-position = Vector2(200, 500)
-
-[node name="TreeFocusPoint" type="Marker2D" parent="FeifeiPaths" unique_id=803615505]
-position = Vector2(960, 400)
-
-[node name="LearningPoint" type="Marker2D" parent="FeifeiPaths" unique_id=803615506]
-position = Vector2(400, 600)
-
 [node name="CameraSystem" type="Node2D" parent="." unique_id=803615507]
 
 [node name="MainCamera" type="Camera2D" parent="CameraSystem" unique_id=803615508]
 position = Vector2(960, 540)
-
-[node name="CameraPositions" type="Node2D" parent="CameraSystem" unique_id=803615509]
-position = Vector2(-112, -200)
-
-[node name="WideShot" type="Marker2D" parent="CameraSystem/CameraPositions" unique_id=803615510]
-position = Vector2(960, 540)
-
-[node name="TreeCloseUp" type="Marker2D" parent="CameraSystem/CameraPositions" unique_id=803615511]
-position = Vector2(960, 648)
-
-[node name="FeifeiCloseUp" type="Marker2D" parent="CameraSystem/CameraPositions" unique_id=803615512]
-position = Vector2(600, 540)
-
-[node name="LearningShot" type="Marker2D" parent="CameraSystem/CameraPositions" unique_id=803615513]
-position = Vector2(400, 600)
-
-[node name="CameraAnimator" type="AnimationPlayer" parent="CameraSystem" unique_id=803615514]
 
 [node name="HUDLayer" type="CanvasLayer" parent="." unique_id=82425486]
 layer = 10
@@ -174,7 +87,7 @@ offset_right = -10.0
 offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "序章：从混沌迷雾中醒来"
+text = "序章：在蜃影客栈醒来"
 
 [node name="MagicCompass" type="Control" parent="HUDLayer" unique_id=702472776]
 layout_mode = 3
@@ -219,7 +132,6 @@ vertical_alignment = 1
 layer = 90
 
 [node name="MicButton" parent="MicLayer" unique_id=608592095 instance=ExtResource("11_mic_button")]
-visible = false
 layout_mode = 3
 anchors_preset = 7
 anchor_left = 0.5
@@ -234,8 +146,8 @@ grow_horizontal = 2
 grow_vertical = 0
 
 [node name="FeifeiLayer" parent="." unique_id=489726390 instance=ExtResource("19_feifei_body")]
-position = Vector2(770.0001, 704.00006)
-scale = Vector2(0.1, 0.1)
+position = Vector2(770, 704)
+scale = Vector2(0.6, 0.6)
 
 [node name="OverlayLayer" type="CanvasLayer" parent="." unique_id=9216045]
 layer = 30
@@ -271,6 +183,3 @@ offset_right = 100.0
 offset_bottom = 70.0
 text = "序章完成"
 horizontal_alignment = 1
-
-[node name="FirstPersonNavigator" type="Node" parent="." unique_id=803615523]
-script = ExtResource("2_navigator")
