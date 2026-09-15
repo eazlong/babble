@@ -309,7 +309,8 @@ def main():
 
     # QA preview: composite on contrasting solid bg for visual inspection
     if args.preview:
-        preview_path = make_qa_preview(out, output_path, bg_color)
+        corner = np.array([img[0, 0], img[0, -1], img[-1, 0], img[-1, -1]])
+        preview_path = make_qa_preview(out, output_path, corner.mean(axis=0))
         print(f"  QA preview: {preview_path}")
 
 
