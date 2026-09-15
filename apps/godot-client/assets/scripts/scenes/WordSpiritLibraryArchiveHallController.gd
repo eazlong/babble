@@ -91,6 +91,8 @@ var clue_label: Label
 var star_label: Label
 var ink_shadow_label: Label
 var phase_label: Label
+var formation_energy_label: Label
+var formation_pips: Array[ColorRect] = []
 
 func _ready() -> void:
 	var manager: Variant = _game_manager()
@@ -116,7 +118,7 @@ func _process(delta: float) -> void:
 		return
 	# 沉默提示（设计文档 §11.2）。沉默不消耗资源，不扣星。
 	_silence_timer += delta
-	var spark_delay: float = float(config.get("silence_to_spark_prompt_s", 10.0))
+	var coach_delay: float = float(config.get("silence_to_coach_prompt_s", 10.0))
 	var feifei_delay: float = float(config.get("silence_to_feifei_prompt_s", 15.0))
 	var exit_delay: float = float(config.get("silence_to_exit_option_s", 30.0))
 	if _silence_timer >= exit_delay:
@@ -124,10 +126,10 @@ func _process(delta: float) -> void:
 		await _speak_flow("archive.guardian_silence_exit_option", "en", 1.5)
 	elif _silence_timer >= feifei_delay and phase in [Phase.SPELLING, Phase.READING]:
 		_silence_timer = 0.0
-		await _speak_flow("archive.spark_spell_hint" if phase == Phase.SPELLING else "archive.spark_reading_hint", "en", 1.2)
-	elif _silence_timer >= spark_delay:
+		await _speak_flow("archive.feifei_spell_hint" if phase == Phase.SPELLING else "archive.feifei_reading_hint", "en", 1.2)
+	elif _silence_timer >= coach_delay:
 		_silence_timer = 0.0
-		await _speak_flow("archive.spark_spell_hint" if phase == Phase.SPELLING else "archive.spark_reading_hint", "en", 1.2)
+		await _speak_flow("archive.feifei_spell_hint" if phase == Phase.SPELLING else "archive.feifei_reading_hint", "en", 1.2)
 	
 # ── 启动 ──────────────────────────────────────────────────────────────
 
@@ -180,16 +182,22 @@ func _build_word_pool() -> void:
 				"clue_text": word_text,
 				"target": word_text.to_upper(),
 			})
-	# 从存档恢复已完成的词牌索引。
+	# 从存档恢复已完成的词牌索引:词牌池切片为剩余牌后,索引必须归零,
+	# 否则 _take_next_word_card 用 word_pool[current_word_index] 取牌会双重跳词,
+	# 且 index >= 切片长度时会误判整个会话已完成。
 	if current_word_index > 0 and current_word_index < word_pool.size():
 		word_pool = word_pool.slice(current_word_index)
+		current_word_index = 0
 
 # ── 取词牌 ────────────────────────────────────────────────────────────
 
 func _take_next_word_card() -> void:
 	if current_word_index >= word_pool.size():
-		_enter_complete()
-		return
+		if _formation_energy() < _formation_energy_max():
+			_refill_word_pool_for_charge()
+		if current_word_index >= word_pool.size():
+			_enter_complete()
+			return
 	current_word = word_pool[current_word_index]
 	spelled_letters.clear()
 	reading_attempts = 0
@@ -209,7 +217,7 @@ func _take_next_word_card() -> void:
 		_first_spelling_prompted = true
 		await _speak_flow("archive.feifei_first_spelling", "zh", 1.2)
 	else:
-		await _speak_flow("archive.spark_spell_hint", "en", 1.0)
+		await _speak_flow("archive.feifei_spell_hint", "en", 1.0)
 	_start_listening(_build_letter_context())
 
 # ── 拼写阶段：字母名识别 ─────────────────────────────────────────────
@@ -238,12 +246,12 @@ func _on_letter_voice_ended(result: Dictionary) -> void:
 	var letter: String = _match_letter(text)
 	if letter.is_empty():
 		# 非字母非指令 → off_topic 软提示
-		await _speak_flow("archive.spark_spell_hint", "en", 1.0)
+		await _speak_flow("archive.feifei_spell_hint", "en", 1.0)
 		_start_listening(_build_letter_context())
 		return
 	# 召唤冷却（设计文档 §5.5），防止连说识别堆积
 	if _letter_cooldown_timer > 0.0:
-		await _speak_flow("archive.spark_one_at_a_time", "en", 1.0)
+		await _speak_flow("archive.feifei_one_at_a_time", "en", 1.0)
 		_start_listening(_build_letter_context())
 		return
 	_handle_letter_identified(letter, confidence)
@@ -267,7 +275,7 @@ func _handle_letter_identified(letter: String, confidence: float) -> void:
 		_start_listening(_build_letter_context())
 		return
 	# 低置信度：不填槽位，提示重说
-	await _speak_flow("archive.spark_letter_unclear", "en", 1.0)
+	await _speak_flow("archive.feifei_letter_unclear", "en", 1.0)
 	_start_listening(_build_letter_context())
 
 func _adopt_letter(letter: String) -> void:
@@ -300,7 +308,7 @@ func _handle_spell_command(command: String, raw_text: String) -> void:
 			# 入口阶段残留问候，忽略
 			_start_listening(_build_letter_context())
 		_:
-			await _speak_flow("archive.spark_spell_hint", "en", 1.0)
+			await _speak_flow("archive.feifei_spell_hint", "en", 1.0)
 			_start_listening(_build_letter_context())
 
 func _undo_last_letter() -> void:
@@ -342,7 +350,7 @@ func _confirm_spell() -> void:
 		# 连续 2 次错误 → Spark 示范模式（§7.4），不扣星
 		_trigger_demo_mode()
 		return
-	await _speak_flow("archive.spark_spell_error", "en", 1.2)
+	await _speak_flow("archive.feifei_spell_error", "en", 1.2)
 	phase = Phase.SPELLING
 	_start_listening(_build_letter_context())
 
@@ -357,7 +365,7 @@ func _enter_reading_phase() -> void:
 		_first_reading_prompted = true
 		await _speak_flow("archive.feifei_first_reading", "zh", 1.2)
 	else:
-		await _speak_flow("archive.spark_reading_hint", "en", 1.0)
+		await _speak_flow("archive.feifei_reading_hint", "en", 1.0)
 	_start_listening(_build_reading_context())
 
 func _build_reading_context() -> Dictionary:
@@ -417,7 +425,7 @@ func _consume_reading_attempt() -> void:
 		# 朗读机会耗尽 → 墨影词牌
 		_to_ink_shadow()
 		return
-	await _speak_flow("archive.spark_reading_retry", "en", 1.2)
+	await _speak_flow("archive.feifei_reading_retry", "en", 1.2)
 	phase = Phase.READING
 	_start_listening(_build_reading_context())
 
@@ -468,8 +476,11 @@ func _inscribe_word(stars: int) -> void:
 	_rest_card_counter += 1
 	_update_stele_visuals()
 	# 刻印成功表现（§7.1）
-	var flow_id: String = "archive.spark_inscribe_clear" if stars >= 3 else "archive.spark_inscribe_close"
+	var flow_id: String = "archive.feifei_inscribe_clear" if stars >= 3 else "archive.feifei_inscribe_close"
 	await _speak_flow(flow_id, "en", 1.2)
+	if _apply_review_unit_energy():
+		await _complete_formation_charge()
+		return
 	await _speak_flow("archive.guardian_next_prompt", "en", 1.2)
 	# 休息提示（§11.4）
 	if _rest_card_counter >= int(config.get("rest_prompt_every_n_cards", 5)):
@@ -495,8 +506,11 @@ func _to_ink_shadow() -> void:
 	elif consecutive_ink_shadow >= 2:
 		await _speak_flow("archive.feifei_consecutive_ink_shadow", "zh", 1.5)
 	else:
-		await _speak_flow("archive.spark_scatter", "en", 1.2)
+		await _speak_flow("archive.feifei_scatter", "en", 1.2)
 	_update_ink_shadow_visuals()
+	if _apply_review_unit_energy():
+		await _complete_formation_charge()
+		return
 	_save_progress()
 	await get_tree().create_timer(0.5).timeout
 	_advance_next_word()
@@ -510,7 +524,7 @@ func _advance_next_word() -> void:
 func _trigger_demo_mode() -> void:
 	demo_mode_active = true
 	_stop_listening()
-	await _speak_flow("archive.spark_demo_intro", "en", 1.2)
+	await _speak_flow("archive.feifei_demo_intro", "en", 1.2)
 	# 逐字母点亮目标单词的字母精灵并播放字母名发音
 	var target: String = str(current_word.get("target", ""))
 	for i in range(target.length()):
@@ -520,7 +534,7 @@ func _trigger_demo_mode() -> void:
 		if _hybrid_api():
 			_hybrid_api().synthesize_tts(letter, "spirit", "en")
 		await get_tree().create_timer(0.5).timeout
-	await _speak_flow("archive.spark_demo_outro", "en", 1.0)
+	await _speak_flow("archive.feifei_demo_outro", "en", 1.0)
 	# 自动填入正确字母
 	spelled_letters.clear()
 	for i in range(target.length()):
@@ -569,7 +583,10 @@ func _exit_scene() -> void:
 	call_deferred("_do_scene_change")
 
 func _do_scene_change() -> void:
-	get_tree().change_scene_to_file("res://assets/scenes/MainMenu.tscn")
+	var hub_path: String = GameManager.get_scene_path("MirageInnHub")
+	if hub_path.is_empty():
+		hub_path = "res://assets/scenes/MainMenu.tscn"
+	get_tree().change_scene_to_file(hub_path)
 
 # ── 语音管线集成 ─────────────────────────────────────────────────────
 
@@ -910,10 +927,12 @@ func _restore_progress() -> void:
 		if manager.has_method("get_ink_shadow_queue"):
 			ink_shadow_queue = manager.get_ink_shadow_queue()
 	_update_ink_shadow_visuals()
+	_update_formation_energy_visuals()
 
 # ── 视觉搭建（程序化 Control，复用 ChangAnMarket 模式）─────────────
 
 func _build_visuals() -> void:
+	formation_pips.clear()
 	world_layer = CanvasLayer.new()
 	world_layer.name = "WorldLayer"
 	world_layer.layer = 0
@@ -986,6 +1005,28 @@ func _build_visuals() -> void:
 	star_label.text = "Stars: 0"
 	star_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visual_root.add_child(star_label)
+	# Formation energy progress (ADR 0003)
+	formation_energy_label = Label.new()
+	formation_energy_label.name = "FormationEnergyLabel"
+	formation_energy_label.position = Vector2(660, 20)
+	formation_energy_label.size = Vector2(600, 50)
+	formation_energy_label.add_theme_font_size_override("font_size", 28)
+	formation_energy_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	formation_energy_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	visual_root.add_child(formation_energy_label)
+	var pip_box := HBoxContainer.new()
+	pip_box.name = "FormationEnergyPips"
+	pip_box.position = Vector2(760, 78)
+	pip_box.size = Vector2(400, 36)
+	pip_box.add_theme_constant_override("separation", 10)
+	pip_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	visual_root.add_child(pip_box)
+	for i in range(8):
+		var pip := ColorRect.new()
+		pip.custom_minimum_size = Vector2(28, 28)
+		pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		pip_box.add_child(pip)
+		formation_pips.append(pip)
 
 	# 墨影词牌区（§7.5）
 	ink_shadow_label = Label.new()
@@ -1099,7 +1140,7 @@ func _speak_flow(flow_id: String, lang: String, fallback_seconds: float = 1.8, p
 		var voice: String = str(line.get("voice", "spirit"))
 		if text.is_empty():
 			continue
-		# NPC 语言约束：feifei 可说中文，守灵/Spark 只说英语（§1）
+		# NPC 语言约束：feifei 可说中文，守灵等 NPC 只说英语（§1）
 		var speaker: String = str(line.get("speaker", ""))
 		var spoken_lang: String = lang
 		if speaker != FEIFEI_SPEAKER and spoken_lang == "zh":
@@ -1108,7 +1149,16 @@ func _speak_flow(flow_id: String, lang: String, fallback_seconds: float = 1.8, p
 			var en_lines: Array[Dictionary] = dialogue_flow_loader.get_lines(flow_id, "en", merged_params)
 			if not en_lines.is_empty():
 				text = str(en_lines[0].get("text", ""))
+		# TTS 播报态：飞飞音（spirit）时口型循环；其他 voice 停口型。气泡在循环前已显示，这里不动。
+		var feifei_speaking: bool = voice == "spirit"
+		if feifei:
+			if feifei_speaking:
+				feifei.talk_speaking_start()
+			else:
+				feifei.talk_speaking_end()
 		await _synthesize_and_wait_for_tts(text, voice, spoken_lang)
+		if feifei and feifei_speaking:
+			feifei.talk_speaking_end()
 
 func _synthesize_and_wait_for_tts(text: String, voice: String = "spirit", lang: String = "", timeout: float = TTS_PLAYBACK_TIMEOUT) -> bool:
 	var audio_manager: Variant = _audio_manager()
@@ -1184,3 +1234,63 @@ func _load_config() -> void:
 	else:
 		push_error("[WordSpiritLibrary] Config root must be a JSON object.")
 		config = {}
+
+
+func _formation_energy() -> int:
+	var manager: Variant = _game_manager()
+	if manager and manager.has_method("get_formation_energy"):
+		return int(manager.get_formation_energy())
+	return 0
+
+func _formation_energy_max() -> int:
+	var manager: Variant = _game_manager()
+	if manager and manager.has_method("get_formation_energy_max"):
+		return int(manager.get_formation_energy_max())
+	return 8
+
+func _apply_review_unit_energy() -> bool:
+	var manager: Variant = _game_manager()
+	if not manager or not manager.has_method("add_formation_energy"):
+		return false
+	if manager.get_formation_energy() >= manager.get_formation_energy_max():
+		return false
+	var completed: bool = manager.add_formation_energy(1)
+	_update_formation_energy_visuals()
+	return completed
+
+func _complete_formation_charge() -> void:
+	phase = Phase.COMPLETE
+	_stop_listening()
+	_set_quest_text(_localized_flow_text("archive.formation_charge_full"))
+	_set_phase_text("Charge complete")
+	await _speak_flow("archive.formation_charge_full", "zh", 1.8)
+	current_word_index = 0
+	_save_progress()
+	_exit_scene()
+
+func _refill_word_pool_for_charge() -> void:
+	current_word_index = 0
+	word_pool.clear()
+	_build_word_pool()
+
+func _localized_flow_text(flow_id: String) -> String:
+	var lang: String = "zh"
+	var manager: Variant = _game_manager()
+	if manager:
+		lang = str(manager.SOURCE_LANGUAGE_CODE)
+	var flow_lines: Array[Dictionary] = dialogue_flow_loader.get_lines(flow_id, lang)
+	if flow_lines.is_empty():
+		return ""
+	return str(flow_lines[0].get("text", ""))
+
+func _update_formation_energy_visuals() -> void:
+	var energy := _formation_energy()
+	var max_energy := _formation_energy_max()
+	if formation_energy_label:
+		formation_energy_label.text = "\u9635\u6cd5\u80fd\u91cf\uff1a%d/%d" % [energy, max_energy]
+	for i in range(formation_pips.size()):
+		var pip := formation_pips[i]
+		if i < energy:
+			pip.color = Color(1.0, 0.86, 0.35, 1.0)
+		else:
+			pip.color = Color(0.25, 0.22, 0.30, 0.50)

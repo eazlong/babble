@@ -417,6 +417,48 @@
 					}
 				}
 			]
+		},
+		{
+			"flow_id": "inn_introduction.hub_charge_prompt",
+			"speaker": "feifei",
+			"voice": "spirit",
+			"lines": [
+				{
+					"key": "inn_introduction.hub_charge_prompt",
+					"text": {
+						"en": "The formation is out of energy. Go review at the Word Spirit Library and bring back the word-spirit echoes.",
+						"zh": "阵法能量耗尽了，去词灵书阁复习吧"
+					}
+				}
+			]
+		},
+		{
+			"flow_id": "inn_introduction.hub_charge_retry",
+			"speaker": "feifei",
+			"voice": "spirit",
+			"lines": [
+				{
+					"key": "inn_introduction.hub_charge_retry",
+					"text": {
+						"en": "Say the library entry phrase to open the word-spirit projection.",
+						"zh": "阵法能量耗尽了，去词灵书阁复习吧"
+					}
+				}
+			]
+		},
+		{
+			"flow_id": "inn_introduction.hub_content_pending",
+			"speaker": "feifei",
+			"voice": "spirit",
+			"lines": [
+				{
+					"key": "inn_introduction.hub_content_pending",
+					"text": {
+						"en": "The next chapter is not available yet. Rest at the inn for now.",
+						"zh": "后续情节尚未开放"
+					}
+				}
+			]
 		}
 	]
 }

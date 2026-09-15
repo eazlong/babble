@@ -8,6 +8,21 @@ const SPECIAL_LANGUAGE_CODE: String = "en"
 const SPECIAL_LANGUAGE_NAME: String = "英语"
 const DEFAULT_SPECIAL_LANGUAGE_PLAYER_NAME: String = "Carl"
 const DEFAULT_SAVE_SLOT: int = 1
+const FORMATION_ENERGY_MAX: int = 8
+const MAINLINE_EPISODE_SCENES: Array[String] = [
+	"ChangAnMarket",
+	"ChangAnMarketLesson02",
+	"ChangAnMarketLesson03",
+	"ChangAnMarketLesson04",
+	"ChangAnMarketLesson05",
+	"ChangAnMarketLesson06",
+	"ChangAnMarketLesson07",
+	"ChangAnMarketLesson08",
+]
+const MAINLINE_EPISODE_COMPLETION_IDS: Array[String] = [
+	"changan_gate_01_complete",
+	"changan_eaves_02_complete",
+]
 const TEST_MODE_SKIP_AUTO_LOAD_SETTING: String = "game/test_mode_skip_auto_load_save"
 const SCENE_PATHS: Dictionary = {
 	"MainMenu": "res://assets/scenes/MainMenu.tscn",
@@ -15,6 +30,8 @@ const SCENE_PATHS: Dictionary = {
 	"beginning": "res://assets/scenes/BeginningFP.tscn",
 	"MirageInnIntroduction": "res://assets/scenes/MirageInnIntroduction.tscn",
 	"ChangAnMarket": "res://assets/scenes/ChangAnMarket.tscn",
+	"ChangAnMarketLesson02": "res://assets/scenes/ChangAnMarketLesson02.tscn",
+	"MirageInnHub": "res://assets/scenes/MirageInnHub.tscn",
 	"SpellLibrary": "res://assets/scenes/SpellLibrary.tscn",
 	"spell_library": "res://assets/scenes/SpellLibrary.tscn",
 	"RainbowGarden": "res://assets/scenes/RainbowGarden.tscn",
@@ -29,6 +46,12 @@ var player_age: int = 0
 var player_cefr_level: String = "A1"  # A1, A2, B1, B2 — used by coach service
 var current_lang: String = SOURCE_LANGUAGE_CODE
 var current_scene: String = "MainMenu"
+## 下一课的场景 id：当前课完成时写入，由蜃影客栈 hub 的「出发」按钮消费。
+var next_lesson_id: String = ""
+
+# Formation energy gate (ADR 0003): one full charge pays for one mainline episode trip.
+var formation_energy: int = FORMATION_ENERGY_MAX
+var formation_active_episode: String = ""
 var save_loaded: bool = false
 
 # 游戏进度
@@ -85,6 +108,8 @@ func _restore_from_save_data(data: Dictionary) -> void:
 	current_lang = str(data.get("current_lang", current_lang))
 	current_scene = str(data.get("current_scene_id", data.get("current_scene", current_scene)))
 	lxp_score = int(data.get("lxp_score", lxp_score))
+	next_lesson_id = str(data.get("next_lesson_id", next_lesson_id))
+
 
 	# 归卷厅进度恢复
 	archive_hall_progress = data.get("archive_hall_progress", {}).duplicate(true) if data.get("archive_hall_progress", {}) is Dictionary else {}
@@ -120,6 +145,13 @@ func _restore_from_save_data(data: Dictionary) -> void:
 		var vocab_id := str(vocab)
 		if not vocabulary_learned.has(vocab_id):
 			vocabulary_learned.append(vocab_id)
+
+
+	if data.has("formation_energy"):
+		formation_energy = clampi(int(data.get("formation_energy", FORMATION_ENERGY_MAX)), 0, FORMATION_ENERGY_MAX)
+		formation_active_episode = str(data.get("formation_active_episode", ""))
+	else:
+		_migrate_formation_state_from_legacy()
 
 	var spirit_data = data.get("unlocked_spirits", [])
 	unlocked_spirits.clear()
@@ -169,6 +201,13 @@ func set_checkpoint(scene_id: String, save_now: bool = true) -> void:
 	if save_now:
 		save_progress()
 
+func set_next_lesson(lesson_id: String) -> void:
+	next_lesson_id = lesson_id
+	save_progress()
+
+func get_next_lesson() -> String:
+	return next_lesson_id
+
 func save_progress() -> void:
 	var save_data = {
 		"version": 1,
@@ -193,6 +232,9 @@ func save_progress() -> void:
 		"current_lang": current_lang,
 		"unlocked_areas": unlocked_areas,
 		"lxp_score": lxp_score,
+		"next_lesson_id": next_lesson_id,
+		"formation_energy": formation_energy,
+		"formation_active_episode": formation_active_episode,
 		"archive_hall_progress": archive_hall_progress,
 		"ink_shadow_queue": ink_shadow_queue,
 		"completed_dialogues": completed_dialogues,
@@ -243,8 +285,14 @@ func get_scene_path(scene_id: String = "") -> String:
 	var resolved_id: String = current_scene if scene_id.is_empty() else scene_id
 	return str(SCENE_PATHS.get(resolved_id, ""))
 
+## 是否存在可以继续的剧情存档点（不含当前启动场景）。
+## 启动时不再直接跳转；主人房与腓腓交互确认后才消费这个存档点。
 func should_resume_to_scene(boot_scene_id: String) -> bool:
-	return save_loaded and current_scene != "" and current_scene != boot_scene_id and get_scene_path(current_scene) != ""
+	if not save_loaded or current_scene == "" or current_scene == boot_scene_id:
+		return false
+	var resume_path: String = get_scene_path(current_scene)
+	var boot_path: String = get_scene_path(boot_scene_id)
+	return not resume_path.is_empty() and resume_path != boot_path and ResourceLoader.exists(resume_path)
 
 ## 归卷厅进度访问器（阻塞 5：场景只读 autoload 状态，不直接改字段）
 func set_archive_hall_progress(progress: Dictionary) -> void:
@@ -270,6 +318,8 @@ func reset() -> void:
 	spirit_usage_counts.clear()
 	archive_hall_progress.clear()
 	ink_shadow_queue.clear()
+	formation_energy = FORMATION_ENERGY_MAX
+	formation_active_episode = ""
 	save_progress()
 
 func show_spirit_unlock(spirit_id: String) -> void:
@@ -288,3 +338,82 @@ func _on_spirit_overlay_dismissed() -> void:
 		var dialogue_mgr = get_node("/root/DialogueManager")
 		if dialogue_mgr.has_method("resume_after_spirit_unlock"):
 			dialogue_mgr.call("resume_after_spirit_unlock")
+
+
+
+func get_formation_energy() -> int:
+	return formation_energy
+
+func get_formation_energy_max() -> int:
+	return FORMATION_ENERGY_MAX
+
+func is_formation_full() -> bool:
+	return formation_energy >= FORMATION_ENERGY_MAX
+
+## True when the given lesson id points to a registered, loadable scene.
+func has_playable_lesson(lesson_id: String) -> bool:
+	var path: String = get_scene_path(lesson_id)
+	if path.is_empty():
+		return false
+	return ResourceLoader.exists(path)
+
+## True when the hub must ask the player to recharge before departing.
+func should_recharge_before_departure() -> bool:
+	return has_playable_lesson(next_lesson_id) and not is_formation_full()
+
+## Spend a full charge and mark the episode trip as paid.
+func start_formation_trip(episode_scene_id: String) -> bool:
+	if not is_formation_full():
+		return false
+	formation_energy = 0
+	formation_active_episode = episode_scene_id
+	save_progress()
+	return true
+
+## Called when a mainline episode finishes; clears the paid trip.
+func complete_mainline_episode(next_lesson_id_value: String) -> void:
+	formation_active_episode = ""
+	if has_playable_lesson(next_lesson_id_value):
+		formation_energy = 0
+	save_progress()
+
+## Add charge from a completed review unit; returns true when it newly fills.
+func add_formation_energy(amount: int = 1) -> bool:
+	if amount <= 0:
+		return false
+	if is_formation_full():
+		return false
+	formation_energy = mini(FORMATION_ENERGY_MAX, formation_energy + amount)
+	save_progress()
+	return is_formation_full()
+
+func clear_formation_active_episode() -> void:
+	if formation_active_episode.is_empty():
+		return
+	formation_active_episode = ""
+	save_progress()
+
+func has_active_formation_trip() -> bool:
+	return not formation_active_episode.is_empty()
+
+func get_formation_active_episode() -> String:
+	return formation_active_episode
+
+func is_mainline_episode_scene(scene_id: String) -> bool:
+	return MAINLINE_EPISODE_SCENES.has(scene_id)
+
+func _migrate_formation_state_from_legacy() -> void:
+	formation_energy = FORMATION_ENERGY_MAX
+	formation_active_episode = ""
+	if is_mainline_episode_scene(current_scene):
+		formation_energy = 0
+		formation_active_episode = current_scene
+		return
+	if _has_completed_mainline_episode() and not next_lesson_id.is_empty() and has_playable_lesson(next_lesson_id):
+		formation_energy = 0
+
+func _has_completed_mainline_episode() -> bool:
+	for completion_id in MAINLINE_EPISODE_COMPLETION_IDS:
+		if completed_dialogues.has(completion_id):
+			return true
+	return false

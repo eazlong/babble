@@ -156,6 +156,9 @@ func test_mirage_inn_intro_flow_order_matches_canon():
 		"inn_introduction.hub_depart_prompt",
 		"inn_introduction.hub_depart_ack",
 		"inn_introduction.hub_stay",
+		"inn_introduction.hub_charge_prompt",
+		"inn_introduction.hub_charge_retry",
+		"inn_introduction.hub_content_pending",
 	]
 	assert_eq(ids, expected, "导览 flow 顺序应为主人房→书柜→书阁→衣橱→大厅→阵法→客房→总结")
 
@@ -262,3 +265,18 @@ func _mixed_valid_and_invalid_json() -> String:
 			}
 		]
 	})
+
+
+func test_beginning_has_resume_room_flows() -> void:
+	var loader: Variant = DialogueFlowLoaderScript.new()
+	loader.load_dialogue_flows()
+	assert_true(loader.has_flow("beginning.resume_prompt"), "resume prompt flow should exist")
+	assert_true(loader.has_flow("beginning.resume_ack"), "resume ack flow should exist")
+	var prompt: Array[Dictionary] = loader.get_lines("beginning.resume_prompt", "zh")
+	assert_eq(prompt.size(), 1, "resume prompt should have one line")
+	assert_true(str(prompt[0]["text"]).contains("欢迎回到蜃影客栈"), "prompt should welcome back to Mirage Inn")
+	assert_true(str(prompt[0]["text"]).contains("出发"), "prompt should teach the depart phrase")
+	assert_false(str(prompt[0]["text"]).contains("点"), "prompt must stay dialogue-driven without tap wording")
+	var ack: Array[Dictionary] = loader.get_lines("beginning.resume_ack", "en")
+	assert_eq(ack.size(), 1, "resume ack should have one line")
+	assert_true(str(ack[0]["text"]).contains("let"), "ack should keep the departing tone")

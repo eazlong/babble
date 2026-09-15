@@ -129,8 +129,8 @@
       ]
     },
     {
-      "flow_id": "archive.spark_spell_hint",
-      "speaker": "spark",
+      "flow_id": "archive.feifei_spell_hint",
+      "speaker": "feifei",
       "voice": "spirit",
       "lines": [
         {
@@ -143,8 +143,8 @@
       ]
     },
     {
-      "flow_id": "archive.spark_reading_hint",
-      "speaker": "spark",
+      "flow_id": "archive.feifei_reading_hint",
+      "speaker": "feifei",
       "voice": "spirit",
       "lines": [
         {
@@ -157,8 +157,8 @@
       ]
     },
     {
-      "flow_id": "archive.spark_letter_unclear",
-      "speaker": "spark",
+      "flow_id": "archive.feifei_letter_unclear",
+      "speaker": "feifei",
       "voice": "spirit",
       "lines": [
         {
@@ -171,8 +171,8 @@
       ]
     },
     {
-      "flow_id": "archive.spark_one_at_a_time",
-      "speaker": "spark",
+      "flow_id": "archive.feifei_one_at_a_time",
+      "speaker": "feifei",
       "voice": "spirit",
       "lines": [
         {
@@ -185,8 +185,8 @@
       ]
     },
     {
-      "flow_id": "archive.spark_spell_error",
-      "speaker": "spark",
+      "flow_id": "archive.feifei_spell_error",
+      "speaker": "feifei",
       "voice": "spirit",
       "lines": [
         {
@@ -199,8 +199,8 @@
       ]
     },
     {
-      "flow_id": "archive.spark_reading_retry",
-      "speaker": "spark",
+      "flow_id": "archive.feifei_reading_retry",
+      "speaker": "feifei",
       "voice": "spirit",
       "lines": [
         {
@@ -213,8 +213,8 @@
       ]
     },
     {
-      "flow_id": "archive.spark_demo_intro",
-      "speaker": "spark",
+      "flow_id": "archive.feifei_demo_intro",
+      "speaker": "feifei",
       "voice": "spirit",
       "lines": [
         {
@@ -227,8 +227,8 @@
       ]
     },
     {
-      "flow_id": "archive.spark_demo_outro",
-      "speaker": "spark",
+      "flow_id": "archive.feifei_demo_outro",
+      "speaker": "feifei",
       "voice": "spirit",
       "lines": [
         {
@@ -241,8 +241,8 @@
       ]
     },
     {
-      "flow_id": "archive.spark_inscribe_clear",
-      "speaker": "spark",
+      "flow_id": "archive.feifei_inscribe_clear",
+      "speaker": "feifei",
       "voice": "spirit",
       "lines": [
         {
@@ -255,8 +255,8 @@
       ]
     },
     {
-      "flow_id": "archive.spark_inscribe_close",
-      "speaker": "spark",
+      "flow_id": "archive.feifei_inscribe_close",
+      "speaker": "feifei",
       "voice": "spirit",
       "lines": [
         {
@@ -269,8 +269,8 @@
       ]
     },
     {
-      "flow_id": "archive.spark_scatter",
-      "speaker": "spark",
+      "flow_id": "archive.feifei_scatter",
+      "speaker": "feifei",
       "voice": "spirit",
       "lines": [
         {
@@ -362,6 +362,20 @@
           "text": {
             "en": "Say 'leave' if you want to stop for today.",
             "zh": "如果想今天先停，说 'leave' 就可以。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "archive.formation_charge_full",
+      "speaker": "guardian",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "formation_charge_full",
+          "text": {
+            "en": "The formation is fully charged. Let us return to the inn.",
+            "zh": "阵法能量已充满。"
           }
         }
       ]

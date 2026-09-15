@@ -9,7 +9,7 @@ const DialogueFlowLoaderScript = preload("res://assets/scripts/core/dialogue_flo
 const LessonResponseMatcherScript = preload("res://assets/scripts/core/lesson_response_matcher.gd")
 const VoiceFailureInterventionScript = preload("res://assets/scripts/components/voice/VoiceFailureIntervention.gd")
 
-const CONFIG_PATH: String = "res://assets/resources/scene_configs/chang_an_market_lesson_01.json"
+const DEFAULT_CONFIG_PATH: String = "res://assets/resources/scene_configs/chang_an_market_lesson_01.json"
 const VIEW_SIZE: Vector2 = Vector2(1920, 1080)
 const TTS_PLAYBACK_TIMEOUT: float = 60.0
 const TTS_MIC_BUFFER_MIN: float = 0.25
@@ -31,6 +31,9 @@ enum LessonState {
 @onready var mic_button: Control = get_node_or_null("MicLayer/MicButton")
 @onready var quest_label: Label = get_node_or_null("HUDLayer/QuestTracker/QuestLabel")
 
+## 每课一份场景配置；复制场景文件时只需改这个路径即可复用本控制器。
+@export var config_path: String = DEFAULT_CONFIG_PATH
+
 var state: LessonState = LessonState.LOADING
 var config: Dictionary = {}
 var steps: Array = []
@@ -44,6 +47,14 @@ var record_duration: float = 0.0
 var asr_request_active: bool = false
 var earned_words: Array[String] = []
 
+## 测试缝：headless 测试没有音频后端，TTS 播放完成信号永远不会到达；
+## 置 true 时跳过 TTS 播放等待，让集成测试能走完整条链路。
+## 仅由测试设置，运行时默认 false。见 test/scenes/test_chang_an_market_lesson_01.gd。
+var test_skip_narration_wait: bool = false
+
+## 测试缝：集成测试直接驱动整课到 COMPLETED，不能让完成时真的切场景；置 true 跳过推进。
+var test_skip_scene_transition: bool = false
+
 var world_layer: CanvasLayer
 var visual_root: Control
 var market_view: Control
@@ -52,18 +63,21 @@ var mist_overlay: ColorRect
 var step_title_label: Label
 var npc_status_label: Label
 var word_spirit_bar: HBoxContainer
+var fade_overlay: ColorRect
 
 func _ready() -> void:
+	_load_config()
 	var manager: Variant = _game_manager()
 	if manager:
-		manager.set_checkpoint("ChangAnMarket", not manager.is_test_mode_skip_auto_load_save())
-	_load_config()
+		manager.set_checkpoint(str(config.get("checkpoint_id", "ChangAnMarket")), not manager.is_test_mode_skip_auto_load_save())
 	_load_dialogue_flows()
 	_build_visuals()
 	_setup_voice_failure_intervention()
 	_connect_runtime_signals()
 	
-	HybridAPI.set_asr_default_answer_test_enabled(true, "res://assets/test_audio/", ["good_morning.wav", "my_name_is_carl.wav", "sit_here.wav"])
+	# TODO(情节1 雾门问居): 还缺 city / street / building / house / i live in / my home is in 的测试音频。
+	# 补齐后按步骤顺序写进下面的列表，即可用 test-audio 模式自动跑完整条链路。
+	HybridAPI.set_asr_default_answer_test_enabled(true, "res://assets/test_audio/", ["my_name_is_carl.wav"])
 	if mic_button:
 		mic_button.visible = false
 	_start_lesson()
@@ -91,9 +105,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			await _accept_current_voice_step("[debug accepted]")
 
 func _load_config() -> void:
-	var file := FileAccess.open(CONFIG_PATH, FileAccess.READ)
+	var file := FileAccess.open(config_path, FileAccess.READ)
 	if file == null:
-		push_error("[ChangAnMarket] Failed to load config: %s" % CONFIG_PATH)
+		push_error("[ChangAnMarket] Failed to load config: %s" % config_path)
 		config = {}
 		steps = []
 		return
@@ -126,7 +140,9 @@ func _go_to_step(index: int) -> void:
 	current_step = steps[index]
 	state = LessonState.PLAYING_FLOW
 	_update_step_visuals()
-	_set_quest_text(_loc(str(current_step.get("quest_key", ""))))
+	var quest_key: String = str(current_step.get("quest_key", ""))
+	var step_text: String = _step_text(str(current_step.get("id", "")), "quest_text")
+	_set_quest_text(step_text if not step_text.is_empty() else _loc(quest_key))
 	await _speak_flow(str(current_step.get("flow_id", "")), 1.8)
 
 	var step_type: String = str(current_step.get("type", "auto"))
@@ -169,7 +185,7 @@ func _unlock_word(word: String) -> void:
 
 func _complete_lesson() -> void:
 	state = LessonState.COMPLETED
-	_set_quest_text(_loc("quest_complete"))
+	_set_quest_text(_completion_text())
 	var manager: Variant = _game_manager()
 	if manager:
 		var completion_id: String = str(config.get("completion_dialogue_id", "chang_an_market_lesson_01_complete"))
@@ -179,9 +195,38 @@ func _complete_lesson() -> void:
 		if not next_unlock.is_empty() and not manager.unlocked_areas.has(next_unlock):
 			manager.unlocked_areas.append(next_unlock)
 		manager.lxp_score += int(config.get("lxp_reward", 0))
+		manager.complete_mainline_episode(next_unlock)
 		manager.save_progress()
 	if feifei:
 		feifei.play_happy()
+	await _advance_to_next_lesson()
+
+func _fade_to_black() -> void:
+	if not fade_overlay:
+		return
+	var tween := create_tween()
+	tween.tween_property(fade_overlay, "color:a", 1.0, 0.65).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+	await tween.finished
+
+## 章节推进：先把下一课记进 GameManager，再回蜃影客栈 hub 复盘与出发。
+## hub 未注册或处于测试缝时只保留记账，停在完成态。
+func _advance_to_next_lesson() -> void:
+	var next_id: String = str(config.get("next_unlock", ""))
+	var manager: Variant = _game_manager()
+	if manager and not next_id.is_empty():
+		manager.set_next_lesson(next_id)
+	if test_skip_scene_transition:
+		return
+	var hub_path: String = GameManager.get_scene_path("MirageInnHub")
+	if hub_path.is_empty():
+		print("[ChangAnMarket] 蜃影客栈 hub 未注册，停在完成状态。")
+		return
+	if manager:
+		manager.set_checkpoint("MirageInnHub")
+	await _fade_to_black()
+	var change_result := get_tree().change_scene_to_file(hub_path)
+	if change_result != OK:
+		push_error("[ChangAnMarket] Failed to change to MirageInnHub: %s" % error_string(change_result))
 
 func _connect_runtime_signals() -> void:
 	var voice_pipeline: Variant = _voice_pipeline()
@@ -324,12 +369,20 @@ func _say_dialogue_line(line: Dictionary, lang: String, fallback_seconds: float 
 		return
 	if feifei:
 		feifei.show_hint(text, FeifeiShoulder.STATE_HINT, 0.0)
+		# TTS 播报态：飞飞音（spirit）时身体 idle + 嘴部 talk_mouth 循环（其他 voice 不动嘴）
+		if voice == "spirit":
+			feifei.talk_speaking_start()
 	voice_failure_intervention.add_turn("npc", text)
 	var completed := await _synthesize_and_wait_for_tts(text, voice, lang)
 	if not completed and fallback_seconds > 0.0:
 		await get_tree().create_timer(fallback_seconds).timeout
+	if feifei and voice == "spirit":
+		feifei.talk_speaking_end()
 
 func _synthesize_and_wait_for_tts(text: String, voice: String = "spirit", lang: String = "", timeout: float = TTS_PLAYBACK_TIMEOUT) -> bool:
+	if test_skip_narration_wait:
+		# 视为"已播完"，调用方因此跳过 fallback 计时，测试得以快速推进。
+		return true
 	var audio_manager: Variant = _audio_manager()
 	var hybrid_api: Variant = _hybrid_api()
 	if not audio_manager or not hybrid_api:
@@ -387,6 +440,15 @@ func _build_visuals() -> void:
 	word_spirit_bar.size = Vector2(1320, 104)
 	word_spirit_bar.add_theme_constant_override("separation", 8)
 	world_layer.add_child(word_spirit_bar)
+
+	fade_overlay = ColorRect.new()
+	fade_overlay.name = "FadeOverlay"
+	fade_overlay.color = Color(0.04, 0.04, 0.05, 0.0)
+	fade_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fade_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	var overlay_layer: CanvasLayer = get_node_or_null("OverlayLayer")
+	if overlay_layer:
+		overlay_layer.add_child(fade_overlay)
 
 func _build_market_view() -> Control:
 	var root := _new_full_view("MarketMorningView", Color(0.50, 0.39, 0.28, 1.0))
@@ -451,9 +513,9 @@ func _add_character_card(parent: Control, display_name: String, position: Vector
 func _update_step_visuals() -> void:
 	var step_id: String = str(current_step.get("id", ""))
 	if market_view and inn_review_view:
-		var is_review := step_id == "afternoon_review"
-		market_view.visible = not is_review
-		inn_review_view.visible = is_review
+		var use_inn_review: bool = str(current_step.get("view", "market")) == "inn_review"
+		market_view.visible = not use_inn_review
+		inn_review_view.visible = use_inn_review
 	if step_title_label:
 		step_title_label.text = _step_title(step_id)
 	if npc_status_label:
@@ -501,7 +563,7 @@ func _setup_voice_failure_intervention() -> void:
 		"silence_ms": COACH_SILENCE_MS,
 		"response_timeout": COACH_RESPONSE_TIMEOUT
 	})
-	voice_failure_intervention.start_session("chang-an-market-lesson-01")
+	voice_failure_intervention.start_session(str(config.get("scene_id", "chang-an-market-lesson-01")))
 
 func _failure_turn_text(reason: String) -> String:
 	return "[%s] Player needs help with step %s." % [reason, str(current_step.get("id", "unknown"))]
@@ -513,17 +575,7 @@ func _set_quest_text(text: String) -> void:
 func _loc(key: String) -> String:
 	var is_zh := _source_language_code() == "zh"
 	var strings := {
-		"quest_good_morning": {"zh": "任务：对晨雾说 Good morning", "en": "Quest: Say Good morning"},
-		"quest_name_register": {"zh": "任务：向天机阁执事登记名字", "en": "Quest: Register your name"},
-		"quest_sit_here": {"zh": "任务：坐到发光石凳上", "en": "Quest: Sit on the bright stone"},
-		"quest_meet_a_ling": {"zh": "任务：介绍阿菱的名字", "en": "Quest: Say A-Ling's name"},
-		"quest_meet_haoran": {"zh": "任务：介绍昊然的名字", "en": "Quest: Say Haoran's name"},
-		"quest_classmate_bond": {"zh": "任务：说出 new classmates", "en": "Quest: Say new classmates"},
-		"quest_baize": {"zh": "任务：聆听白泽的认可", "en": "Quest: Listen to Baize"},
-		"quest_afternoon_review": {"zh": "任务：下午回客栈复盘", "en": "Quest: Afternoon review"},
-		"quest_review_a_ling": {"zh": "任务：向掌柜介绍阿灵", "en": "Quest: Introduce A-Ling to the innkeeper"},
-		"quest_review_haoran": {"zh": "任务：向掌柜介绍浩然", "en": "Quest: Introduce Haoran to the innkeeper"},
-		"quest_complete": {"zh": "完成：西市晨钟", "en": "Complete: West Market Morning Bell"},
+		"quest_complete": {"zh": "完成：雾门问居", "en": "Complete: The Mist Gate"},
 		"recognizing": {"zh": "正在识别你的声音...", "en": "Listening to your voice..."},
 		"coach_waiting": {"zh": "别着急，腓腓来帮你。", "en": "No rush. Feifei will help."},
 		"coach_fallback": {"zh": "先说关键词也可以。跟着提示慢慢来。", "en": "Key words are enough. Follow the hint slowly."}
@@ -532,34 +584,37 @@ func _loc(key: String) -> String:
 		return strings[key].get("zh" if is_zh else "en", "")
 	return ""
 
+func _step_text(step_id: String, field: String) -> String:
+	for step in steps:
+		if str(step.get("id", "")) == step_id:
+			var value: Variant = step.get(field, "")
+			if value is Dictionary:
+				var is_zh: bool = _source_language_code() == "zh"
+				return str(value.get("zh" if is_zh else "en", ""))
+			return str(value)
+	return ""
+
+func _completion_text() -> String:
+	var value: Variant = config.get("completion_text", {})
+	if value is Dictionary:
+		var is_zh: bool = _source_language_code() == "zh"
+		var text: String = str(value.get("zh" if is_zh else "en", ""))
+		if not text.is_empty():
+			return text
+	return _loc("quest_complete")
+
 func _step_title(step_id: String) -> String:
-	var titles := {
-		"good_morning": "晨光开门",
-		"name_register": "雾门登记",
-		"sit_here": "晨课石凳",
-		"meet_a_ling": "认识阿菱",
-		"meet_haoran": "认识昊然",
-		"classmate_bond": "同修结伴",
-		"baize_recognition": "白泽远观",
-		"afternoon_review": "下午复盘",
-		"review_a_ling": "记住阿菱",
-		"review_haoran": "记住昊然"
-	}
+	var from_config: String = _step_text(step_id, "title")
+	if not from_config.is_empty():
+		return from_config
+	var titles := {}
 	return str(titles.get(step_id, "长安西市"))
 
 func _step_status(step_id: String) -> String:
-	var status := {
-		"good_morning": "清晨的雾在西市门前翻动。",
-		"name_register": "天机阁执事正在等待新来的声音。",
-		"sit_here": "发光石凳正在等待你坐下。",
-		"meet_a_ling": "阿菱的名字被雾扰乱了。",
-		"meet_haoran": "昊然从香料摊旁冲出了迷雾。",
-		"classmate_bond": "三位新同修站在晨课石凳前。",
-		"baize_recognition": "远处的晨钟影子亮了一下。",
-		"afternoon_review": "词灵书阁正在收拢今天的声音。",
-		"review_a_ling": "阿菱的词灵头像亮了起来。",
-		"review_haoran": "昊然的词灵头像亮了起来。"
-	}
+	var from_config: String = _step_text(step_id, "status")
+	if not from_config.is_empty():
+		return from_config
+	var status := {}
 	return str(status.get(step_id, ""))
 
 func _speaker_label(speaker: String) -> String:
@@ -568,7 +623,8 @@ func _speaker_label(speaker: String) -> String:
 		"tianji_steward": "天机阁执事正在确认规则。",
 		"a_ling": "阿菱正在努力让名字稳定。",
 		"haoran": "昊然正在辨认西市道路。",
-		"baize_shadow": "白泽的影子在雾中回响。"
+		"baize_shadow": "白泽的影子在雾中回响。",
+		"nest_keeper": "守巢人正在照看坊墙上的灵兽。"
 	}
 	return str(labels.get(speaker, _step_status(str(current_step.get("id", "")))))
 

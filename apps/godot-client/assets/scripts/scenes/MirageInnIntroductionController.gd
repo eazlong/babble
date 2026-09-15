@@ -17,6 +17,7 @@ enum InnIntroState {
 	GUEST_ROOM_PREVIEW,
 	SUMMARY,
 	HUB_AWAIT_DEPART,
+	HUB_AWAIT_CHARGE,
 	COMPLETED
 }
 
@@ -28,11 +29,8 @@ const COACH_SILENCE_MS: int = 15000
 const COACH_RESPONSE_TIMEOUT: float = 8.0
 const TARGET_SCENE_PATH: String = "res://assets/scenes/MirageInnHub.tscn"
 const VIEW_SIZE: Vector2 = Vector2(1920, 1080)
-## hub 语音出发口令。ASR 候选白名单与本地匹配必须共用这一份，避免两处漂移。
-const HUB_DEPART_MARKERS: Array[String] = [
-	"let's go", "lets go", "let us go", "let s go",
-	"出发", "走吧", "启程", "下一课", "next lesson", "set off", "go now",
-]
+## hub 语音出发口令。与启动主人房「继续旅程」共用 StoryContinueMarkers，避免 ASR 候选白名单两处漂移。
+const StoryContinueMarkersScript = preload("res://assets/scripts/core/story_continue_markers.gd")
 
 const HALL_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_hall_bg.png")
 const FORMATION_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_formation_room_bg.png")
@@ -79,6 +77,8 @@ var first_light: TextureRect
 var bookshelf_closed: TextureRect
 var bookshelf_awake: TextureRect
 var wardrobe_empty: TextureRect
+var formation_pips: Array[TextureRect] = []
+var formation_projection: TextureRect
 
 func _ready() -> void:
 	var manager: Variant = _game_manager()
@@ -86,6 +86,7 @@ func _ready() -> void:
 		manager.set_checkpoint("MirageInnHub" if hub_mode else "MirageInnIntroduction")
 	_load_dialogue_flows()
 	_build_visuals()
+	_update_formation_energy_visuals()
 	_setup_voice_failure_intervention()
 	_connect_runtime_signals()
 	if mic_button:
@@ -133,22 +134,35 @@ func _start_intro() -> void:
 
 ## 客栈 hub（复访）：复盘 + 语音出发。
 func _start_hub() -> void:
-	await _show_view(hall_view)
+	await _show_view(formation_view)
 	var manager: Variant = _game_manager()
 	if manager:
 		manager.set_checkpoint("MirageInnHub")
-	_set_quest_text(_hub_summary_text())
+	_update_formation_energy_visuals()
 	if feifei:
 		feifei.visible = true
 		feifei.show_hint(_hub_words_hint(), FeifeiShoulder.STATE_HINT, 0.0)
 
 	if _next_lesson_path().is_empty():
-		_set_quest_text(_loc("hub_stay"))
-		await _speak_flow("inn_introduction.hub_stay", 2.5)
+		_set_quest_text(_localized_flow_text("inn_introduction.hub_content_pending"))
+		await _speak_flow("inn_introduction.hub_content_pending", 2.5)
+		return
+
+	if manager and manager.has_active_formation_trip() and not GameManager.get_scene_path(str(manager.get_formation_active_episode())).is_empty():
+		state = InnIntroState.HUB_AWAIT_DEPART
+		_set_quest_text(_formation_energy_status_text() + "\n" + _loc("quest_depart"))
+		await _speak_flow("inn_introduction.hub_depart_prompt", 2.5)
+		_start_voice_listening()
+		return
+	if manager and manager.should_recharge_before_departure():
+		state = InnIntroState.HUB_AWAIT_CHARGE
+		_set_quest_text(_formation_energy_status_text() + "\n" + _localized_flow_text("inn_introduction.hub_charge_prompt"))
+		await _speak_flow("inn_introduction.hub_charge_prompt", 2.5)
+		_start_voice_listening()
 		return
 
 	state = InnIntroState.HUB_AWAIT_DEPART
-	_set_quest_text(_loc("quest_depart"))
+	_set_quest_text(_formation_energy_status_text() + "\n" + _loc("quest_depart"))
 	await _speak_flow("inn_introduction.hub_depart_prompt", 2.5)
 	_start_voice_listening()
 
@@ -184,9 +198,34 @@ func _next_lesson_path() -> String:
 func _depart_for_next_lesson() -> void:
 	var next_path: String = _next_lesson_path()
 	if next_path.is_empty():
-		_set_quest_text(_loc("hub_stay"))
-		await _speak_flow("inn_introduction.hub_stay", 2.5)
+		_set_quest_text(_localized_flow_text("inn_introduction.hub_content_pending"))
+		await _speak_flow("inn_introduction.hub_content_pending", 2.5)
 		return
+	var manager: Variant = _game_manager()
+	if manager and manager.has_active_formation_trip():
+		var active_id: String = str(manager.get_formation_active_episode())
+		var active_path: String = GameManager.get_scene_path(active_id)
+		if not active_path.is_empty() and GameManager.has_playable_lesson(active_id):
+			_stop_voice_listening()
+			await _fade_to_black()
+			var active_result := get_tree().change_scene_to_file(active_path)
+			if active_result != OK:
+				push_error("[MirageInnHub] Failed to resume active episode: %s" % error_string(active_result))
+			return
+	if manager:
+		if not manager.is_formation_full():
+			state = InnIntroState.HUB_AWAIT_CHARGE
+			_set_quest_text(_formation_energy_status_text() + "\n" + _localized_flow_text("inn_introduction.hub_charge_retry"))
+			await _speak_flow("inn_introduction.hub_charge_retry", 2.0)
+			_start_voice_listening()
+			return
+		var next_id: String = str(manager.get_next_lesson())
+		if not manager.start_formation_trip(next_id):
+			state = InnIntroState.HUB_AWAIT_CHARGE
+			_set_quest_text(_formation_energy_status_text() + "\n" + _localized_flow_text("inn_introduction.hub_charge_retry"))
+			await _speak_flow("inn_introduction.hub_charge_retry", 2.0)
+			_start_voice_listening()
+			return
 	_stop_voice_listening()
 	await _fade_to_black()
 	var change_result := get_tree().change_scene_to_file(next_path)
@@ -286,6 +325,7 @@ func _build_hall_view() -> Control:
 	return _new_full_view("HallView", HALL_BACKGROUND)
 
 func _build_formation_view() -> Control:
+	formation_pips.clear()
 	var root := _new_full_view("FormationRoomView", FORMATION_BACKGROUND)
 	var center := Vector2(960, 570)
 	for i in range(6):
@@ -294,6 +334,15 @@ func _build_formation_view() -> Control:
 		_add_texture(root, "ArtifactSeat%d" % (i + 1), ARTIFACT_SEAT_EMPTY, pos - Vector2(64, 64), Vector2(128, 128))
 
 	first_light = _add_texture(root, "FirstArtifactLight", ARTIFACT_FIRST_LIGHT, center - Vector2(48, 48), Vector2(96, 96))
+	for i in range(8):
+		var pip_angle := TAU * float(i) / 8.0 - PI / 2.0
+		var pip_pos := center + Vector2(cos(pip_angle), sin(pip_angle)) * 175.0
+		var pip := _add_texture(root, "FormationEnergyPip%d" % (i + 1), ARTIFACT_FIRST_LIGHT, pip_pos - Vector2(18, 18), Vector2(36, 36))
+		formation_pips.append(pip)
+		pip.modulate = Color(0.22, 0.20, 0.28, 0.55)
+	formation_projection = _add_texture(root, "SpiritProjection", WORD_SPIRIT_HELLO, center - Vector2(120, 120), Vector2(240, 240))
+	formation_projection.modulate = Color(0.75, 0.82, 1.0, 0.45)
+	formation_projection.visible = false
 	return root
 
 func _build_owner_room_view() -> Control:
@@ -482,16 +531,22 @@ func _on_voice_ended(audio_data: PackedByteArray) -> void:
 		feifei.show_hint(_loc("recognizing"), FeifeiShoulder.STATE_HINT, 0.0)
 	var hybrid_api: Variant = _hybrid_api()
 	if hybrid_api:
-		var asr_context: Dictionary = (
-			_build_hub_depart_asr_context()
-			if state == InnIntroState.HUB_AWAIT_DEPART
-			else _build_bookshelf_asr_context()
-		)
+		var asr_context: Dictionary
+		match state:
+			InnIntroState.HUB_AWAIT_DEPART:
+				asr_context = _build_hub_depart_asr_context()
+			InnIntroState.HUB_AWAIT_CHARGE:
+				asr_context = _build_library_entry_asr_context()
+			_:
+				asr_context = _build_bookshelf_asr_context()
 		hybrid_api.recognize_speech(audio_data, _source_language_code(), asr_context)
 
 func _on_asr_received(result: Dictionary) -> void:
 	if state == InnIntroState.HUB_AWAIT_DEPART:
 		await _handle_hub_depart_asr(result)
+		return
+	if state == InnIntroState.HUB_AWAIT_CHARGE:
+		await _handle_hub_charge_asr(result)
 		return
 	if state != InnIntroState.AWAIT_BOOKSHELF_CALL:
 		return
@@ -520,17 +575,23 @@ func _handle_hub_depart_asr(result: Dictionary) -> void:
 		await _depart_for_next_lesson()
 		return
 
+	if await _try_enter_library_from_text(text):
+		return
 	await _handle_voice_attempt_failed("wrong_answer")
 
 func _handle_voice_attempt_failed(reason: String) -> void:
-	if state not in [InnIntroState.AWAIT_BOOKSHELF_CALL, InnIntroState.HUB_AWAIT_DEPART]:
+	if state not in [InnIntroState.AWAIT_BOOKSHELF_CALL, InnIntroState.HUB_AWAIT_DEPART, InnIntroState.HUB_AWAIT_CHARGE]:
 		return
 	if voice_failure_intervention.register_failure(reason):
 		await get_tree().create_timer(0.45).timeout
 		_start_voice_listening()
 		return
 
-	var retry_text: String = _loc("hub_depart_retry") if state == InnIntroState.HUB_AWAIT_DEPART else _loc("bookshelf_retry")
+	var retry_text: String = _loc("bookshelf_retry")
+	if state == InnIntroState.HUB_AWAIT_DEPART:
+		retry_text = _loc("hub_depart_retry")
+	elif state == InnIntroState.HUB_AWAIT_CHARGE:
+		retry_text = _localized_flow_text("inn_introduction.hub_charge_retry")
 	if feifei:
 		feifei.show_hint(retry_text, FeifeiShoulder.STATE_HINT, 0.0)
 	await get_tree().create_timer(0.35).timeout
@@ -541,13 +602,7 @@ func _is_bookshelf_call(text: String) -> bool:
 	return lower.contains("书架") or lower.contains("bookshelf") or lower.contains("book shelf")
 
 func _is_depart_call(text: String) -> bool:
-	var normalized := text.strip_edges().to_lower()
-	if normalized.is_empty():
-		return false
-	for marker in HUB_DEPART_MARKERS:
-		if normalized.contains(marker):
-			return true
-	return false
+	return StoryContinueMarkersScript.matches(text)
 
 func _set_quest_text(text: String) -> void:
 	if quest_label:
@@ -610,6 +665,16 @@ func _setup_voice_failure_intervention() -> void:
 	voice_failure_intervention.start_session("mirage-inn-intro")
 
 func _failure_turn_text(reason: String) -> String:
+	if state == InnIntroState.HUB_AWAIT_CHARGE:
+		match reason:
+			"silence":
+				return "[no_voice_detected] Player did not respond to the formation recharge prompt."
+			"asr_error":
+				return "[asr_error] Voice service returned an error during the formation recharge prompt."
+			"wrong_answer":
+				return "[wrong_answer] Player should say the Word Spirit Library entry phrase."
+			_:
+				return "[voice_retry] Player needs help with the library entry phrase."
 	if state == InnIntroState.HUB_AWAIT_DEPART:
 		match reason:
 			"silence":
@@ -667,7 +732,7 @@ func _build_hub_depart_asr_context() -> Dictionary:
 			}
 		],
 		"expected_answer_type": "keyword",
-		"candidate_answers": HUB_DEPART_MARKERS.duplicate(),
+		"candidate_answers": _depart_and_library_candidates(),
 		"recent_turns": voice_failure_intervention.get_recent_turns(),
 		"player_level": _player_level(),
 		"language": _source_language_code(),
@@ -696,3 +761,99 @@ func _hybrid_api() -> Variant:
 
 func _audio_manager() -> Variant:
 	return get_node_or_null("/root/AudioManager")
+
+
+func _update_formation_energy_visuals() -> void:
+	var manager: Variant = _game_manager()
+	var energy: int = 8
+	var max_energy: int = 8
+	if manager:
+		energy = int(manager.get_formation_energy())
+		max_energy = int(manager.get_formation_energy_max())
+	for i in range(formation_pips.size()):
+		var pip: TextureRect = formation_pips[i]
+		if i < energy:
+			pip.modulate = Color(1.0, 0.86, 0.35, 1.0)
+		else:
+			pip.modulate = Color(0.22, 0.20, 0.28, 0.55)
+	if formation_projection:
+		formation_projection.visible = energy < max_energy
+
+func _localized_flow_text(flow_id: String) -> String:
+	var flow_lines: Array[Dictionary] = dialogue_flow_loader.get_lines(flow_id, _source_language_code())
+	if flow_lines.is_empty():
+		return ""
+	return str(flow_lines[0].get("text", ""))
+
+func _is_library_entry_call(text: String) -> bool:
+	var lower := text.to_lower()
+	if lower.contains("library") or lower.contains("archive") or lower.contains("word spirit"):
+		return true
+	return text.contains("\u8bcd\u7075\u9601") or text.contains("\u4e66\u9601") or text.contains("\u8bcd\u7075\u4e66\u9601") or text.contains("\u5145\u80fd")
+
+func _build_library_entry_asr_context() -> Dictionary:
+	return {
+		"session_id": voice_failure_intervention.get_session_id(),
+		"user_id": _player_name(),
+		"npc_id": "feifei_mirage_inn",
+		"scene_id": "mirage_inn_hub",
+		"npc_question": _localized_flow_text("inn_introduction.hub_charge_retry"),
+		"expected_slots": [
+			{
+				"key": "answer",
+				"type": "keyword",
+				"description": "Word Spirit Library entry command",
+			}
+		],
+		"expected_answer_type": "keyword",
+		"candidate_answers": _library_entry_candidates(),
+		"recent_turns": voice_failure_intervention.get_recent_turns(),
+		"player_level": _player_level(),
+		"language": _source_language_code(),
+	}
+
+func _handle_hub_charge_asr(result: Dictionary) -> void:
+	if result.has("error"):
+		await _handle_voice_attempt_failed("asr_error")
+		return
+	var text := _asr_answer_text(result)
+	if await _try_enter_library_from_text(text):
+		return
+	await _handle_voice_attempt_failed("wrong_answer")
+
+func _enter_word_spirit_library() -> void:
+	var library_path: String = GameManager.get_scene_path("WordSpiritLibraryArchiveHall")
+	if library_path.is_empty():
+		await _speak_flow("inn_introduction.hub_charge_retry", 2.0)
+		_start_voice_listening()
+		return
+	await _fade_to_black()
+	var change_result := get_tree().change_scene_to_file(library_path)
+	if change_result != OK:
+		push_error("[MirageInnHub] Failed to change to WordSpiritLibraryArchiveHall: %s" % error_string(change_result))
+
+func _library_entry_candidates() -> Array[String]:
+	return ["\u8bcd\u7075\u9601", "\u4e66\u9601", "\u8bcd\u7075\u4e66\u9601", "\u5145\u80fd", "library", "archive", "word spirit"]
+
+func _depart_and_library_candidates() -> Array[String]:
+	var candidates: Array[String] = StoryContinueMarkersScript.MARKERS.duplicate()
+	candidates.append_array(_library_entry_candidates())
+	return candidates
+
+func _formation_energy_status_text() -> String:
+	var manager: Variant = _game_manager()
+	var energy: int = 8
+	var max_energy: int = 8
+	if manager:
+		energy = int(manager.get_formation_energy())
+		max_energy = int(manager.get_formation_energy_max())
+	return "\u9635\u6cd5\u80fd\u91cf: %d/%d" % [energy, max_energy]
+
+func _try_enter_library_from_text(text: String) -> bool:
+	if not _is_library_entry_call(text):
+		return false
+	voice_failure_intervention.reset_failures()
+	voice_failure_intervention.add_turn("player", text)
+	_stop_voice_listening()
+	await _enter_word_spirit_library()
+	return true
