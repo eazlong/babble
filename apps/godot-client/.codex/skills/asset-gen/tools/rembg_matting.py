@@ -88,14 +88,22 @@ def create_session(model: str = "birefnet-general"):
 
 
 def sample_bg_color(img: np.ndarray, block: int = 2) -> np.ndarray:
-    """Average color from 2x2 blocks at all 4 corners."""
-    corners = np.concatenate([
-        img[:block, :block].reshape(-1, 3),
-        img[:block, -block:].reshape(-1, 3),
-        img[-block:, :block].reshape(-1, 3),
-        img[-block:, -block:].reshape(-1, 3),
+    """Robust background colour from the whole image border (per-channel median).
+
+    Corner-only sampling (or its mean) breaks whenever the subject reaches a
+    cell edge: a sheet cell whose arm runs off the bottom edge, or a character
+    touching two corners, drags the estimate off the flat background and turns
+    the background into foreground residue. Sampling the full 2px border and
+    taking the median keeps the estimate on the true background because the
+    subject only ever occupies a minority of the border.
+    """
+    border = np.concatenate([
+        img[:block, :].reshape(-1, 3),
+        img[-block:, :].reshape(-1, 3),
+        img[:, :block].reshape(-1, 3),
+        img[:, -block:].reshape(-1, 3),
     ])
-    return corners.mean(axis=0)
+    return np.median(border, axis=0)
 
 
 def compute_alpha_color(img: np.ndarray, bg_color: np.ndarray) -> np.ndarray:
