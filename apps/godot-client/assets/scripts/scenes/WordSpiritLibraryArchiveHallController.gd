@@ -553,6 +553,9 @@ func _enter_complete() -> void:
 	_set_phase_text("完成")
 	await _speak_flow("archive.guardian_complete_report", "en", 1.8, {"count": str(inscribed_count)})
 	_save_progress()
+	if _formation_energy() >= _formation_energy_max():
+		_exit_scene()
+		return
 	_start_listening(_build_recording_context(
 		"exit_command",
 		"archive_session_complete",

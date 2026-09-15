@@ -31,6 +31,15 @@ const TARGET_SCENE_PATH: String = "res://assets/scenes/MirageInnHub.tscn"
 const VIEW_SIZE: Vector2 = Vector2(1920, 1080)
 ## hub 语音出发口令。与启动主人房「继续旅程」共用 StoryContinueMarkers，避免 ASR 候选白名单两处漂移。
 const StoryContinueMarkersScript = preload("res://assets/scripts/core/story_continue_markers.gd")
+const LIBRARY_ENTRY_MARKERS: Array[String] = [
+	"\u8bcd\u7075\u9601",
+	"\u4e66\u9601",
+	"\u8bcd\u7075\u4e66\u9601",
+	"\u5145\u80fd",
+	"library",
+	"archive",
+	"word spirit",
+]
 
 const HALL_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_hall_bg.png")
 const FORMATION_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_formation_room_bg.png")
@@ -143,16 +152,16 @@ func _start_hub() -> void:
 		feifei.visible = true
 		feifei.show_hint(_hub_words_hint(), FeifeiShoulder.STATE_HINT, 0.0)
 
-	if _next_lesson_path().is_empty():
-		_set_quest_text(_localized_flow_text("inn_introduction.hub_content_pending"))
-		await _speak_flow("inn_introduction.hub_content_pending", 2.5)
-		return
-
 	if manager and manager.has_active_formation_trip() and not GameManager.get_scene_path(str(manager.get_formation_active_episode())).is_empty():
 		state = InnIntroState.HUB_AWAIT_DEPART
 		_set_quest_text(_formation_energy_status_text() + "\n" + _loc("quest_depart"))
 		await _speak_flow("inn_introduction.hub_depart_prompt", 2.5)
 		_start_voice_listening()
+		return
+
+	if _next_lesson_path().is_empty():
+		_set_quest_text(_localized_flow_text("inn_introduction.hub_content_pending"))
+		await _speak_flow("inn_introduction.hub_content_pending", 2.5)
 		return
 	if manager and manager.should_recharge_before_departure():
 		state = InnIntroState.HUB_AWAIT_CHARGE
@@ -777,7 +786,8 @@ func _update_formation_energy_visuals() -> void:
 		else:
 			pip.modulate = Color(0.22, 0.20, 0.28, 0.55)
 	if formation_projection:
-		formation_projection.visible = energy < max_energy
+		formation_projection.visible = hub_mode
+		formation_projection.modulate.a = 0.55 if energy < max_energy else 0.20
 
 func _localized_flow_text(flow_id: String) -> String:
 	var flow_lines: Array[Dictionary] = dialogue_flow_loader.get_lines(flow_id, _source_language_code())
@@ -787,9 +797,10 @@ func _localized_flow_text(flow_id: String) -> String:
 
 func _is_library_entry_call(text: String) -> bool:
 	var lower := text.to_lower()
-	if lower.contains("library") or lower.contains("archive") or lower.contains("word spirit"):
-		return true
-	return text.contains("\u8bcd\u7075\u9601") or text.contains("\u4e66\u9601") or text.contains("\u8bcd\u7075\u4e66\u9601") or text.contains("\u5145\u80fd")
+	for marker in LIBRARY_ENTRY_MARKERS:
+		if lower.contains(marker.to_lower()):
+			return true
+	return false
 
 func _build_library_entry_asr_context() -> Dictionary:
 	return {
@@ -833,7 +844,7 @@ func _enter_word_spirit_library() -> void:
 		push_error("[MirageInnHub] Failed to change to WordSpiritLibraryArchiveHall: %s" % error_string(change_result))
 
 func _library_entry_candidates() -> Array[String]:
-	return ["\u8bcd\u7075\u9601", "\u4e66\u9601", "\u8bcd\u7075\u4e66\u9601", "\u5145\u80fd", "library", "archive", "word spirit"]
+	return LIBRARY_ENTRY_MARKERS.duplicate()
 
 func _depart_and_library_candidates() -> Array[String]:
 	var candidates: Array[String] = StoryContinueMarkersScript.MARKERS.duplicate()
