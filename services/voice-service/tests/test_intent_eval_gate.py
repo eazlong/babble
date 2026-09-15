@@ -28,6 +28,7 @@ from tests.intent_eval.harness import (
     grade,
     load_cases,
     load_pending_rulings,
+    load_rulings,
     normalize_text,
     run_eval,
     sample_per_bucket,
@@ -77,6 +78,65 @@ def test_pending_rulings_are_not_graded() -> None:
         assert case.get("ruling_question"), f"{case['id']} 必须写清待裁定的问题"
     graded_ids = {c["id"] for c in load_cases()}
     assert not (graded_ids & {c["id"] for c in pending}), "待裁定用例不得同时出现在可判分集里"
+
+
+def test_rulings_are_recorded_and_consistent() -> None:
+    """裁定必须留下书面依据，且**生效后要从不裁定集里移除**——否则裁定等于没做。"""
+    rulings = load_rulings()
+    assert rulings, "rulings.jsonl 为空：裁定过程没有留痕"
+    graded = {case["id"] for case in load_cases()}
+    pending = {case["id"] for case in load_pending_rulings()}
+    seen: set[str] = set()
+
+    for ruling in rulings:
+        ruling_id = ruling["id"]
+        assert ruling_id not in seen, f"裁定 id 重复：{ruling_id}"
+        seen.add(ruling_id)
+        for field_name in ("decided_at", "title", "decision", "rationale", "affects_cases"):
+            assert ruling.get(field_name), f"{ruling_id} 缺少 {field_name}"
+        assert isinstance(ruling["rationale"], list) and ruling["rationale"], (
+            f"{ruling_id} 的 rationale 必须是非空列表（裁定要有依据）"
+        )
+        superseded = ruling.get("supersedes")
+        if superseded:
+            assert superseded not in pending, f"{superseded} 已裁定却仍在待裁定集里"
+        for case_id in ruling["affects_cases"]:
+            assert case_id in graded or case_id in pending, (
+                f"{ruling_id} 引用了不存在的用例 {case_id}"
+            )
+
+
+def test_closed_set_expectations_are_canonical_candidates() -> None:
+    """rule_001 的可执行形式：封闭题的期望 extracted 必须是候选规范值，而不是玩家原话。
+
+    这条不变量能挡住未来写用例时把原话（如『接着走』）当成期望值——
+    那会让门禁去要求一个已经裁定为错误的行为。
+    """
+    violations: list[str] = []
+    for case in load_cases():
+        candidates = case["context"].get("candidate_answers") or []
+        if not candidates or case["expect"]["intent"] != "provide":
+            continue
+        normalized_candidates = {normalize_text(candidate) for candidate in candidates}
+        for key, value in case["expect"].get("extracted", {}).items():
+            if normalize_text(value) not in normalized_candidates:
+                violations.append(f"{case['id']}[{key}] = {value!r} 不在候选表内")
+    assert not violations, violations
+
+
+def test_free_slot_exception_is_documented_where_it_matters() -> None:
+    """涉及值池的裁定必须写明自由槽例外。
+
+    刻意**不**做"期望值不得等于池成员"这类静态断言：孩子真说了池里的名字
+    与"被改写成池成员"在静态上无法区分，那种断言将来必然误判。
+    这里只保证例外被写下来（执行层面靠 prompt/规则层设计，见 rule_001）。
+    """
+    for ruling in load_rulings():
+        text = f"{ruling.get('title', '')} {ruling.get('decision', '')}"
+        if "值池" in text:
+            assert ruling.get("exception"), (
+                f"{ruling['id']} 涉及值池却未写明例外（自由槽不得改写为池成员）"
+            )
 
 
 def test_sample_per_bucket_is_stratified_and_deterministic() -> None:

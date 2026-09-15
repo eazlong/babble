@@ -29,6 +29,7 @@ from src.services.asr_postprocess import ASRPostprocessor  # noqa: E402
 EVAL_DIR = Path(__file__).resolve().parent
 DEFAULT_CASES = EVAL_DIR / "cases.jsonl"
 DEFAULT_PENDING = EVAL_DIR / "cases_pending_ruling.jsonl"
+DEFAULT_RULINGS = EVAL_DIR / "rulings.jsonl"
 DEFAULT_CONTEXTS = EVAL_DIR / "contexts.json"
 DEFAULT_BASELINE = EVAL_DIR / "baseline.json"
 
@@ -180,6 +181,17 @@ def load_cases(
 
 
 def load_pending_rulings(path: Path | str = DEFAULT_PENDING) -> list[dict[str, Any]]:
+    return _read_jsonl(path)
+
+
+def load_rulings(path: Path | str = DEFAULT_RULINGS) -> list[dict[str, Any]]:
+    """已生效的裁定记录。
+
+    裁定不是契约本身：它是"这批用例为什么这么期望"的书面依据，
+    契约层面的固化在 ADR 里（见各裁定的 `folds_into`）。
+    """
+    if not Path(path).exists():
+        return []
     return _read_jsonl(path)
 
 

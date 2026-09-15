@@ -349,6 +349,7 @@ voice-service 当前的"目标识别"是**单次 LLM 一次性出结论**：把�
 ### 11.5 下一步（顺序即优先级）
 
 1. **裁定 9 条待裁定用例**（`cases_pending_ruling.jsonl`），其中 `pr_009` 直接决定 `cs_009` 的期望值是否翻转。
+   **进行中（2026-09-15）**：`pr_009` 已裁定为 `rule_001`（见 §13）。剩余 8 条，另新增 1 条下游问题 `pr_010`。
 2. **补 20–30 条真实样本锚点**（真实日志或人工记录），把分布偏差从"声明"变成"缩小"。
 3. **扩桶**：优先 `proposed_state`（PROPOSED 态接受/拒绝/换一个）与 `person_name`，并把"复读上一轮"扩成独立小类。
 4. ~~**裁定 F6 是否纳入**：一行守卫 + 一条"stub 返回 str"的单元测试。~~
@@ -384,3 +385,28 @@ voice-service 当前的"目标识别"是**单次 LLM 一次性出结论**：把�
 
 - voice-service 的**完整** Python 套件（`tests/test_voice.py`、`test_xfyun_services.py`、端到端路由测试等）需要 `faster-whisper` / `ctranslate2` 等重依赖，CI 尚未覆盖——这是 voice-service 目前最大的质量缺口。
 - 建议顺带把 `scripts/test_xfyun.py` 的 4 个用例标记为 `@pytest.mark.integration`（它们本就是手工集成脚本），这样"脚本 vs 测试"的边界由标记而非目录来保证。
+
+---
+
+## 13. 裁定记录
+
+裁定是"这批用例为什么这么期望"的书面依据，逐条落在 `services/voice-service/tests/intent_eval/rulings.jsonl`；契约层面的固化在 ADR（各条的 `folds_into`）。流程与约束见同目录 README。
+
+### rule_001（原 `pr_009`，2026-09-15）：封闭题取候选规范值，自由槽不得改写
+
+**裁定**
+- 有 `candidate_answers` 的封闭题：`extracted[key]` 回填**命中的候选规范值**（阈值内 top-1）；未达阈值判 `off_topic`，不猜。
+- 自由槽（`expected_answer_type=person_name` 或无候选表）：`extracted` **保留玩家说出的值**，只允许去壳归一（去掉"我叫/我是"），**禁止**改写成值池成员。
+- `corrected_text` 保留玩家实际说出的话（纠错后），供结构化过程回放与诊断；`extracted` 承载机器可读值，供判定/跨轮上下文/聚合。
+
+**依据（取证过程）**
+1. **判定侧零风险**：客户端 `LessonResponseMatcher._matches_any_phrase`（`apps/godot-client/assets/scripts/core/lesson_response_matcher.gd`）用的是 `text.contains(phrase)` —— **containment 而非相等**。玩家原话是候选值的超集，因此规范值与原话**都能通过判定**，取规范值不会降低通过率。
+2. **`extracted` 会回流成上下文**：`ChangAnMarketController._accept_current_voice_step()` 把该值写入 `voice_failure_intervention.add_turn("player", text)`，于是它成为下一轮请求的 `recent_turns` —— 直接喂给"复读上一轮"这类判定（即 `neg_017` 的题型），也影响 token 成本。规范值更短更稳定。
+3. **可稳定分组**：报告与掌握度聚合按值分组，玩家多说几个字不该产生另一个字符串。
+4. **已知行为不一致**：首次 live 测量中 `cs_007`「我们启程吧」被规范化为「启程」，`cs_009`「接着走」没有 —— 同一份 prompt 下口径不统一，只有确定性规则层能保证一致（方向 C 的靶子）。
+5. **自由槽例外是硬约束**：`extracted.name` 在 `BeginningFPController.gd:483-508` 会**直接成为玩家名字**，把它替换成策划池里的名字属于内容越权 + 儿童数据失真。值池只用于委托（delegate）提议。
+
+**推论**
+- `cs_009` 的期望值「接着」**保留不变**，它是方向 C 必须修好的验收靶子，而不是"期望写错了"。
+- 该裁定已变成可执行不变量：`tests/test_intent_eval_gate.py::test_closed_set_expectations_are_canonical_candidates`（封闭题期望值必须在候选表内）与 `test_free_slot_exception_is_documented_where_it_matters`（涉及值池的裁定必须写明例外）。
+- **下游新问题 `pr_010`**：一句话命中多个候选值（如"出发，继续"）时如何仲裁？`rule_001` 只裁定了"取候选规范值"，没裁定多命中的选择规则——不裁定它，方向 C 的规则层无法确定性实现 canonicalization。这是裁定过程自然浮出的下一个问题，已进待裁定集。

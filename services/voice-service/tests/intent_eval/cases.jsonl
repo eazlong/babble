@@ -6,7 +6,7 @@
 {"id": "cs_006", "bucket": "closed_set", "context_ref": "resume_confirm", "raw_text": "走吧", "expect": {"intent": "provide", "extracted": {"answer": "走吧"}}, "provenance": "agent_authored", "note": "中文同义口令"}
 {"id": "cs_007", "bucket": "closed_set", "context_ref": "resume_confirm", "raw_text": "我们启程吧", "expect": {"intent": "provide", "extracted": {"answer": "启程"}}, "provenance": "agent_authored", "note": "含候选词的长句，期望归一到候选值 启程"}
 {"id": "cs_008", "bucket": "closed_set", "context_ref": "resume_confirm", "raw_text": "继续吧", "expect": {"intent": "provide", "extracted": {"answer": "继续"}}, "provenance": "agent_authored", "note": "候选 继续 带语气词"}
-{"id": "cs_009", "bucket": "closed_set", "context_ref": "resume_confirm", "raw_text": "接着走", "expect": {"intent": "provide", "extracted": {"answer": "接着"}}, "provenance": "agent_authored", "note": "候选 接着 带动词"}
+{"id": "cs_009", "bucket": "closed_set", "context_ref": "resume_confirm", "raw_text": "接着走", "expect": {"intent": "provide", "extracted": {"answer": "接着"}}, "provenance": "agent_authored", "note": "候选 接着 带动词：按 rule_001 必须回填候选规范值 接着（而不是原话 接着走）。首次 live 测量该例五次全错，是方向 C 规则层的验收靶子"}
 {"id": "cs_010", "bucket": "closed_set", "context_ref": "resume_confirm", "raw_text": "下一课", "expect": {"intent": "provide", "extracted": {"answer": "下一课"}}, "provenance": "agent_authored", "note": "课程推进语义口令"}
 {"id": "cs_011", "bucket": "closed_set", "context_ref": "resume_confirm", "raw_text": "next lesson", "expect": {"intent": "provide", "extracted": {"answer": "next lesson"}}, "provenance": "agent_authored", "note": "英文课程口令"}
 {"id": "cs_012", "bucket": "closed_set", "context_ref": "resume_confirm", "raw_text": "continue", "expect": {"intent": "provide", "extracted": {"answer": "continue"}}, "provenance": "agent_authored", "note": "单词口令"}
