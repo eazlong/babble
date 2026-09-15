@@ -42,14 +42,22 @@ cd services/voice-service
 
 - **每桶退步 >2pt → 整体拒绝**（计划文档 §5.1）。看每个桶而不是总体，因为"一律判 off_topic"这类退化策略能拿满 `negative` 桶却在 `closed_set` 上崩掉，总体准确率会掩盖它（`tests/test_intent_eval_gate.py` 有专门一条用例钉住这点）。
 - **抖动率上升 >2pt → 拒绝**。抖动率需要 `--repeats >1`，按计划只在 nightly/slow 通道跑 N=5，日常批次不跑（否则门禁一次要烧几十次调用）。
+- **降级率上升 >2pt → 拒绝**。容忍降级 ≠ 放过降级：准确率只看已落地判决，所以必须有另一道闸看住 provider 故障，否则它会被"容忍"掩盖（F6 那类缺陷正是如此）。
 - **基线与本次运行的模式必须一致**（`live` vs `stub:*`）。stub 基线不能给 live 结果当门禁，反之亦然——防止用假尺子量真东西。
-- **`--bucket` / `--limit` 属于 partial 运行**：不参与棘轮，`--update-baseline` 会拒绝（除非 `--force`）。
+- **`--bucket` / `--limit` / `--sample-per-bucket` 属于 partial 运行**：不参与棘轮，`--update-baseline` 会拒绝（除非 `--force`）。
 - **`--max-calls` 是费用闸门**：计划调用数超限直接拒绝运行，不先花钱再报错。
+- **薄桶不棘轮**：某桶落地用例数低于基线该桶的 50% 时，该桶只出 note、不判退步或进步（防止降级掏空分母后"2 例全对"报出 100% 的假进步）。
+
+## 指标口径（重要）
+
+- **准确率只统计"已落地判决"的用例**（`applied=True`）。provider 降级（网关 500、超时等）不是模型的判决，把它算成"答错"会让网关抖动伪装成准确度回归——实测同一次运行因 13.5% 降级而虚报 -12pt（计划文档 §14）。
+- **抖动率只统计"落地 ≥2 次"的用例**（`flippable_cases`）；某次 repeat 降级不算"结论翻转"。
+- 降级单独上报为 `fallback_rate` / `unscored_cases`，由降级率门禁看住。
 
 ## 样本约定
 
 - `provenance`：`agent_authored` / `human_handwritten` / `real_log`。
-  **当前 70 条全部是 `agent_authored`**（由编码 agent 依客户端真实上下文形状编写，**不是**真实玩家语音，也不是运行期 LLM 采样）。这意味着分布偏差是真实存在的：儿童真实表达、口音、ASR 误听模式都未覆盖。计划文档 §8 要求的"20–30 条真实样本锚点"仍是 TODO。
+  **当前 74 条全部是 `agent_authored`**（由编码 agent 依客户端真实上下文形状编写，**不是**真实玩家语音，也不是运行期 LLM 采样）。这意味着分布偏差是真实存在的：儿童真实表达、口音、ASR 误听模式都未覆盖。计划文档 §8 要求的"20–30 条真实样本锚点"仍是 TODO。
 - 每条样本必须有 `note`：说明它钉住什么失败模式。没有 note 的样本会在测试里被拒绝。
 - 边界模糊的样本**不放这里**，放 `cases_pending_ruling.jsonl`，`ruling_question` 写清要裁定什么。用它避免"用一条自己也拿不准的样本去卡门禁"。
 - 一期只有文字样本，`asr_confidence` 固定注入 `0.9`（干净音频假设）。音频集是二期。
@@ -65,8 +73,9 @@ cd services/voice-service
 
 - **`rule_001`（原 `pr_009`）**：封闭题的 `extracted` 取**候选规范值**（阈值内 top-1，未达阈值判 `off_topic` 不猜）；**自由槽例外**——`person_name` / 无候选表时保留玩家说出的值，禁止改写成值池成员（`extracted.name` 会直接成为玩家名字）。`corrected_text` 保留玩家原话供回放，`extracted` 承载机器可读值。
   可执行形式见 `tests/test_intent_eval_gate.py::test_closed_set_expectations_are_canonical_candidates`——封闭题的期望值必须在候选表内，这条不变量挡住"把原话当期望值"的写法。
+- **`rule_002`（原 `pr_010`）**：多候选命中的仲裁 —— **本轮目标优先 → 最长 → 首次出现 → 表序**，且 `extracted` 必须恰好等于某个候选（禁止拼接）。第 3/4 级次序是依实测改判的（表序依赖客户端拼接两个列表的实现细节，脆弱）。`pr_011`（模型返回非候选拼接值时怎么办）是它的直接下游。
 
-裁定的下游：`pr_010`（一句话命中多个候选值时的仲裁规则）就是 `rule_001` 直接浮出来的问题——不裁定它，方向 C 的规则层无法确定性实现 canonicalization。
+裁定的下游：每裁定一条，常会浮出下一条。`pr_011` 就是 `rule_002` 直接暴露的：规则规定了"应该取候选"，没规定"取不到时怎么办"——而探针实测模型确实会返回拼接值（`mynameislilynicetomeetyou`）。
 
 ## 与 CI 的关系
 

@@ -39,9 +39,12 @@ INTENT_LABELS: tuple[str, ...] = ("provide", "delegate", "off_topic")
 # 一期文字集不携带真实 ASR 置信度：给一个干净音频的固定值，避免把语言概率噪声混进意图评测
 DEFAULT_ASR_CONFIDENCE = 0.9
 
-# 门禁默认阈值（对齐计划文档：某桶退步 >2pt 即拒绝；抖动率同口径）
+# 门禁默认阈值（对齐计划文档：某桶退步 >2pt 即拒绝；抖动率与降级率同口径）
 BUCKET_DROP_PT = 2.0
 FLIP_RATE_DELTA_PT = 2.0
+FALLBACK_RATE_DELTA_PT = 2.0
+# 桶内"已落地"用例数低于基线该比例时，该桶样本太薄，不参与棘轮判定
+MIN_SCORED_RATIO = 0.5
 
 SCHEMA_VERSION = 1
 
@@ -315,6 +318,7 @@ class CaseResult:
     actual_intent: str
     actual_extracted: dict[str, Any]
     pass_rate: float
+    applied_pass_rate: float | None
     passed_first: bool
     reasons: list[str]
     applied: bool
@@ -329,6 +333,7 @@ class CaseResult:
 
     @property
     def flipped(self) -> bool:
+        """抖动只看**已落地的判决**：一次 provider 降级不算"结论翻转"（那是基础设施噪声）。"""
         return len(set(self.verdicts)) > 1
 
     def to_dict(self) -> dict[str, Any]:
@@ -339,6 +344,9 @@ class CaseResult:
             "expect": {"intent": self.expected_intent, "extracted": self.expected_extracted},
             "actual": {"intent": self.actual_intent, "extracted": self.actual_extracted},
             "pass_rate": round(self.pass_rate, 4),
+            "applied_pass_rate": (
+                None if self.applied_pass_rate is None else round(self.applied_pass_rate, 4)
+            ),
             "pass": self.passed_first,
             "reasons": self.reasons,
             "applied": self.applied,
@@ -380,10 +388,13 @@ async def run_case(
         outcomes.append(result)
 
     passes: list[bool] = []
+    applied_passes: list[bool] = []
     reasons_first: list[str] = []
     for index, outcome in enumerate(outcomes):
         passed, reasons = grade(case, outcome)
         passes.append(passed)
+        if outcome.get("applied"):
+            applied_passes.append(passed)
         if index == 0:
             reasons_first = reasons
 
@@ -397,6 +408,7 @@ async def run_case(
         actual_intent=str(first.get("intent", "")),
         actual_extracted=first.get("extracted", {}) or {},
         pass_rate=sum(passes) / len(passes),
+        applied_pass_rate=(sum(applied_passes) / len(applied_passes)) if applied_passes else None,
         passed_first=passes[0],
         reasons=reasons_first,
         applied=bool(first.get("applied")),
@@ -407,7 +419,12 @@ async def run_case(
         shortcut_hit=bool(first.get("shortcut_hit")),
         matched_rule=first.get("matched_rule"),
         latency_ms=max(latencies) if latencies else 0,
-        verdicts=[verdict_key(str(o.get("intent", "")), o.get("extracted", {}) or {}) for o in outcomes],
+        # 抖动指纹只取已落地的判决
+        verdicts=[
+            verdict_key(str(o.get("intent", "")), o.get("extracted", {}) or {})
+            for o in outcomes
+            if o.get("applied")
+        ],
     )
 
 
@@ -441,10 +458,12 @@ async def run_eval(
 # ────────────────────────────── 指标与门禁 ──────────────────────────────
 
 def confusion_matrix(results: Sequence[CaseResult]) -> dict[str, dict[str, int]]:
-    """expected × actual。含一期不会出现的标签，便于规则层扩 accept/reject 后直接复用。"""
+    """expected × actual（只统计已落地的判决；降级不是判决）。"""
     labels = list(INTENT_LABELS) + ["accept", "reject", "other"]
     matrix = {expected: {actual: 0 for actual in labels} for expected in labels}
     for result in results:
+        if result.applied_pass_rate is None:
+            continue  # 该例没有一次成功落地（全部 provider 降级）
         expected = result.expected_intent if result.expected_intent in labels else "other"
         actual = result.actual_intent if result.actual_intent in labels else "other"
         matrix[expected][actual] += 1
@@ -460,19 +479,22 @@ def compute_metrics(
     partial: bool = False,
     durations_ms: int | None = None,
 ) -> dict[str, Any]:
-    buckets: dict[str, dict[str, Any]] = {}
-    for result in results:
-        entry = buckets.setdefault(result.bucket, {"n": 0, "pass_sum": 0.0, "cases": []})
-        entry["n"] += 1
-        entry["pass_sum"] += result.pass_rate
-        entry["cases"].append(result.case_id)
+    """指标口径：**准确率只统计已落地的判决**。
+
+    provider 降级（`applied=False`，如网关 500）不是模型的判决，把它算成"答错"会让
+    网关抖动伪装成准确度回归，棘轮随之失去意义。降级单独作为基础设施指标上报，
+    并由 `fallback_rate` 门禁看住（否则"容忍降级"会掩盖真实的 provider 故障）。
+    """
+    scored = [r for r in results if r.applied_pass_rate is not None]
+    buckets: dict[str, list[float]] = {}
+    for result in scored:
+        buckets.setdefault(result.bucket, []).append(result.applied_pass_rate or 0.0)
 
     bucket_metrics: dict[str, dict[str, Any]] = {}
-    for name, entry in sorted(buckets.items()):
-        accuracy = entry["pass_sum"] / entry["n"] if entry["n"] else 0.0
+    for name, rates in sorted(buckets.items()):
         bucket_metrics[name] = {
-            "n": entry["n"],
-            "accuracy": round(accuracy, 4),
+            "n": len(rates),
+            "accuracy": round(sum(rates) / len(rates), 4),
         }
 
     min_bucket = None
@@ -480,8 +502,15 @@ def compute_metrics(
         worst = min(bucket_metrics.items(), key=lambda kv: (kv[1]["accuracy"], kv[0]))
         min_bucket = {"bucket": worst[0], "accuracy": worst[1]["accuracy"]}
 
-    flips = [r for r in results if r.flipped]
-    flip_rate = (len(flips) / len(results)) if (results and repeats > 1) else None
+    # 抖动率只在"有一次以上成功落地"的用例里看；单次落地的用例无法判定翻转
+    flippable = [r for r in scored if r.applied_repeats > 1]
+    flips = [r for r in flippable if r.flipped]
+    flip_rate = (len(flips) / len(flippable)) if (flippable and repeats > 1) else None
+
+    total_repeats = sum(r.applied_repeats + r.fallback_repeats for r in results)
+    fallback_repeats = sum(r.fallback_repeats for r in results)
+    fallback_rate = (fallback_repeats / total_repeats) if total_repeats else 0.0
+    unscored = [r.case_id for r in results if r.applied_pass_rate is None]
 
     return {
         "schema_version": SCHEMA_VERSION,
@@ -490,14 +519,18 @@ def compute_metrics(
         "repeats": repeats,
         "partial": partial,
         "cases": len(results),
+        "scored_cases": len(scored),
+        "unscored_cases": sorted(unscored),
         "overall_accuracy": round(
-            (sum(r.pass_rate for r in results) / len(results)) if results else 0.0, 4
+            (sum(r.applied_pass_rate or 0.0 for r in scored) / len(scored)) if scored else 0.0, 4
         ),
         "buckets": bucket_metrics,
         "min_bucket": min_bucket,
         "flip_rate": round(flip_rate, 4) if flip_rate is not None else None,
+        "flippable_cases": len(flippable),
         "flipped_cases": sorted(r.case_id for r in flips),
-        "fallback_count": sum(r.fallback_repeats for r in results),
+        "fallback_count": fallback_repeats,
+        "fallback_rate": round(fallback_rate, 4),
         "fallback_reasons": sorted({r.fallback_reason for r in results if r.fallback_reason}),
         "shortcut_hits": sum(1 for r in results if r.shortcut_hit),
         "verdict_sources": sorted({r.verdict_source for r in results if r.verdict_source}),
@@ -508,6 +541,7 @@ def compute_metrics(
         "thresholds": {
             "bucket_drop_pt": BUCKET_DROP_PT,
             "flip_rate_delta_pt": FLIP_RATE_DELTA_PT,
+            "fallback_rate_delta_pt": FALLBACK_RATE_DELTA_PT,
         },
     }
 
@@ -553,6 +587,15 @@ def check_gate(
             else:
                 failures.append(f"桶 {name} 在本次运行中缺失（覆盖被删除，棘轮不允许）")
             continue
+        # 样本太薄的桶不做棘轮判定：降级会削掉分母，2 例全对就报 100% 会让门禁失去意义
+        base_n = int(base.get("n") or 0)
+        current_n = int(current.get("n") or 0)
+        if base_n and current_n < max(1, int(base_n * MIN_SCORED_RATIO)):
+            notes.append(
+                f"桶 {name} 本次仅 {current_n} 例落地（基线 {base_n} 例，低于 {MIN_SCORED_RATIO:.0%} 门槛）"
+                "：样本不足，本桶不参与棘轮判定"
+            )
+            continue
         drop_pt = (base["accuracy"] - current["accuracy"]) * 100
         if drop_pt > threshold:
             failures.append(
@@ -576,6 +619,29 @@ def check_gate(
                 f"抖动率上升 {delta_pt:.1f}pt（基线 {baseline['flip_rate']:.3f} → 本次 {run['flip_rate']:.3f}，阈值 {flip_threshold:.1f}pt）"
             )
 
+    # 降级率门禁：准确率只看已落地判决，所以必须另有一道闸看住"降级率飙升"
+    # ——否则 provider 故障会以"容忍降级"的名义躲过所有检查（F6 那类缺陷正是如此）。
+    fallback_threshold = float(
+        baseline.get("thresholds", {}).get("fallback_rate_delta_pt", FALLBACK_RATE_DELTA_PT)
+    )
+    run_fallback = run.get("fallback_rate")
+    base_fallback = baseline.get("fallback_rate")
+    if run_fallback is None:
+        notes.append("降级率缺失，门禁跳过")
+    elif base_fallback is None:
+        notes.append(f"基线无降级率，本次记录为 {run_fallback:.3f}（下次起可门禁）")
+    else:
+        fallback_delta_pt = (run_fallback - base_fallback) * 100
+        if fallback_delta_pt > fallback_threshold:
+            failures.append(
+                f"provider 降级率上升 {fallback_delta_pt:.1f}pt（基线 {base_fallback:.3f} → 本次 {run_fallback:.3f}，阈值 {fallback_threshold:.1f}pt）"
+            )
+
+    if run.get("unscored_cases"):
+        notes.append(
+            f"{len(run['unscored_cases'])} 例全部降级、未计入准确率：{', '.join(run['unscored_cases'][:8])}"
+        )
+
     return GateReport(passed=not failures, failures=failures, notes=notes)
 
 
@@ -592,10 +658,13 @@ def baseline_from_metrics(metrics: dict[str, Any], *, note: str | None = None) -
         },
         "min_bucket": metrics.get("min_bucket"),
         "overall_accuracy": metrics.get("overall_accuracy"),
+        "scored_cases": metrics.get("scored_cases"),
+        "fallback_rate": metrics.get("fallback_rate"),
         "flip_rate": metrics.get("flip_rate"),
         "thresholds": {
             "bucket_drop_pt": BUCKET_DROP_PT,
             "flip_rate_delta_pt": FLIP_RATE_DELTA_PT,
+            "fallback_rate_delta_pt": FALLBACK_RATE_DELTA_PT,
         },
     }
     if note:

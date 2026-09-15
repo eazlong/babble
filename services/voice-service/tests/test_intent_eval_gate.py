@@ -15,6 +15,7 @@ import asyncio
 import json
 import os
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -86,6 +87,9 @@ def test_rulings_are_recorded_and_consistent() -> None:
     assert rulings, "rulings.jsonl 为空：裁定过程没有留痕"
     graded = {case["id"] for case in load_cases()}
     pending = {case["id"] for case in load_pending_rulings()}
+    # 被后续裁定取代的用例 id（已从待裁定集移除）也应被引用得到
+    superseded_ids = {r["supersedes"] for r in rulings if r.get("supersedes")}
+    known_cases = graded | pending | superseded_ids
     seen: set[str] = set()
 
     for ruling in rulings:
@@ -101,7 +105,7 @@ def test_rulings_are_recorded_and_consistent() -> None:
         if superseded:
             assert superseded not in pending, f"{superseded} 已裁定却仍在待裁定集里"
         for case_id in ruling["affects_cases"]:
-            assert case_id in graded or case_id in pending, (
+            assert case_id in known_cases, (
                 f"{ruling_id} 引用了不存在的用例 {case_id}"
             )
 
@@ -295,9 +299,11 @@ def test_stub_client_counts_calls() -> None:
 
 
 def test_call_accounting_counts_repeats_not_cases() -> None:
-    """费用记账要按『次』而不是按『例』——N=5 的一次全量跑是 350 次调用，不是 70 次。"""
+    """费用记账要按『次』而不是按『例』——N=5 的一次全量跑是 5 倍用例数的调用。"""
+    total_cases = len(load_cases())
     metrics = _run_stub("perfect", repeats=3)
-    assert metrics["llm_calls_lower_bound"] == 70 * 3
+    assert metrics["cases"] == total_cases
+    assert metrics["llm_calls_lower_bound"] == total_cases * 3
     assert metrics["fallback_count"] == 0
 
 
@@ -309,6 +315,150 @@ def test_reserved_fields_keep_rule_layer_semantics() -> None:
     metrics = _run_stub("perfect")
     assert metrics["shortcut_hits"] == 0, "规则层尚未落地，短路命中必须为 0"
     assert metrics["verdict_sources"] == ["llm"]
+
+
+# ────────────────────── 测量有效性：降级不得污染准确率 ──────────────────────
+
+_FALLBACK_CONTEXT = {
+    "npc_question": "请跟老师读：Nice to meet you",
+    "expected_slots": [{"key": "answer", "type": "keyword", "description": "课堂回答"}],
+    "expected_answer_type": "keyword",
+    "candidate_answers": ["Nice to meet you"],
+    "recent_turns": [],
+    "language": "en",
+    "task_mode": "dialogue",
+}
+
+
+def _mixed_case(case_id: str, raw_text: str) -> dict:
+    return {
+        "id": case_id,
+        "bucket": "closed_set",
+        "raw_text": raw_text,
+        "expect": {"intent": "provide", "extracted": {"answer": "Nice to meet you"}},
+        "context": _FALLBACK_CONTEXT,
+    }
+
+
+class _MixedCompletions:
+    """按 raw_text 决定这次调用是"正常判决"还是"网关返回 HTML"（即 provider 降级）。"""
+
+    def __init__(self, fallback_texts: set[str], *, fallback_once: bool = False):
+        self._fallback_texts = fallback_texts
+        self._fallback_once = fallback_once
+        self._already_fell_back: set[str] = set()
+        self.calls = 0
+
+    def _should_fall_back(self, raw: str) -> bool:
+        if raw not in self._fallback_texts:
+            return False
+        if not self._fallback_once:
+            return True
+        if raw in self._already_fell_back:
+            return False
+        self._already_fell_back.add(raw)
+        return True
+
+    async def create(self, *, model: str, messages: list[dict], **kwargs) -> object:
+        self.calls += 1
+        raw = str(json.loads(messages[-1]["content"]).get("raw_text", ""))
+        if self._should_fall_back(raw):
+            return "<!doctype html>\n<html>gateway landing page</html>"
+        return SimpleNamespace(
+            choices=[
+                SimpleNamespace(
+                    message=SimpleNamespace(
+                        content=json.dumps(
+                            {
+                                "corrected_text": raw,
+                                "correction_applied": False,
+                                "correction_reason": None,
+                                "extracted": {"answer": "Nice to meet you"},
+                                "intent_matched": True,
+                                "intent": "provide",
+                                "guidance": {"npc_line": None},
+                                "confidence": 0.9,
+                            },
+                            ensure_ascii=False,
+                        )
+                    ),
+                    finish_reason="stop",
+                )
+            ],
+            model_dump=lambda mode="json": {"model": "mixed"},
+        )
+
+
+class _MixedClient:
+    def __init__(self, fallback_texts: set[str], *, fallback_once: bool = False):
+        self.chat = SimpleNamespace(
+            completions=_MixedCompletions(fallback_texts, fallback_once=fallback_once)
+        )
+
+
+def _mixed_metrics(
+    fallback_texts: set[str], *, repeats: int = 1, fallback_once: bool = False
+) -> dict:
+    from src.services.asr_postprocess import ASRPostprocessor
+
+    cases = [_mixed_case("mx_ok", "Nice to meet you"), _mixed_case("mx_bad", "BOOM")]
+    postprocessor = ASRPostprocessor(
+        client=_MixedClient(fallback_texts, fallback_once=fallback_once)  # type: ignore[arg-type]
+    )
+    results = asyncio.run(run_eval(cases, postprocessor, repeats=repeats, concurrency=1))
+    return compute_metrics(results, repeats=repeats, mode="live", model="mixed")
+
+
+def test_provider_fallback_does_not_count_as_a_wrong_answer() -> None:
+    """网关 500 不是模型的判决：不得计入准确率（否则网关抖动会伪装成准确度回归）。"""
+    metrics = _mixed_metrics({"BOOM"})
+
+    assert metrics["buckets"]["closed_set"]["accuracy"] == 1.0, "降级用例被算成了答错"
+    assert metrics["buckets"]["closed_set"]["n"] == 1, "分母应为已落地判决的用例数"
+    assert metrics["unscored_cases"] == ["mx_bad"]
+    assert metrics["fallback_rate"] == 0.5
+
+
+def test_fallback_rate_is_gated_separately() -> None:
+    """容忍降级 ⇏ 放过降级：降级率飙升必须自己被门禁抓住。"""
+    baseline = baseline_from_metrics(_mixed_metrics(set()))
+    assert baseline["fallback_rate"] == 0.0
+
+    degraded = _mixed_metrics({"BOOM"})
+    gate = check_gate(degraded, baseline)
+
+    assert not gate.passed
+    assert any("降级率上升" in item for item in gate.failures), gate.failures
+
+
+def test_fallback_repeat_is_not_counted_as_a_flip() -> None:
+    """抖动率只看已落地判决：某次 repeat 降级不能让该例被判为"结论翻转"。"""
+    metrics = _mixed_metrics({"BOOM"}, repeats=3, fallback_once=True)
+
+    assert metrics["flipped_cases"] == [], "降级的那一次 repeat 被误判成翻转"
+    assert metrics["flippable_cases"] == 2, "两个用例都有 >=2 次落地，均可判定抖动"
+    assert metrics["overall_accuracy"] == 1.0
+    assert metrics["fallback_rate"] < 0.5
+
+
+def test_thin_bucket_is_not_ratcheted() -> None:
+    """降级会把分母削薄：某桶只剩 1–2 例时不得用它的准确率判定退步或进步。"""
+    big = [
+        _mixed_case(f"mx_{index}", "Nice to meet you") for index in range(10)
+    ]
+    from src.services.asr_postprocess import ASRPostprocessor
+
+    def run(cases):
+        postprocessor = ASRPostprocessor(client=_MixedClient(set()))  # type: ignore[arg-type]
+        results = asyncio.run(run_eval(cases, postprocessor, repeats=1, concurrency=1))
+        return compute_metrics(results, repeats=1, mode="live", model="mixed")
+
+    baseline = baseline_from_metrics(run(big))
+    thin = run(big[:2])  # 只剩 2 例落地
+    gate = check_gate(thin, baseline)
+
+    assert any("样本不足" in note for note in gate.notes), gate.notes
+    assert not any("退步" in item for item in gate.failures), gate.failures
 
 
 # ────────────────────────────── 真实模型（opt-in） ──────────────────────────────
