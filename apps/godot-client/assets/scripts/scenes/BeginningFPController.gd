@@ -92,6 +92,9 @@ signal prologue_completed()
 signal task_completed(task_name: String)
 
 func _ready() -> void:
+	# 环境音（批次 1 T16）：BeginningFP 无 BGM，只铺开始环境音床（两条启动路径都生效）
+	if AudioManager:
+		AudioManager.play_ambient_named("res://assets/audio/amb/beginning_ambient.ogg")
 	if GameManager.should_resume_to_scene("BeginningFP"):
 		# CLAUDE.md §11：不要在 _ready() 中直接抢切场景，
 		# 否则会报 "Parent node is busy adding/removing children"。

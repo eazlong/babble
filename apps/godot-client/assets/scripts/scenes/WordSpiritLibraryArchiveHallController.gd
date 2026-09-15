@@ -109,6 +109,12 @@ func _ready() -> void:
 	
 	HybridAPI.set_asr_default_answer_test_enabled(true, "res://assets/test_audio/",
 		["hello.wav", "letter_a.wav", "letter_p.wav", "letter_p.wav", "letter_l.wav", "letter_e.wav", "done.wav", "apple.wav", "next.wav"])
+
+	# BGM + 环境音（批次 1 T16）：词灵图书馆归档厅——安静神秘 + 聚气室低频嗡鸣
+	var audio: Variant = _audio_manager()
+	if audio:
+		audio.play_bgm_named("res://assets/audio/bgm/archive_hall_bgm.ogg")
+		audio.play_ambient_named("res://assets/audio/amb/formation_room_hum.ogg")
 	
 
 func _process(delta: float) -> void:

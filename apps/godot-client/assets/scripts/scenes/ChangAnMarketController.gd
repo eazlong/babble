@@ -70,6 +70,11 @@ func _ready() -> void:
 	var manager: Variant = _game_manager()
 	if manager:
 		manager.set_checkpoint(str(config.get("checkpoint_id", "ChangAnMarket")), not manager.is_test_mode_skip_auto_load_save())
+	# BGM + 环境音（批次 1 T16）：长安集市——轻快不喧宾夺主 + 集市人声床
+	var audio: Variant = _audio_manager()
+	if audio:
+		audio.play_bgm_named("res://assets/audio/bgm/changan_market_bgm.ogg")
+		audio.play_ambient_named("res://assets/audio/amb/changan_market_ambient.ogg")
 	_load_dialogue_flows()
 	_build_visuals()
 	_setup_voice_failure_intervention()

@@ -104,6 +104,12 @@ func _ready() -> void:
 		_start_hub()
 	else:
 		_start_intro()
+	# BGM + 环境音（批次 1 T16）：幻影客栈——客栈环境音 + 归档厅 BGM 低音量暂用
+	var audio: Variant = _audio_manager()
+	if audio:
+		audio.play_bgm_named("res://assets/audio/bgm/archive_hall_bgm.ogg")
+		audio.set_bgm_volume(0.3)
+		audio.play_ambient_named("res://assets/audio/amb/inn_ambient.ogg")
 
 func _process(delta: float) -> void:
 	_animate_first_light(delta)
