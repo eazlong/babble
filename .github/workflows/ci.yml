@@ -47,3 +47,36 @@ jobs:
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         if: matrix.service == 'services/dialogue-service'
+
+  voice-service-intent-eval:
+    # 上面的 lint-and-test 矩阵虽然列了 services/voice-service，但该目录**没有 package.json**，
+    # 且全仓库的 package.json 里没有任何一处调用 pytest —— 所以那一步跑不到 voice-service 的
+    # Python 测试。这里用最小依赖集（requirements-eval.txt，不含 ASR/TTS 引擎）把
+    # 意图判定评测的**离线门禁**真正跑起来：零成本、不联网、秒级。
+    #
+    # 仍未接线：voice-service 的完整 Python 套件（需要 faster-whisper 等重依赖）。
+    # 见 docs/plans/2026-09-15-intent-accuracy.md
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: |
+            services/voice-service/requirements.txt
+            services/voice-service/requirements-eval.txt
+
+      - name: Install eval deps
+        run: pip install -r services/voice-service/requirements-eval.txt
+
+      - name: Offline intent-eval gate（harness/门禁/客户端生命周期/形状漂移）
+        working-directory: services/voice-service
+        run: |
+          python -m pytest \
+            tests/test_intent_eval_gate.py \
+            tests/test_asr_postprocess_provider_shape.py \
+            tests/test_asr_postprocess_client_lifecycle.py \
+            -q

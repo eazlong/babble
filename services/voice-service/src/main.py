@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from src.api.routes import health
 from src.api.routes import asr
 from src.api.routes import tts
+from src.services.asr_postprocess import asr_postprocessor
 from src.services.service_manager import service_manager
 
 app = FastAPI(title="LinguaQuest Voice Service", version="0.1.0")
@@ -24,6 +25,12 @@ async def startup_event():
     """Initialize services on startup."""
     # 使用ServiceManager统一初始化所有引擎
     await service_manager.init_all()
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """关停时释放复用的 LLM 客户端（连接池）。"""
+    await asr_postprocessor.aclose()
 
 
 @app.get("/health")

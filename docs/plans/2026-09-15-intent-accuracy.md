@@ -1,0 +1,386 @@
+# 目标意图判定准确度：评测尺子 + 确定性规则层
+
+**状态**: proposed
+**日期**: 2026-09-15
+**范围**: `services/voice-service/src/services/asr_postprocess.py` 的目标意图判定链路（`target_intent` / `intent_description` / `expected_slots` / `candidate_answers` → `intent` / `extracted`）
+**方向选定**: A（评测尺子）+ C（确定性规则层前置与契约扩展）
+**不在范围**: ADR-0001 的无状态边界本身、值池与槽位状态机（仍归前端）、音频端到端评测、离线深度补评链路
+
+---
+
+## 1. 问题陈述与失败模式
+
+voice-service 当前的"目标识别"是**单次 LLM 一次性出结论**：把上下文 JSON 与规则说明塞进一次 `chat.completions` 调用（`asr_postprocess.py:501-545`），拿回 JSON 后做轻量过滤即返回。链路本身没有确定性校验层，也没有任何准确度度量。
+
+| 编号 | 失败模式 | 机制与证据 |
+|---|---|---|
+| **F1** | 误接收：跑题/乱说被判 `provide`，垃圾值填死槽位 | 判定完全依赖模型自觉（prompt 里只有 `Do not invent slot values when intent is not matched.` 这类文字约束，`asr_postprocess.py:501-520`）；且 `intent_matched` 由 `intent == "provide"` 机械推导（L287-290） |
+| **F2** | 误拒：正确作答被判 `off_topic`，孩子被反复重问 | 闭集题只把 `candidate_answers` 写进 prompt（"prefer candidate_answers"，L514），没有拼音/近音/编辑距离匹配层；中文名与中英混说尤其吃亏 |
+| **F3** | 标签混淆：`provide` ↔ `delegate`；PROPOSED 态下"接受提议/拒绝/换一个"三分不开 | 意图标签只有三值（`IntentLabel`，L32）；客户端被迫自建 `DECLINE_MARKERS`（`BeginningFPController.gd:531-545`）与字母/指令本地分类（`WordSpiritLibraryArchiveHallController.gd:14-21`、L243-255） |
+| **F4** | 故障静默放行：一切异常都变成 `provide` | `_fallback()` 的容错设计：除 `missing_context` 外一律 `intent=provide`、`intent_matched=True`（L478-496）。网络抖动会导致"孩子答对了"的记录，实为误接收 |
+| **F5** | 不稳定：同一句话跨轮判定漂移 | 单次调用、无投票、无自洽性检查；`temperature=0.1` 压不住上下文变化带来的翻转 |
+
+**根因层：不可度量。** `tests/test_asr_postprocess.py` 只断言响应契约与降级路径（三个端点共享的成功/降级契约），没有任何一条断言"这句话该判 `provide` 还是 `off_topic`"。因此 prompt 的任何改动都是盲改，准确度是形容词而非数字。
+
+---
+
+## 2. 已定约束
+
+1. **ADR-0001 无状态边界不变**：voice-service 不造值、不持槽位状态、不解释值池；跨轮上下文靠客户端每轮重传 `recent_turns` 重建。
+2. **双客户端契约**：Godot 与 Cocos 复用同一 ASR 响应契约，改动必须向后兼容（依据见 §6）。
+3. **成本预算**：允许**最多 2 次** LLM 调用，但本计划一期只使用 1 次（规则层短路实为**减少**调用量）；第二次调用留给后续的独立校验方向。
+4. **平台事实**：`requirements.txt` 当前无 `pypinyin`，引入与否见 §6.1。
+
+**证据索引**
+
+| 事实 | 位置 |
+|---|---|
+| 六道闸门与降级语义 | `services/voice-service/src/services/asr_postprocess.py:113-163, 478-496` |
+| LLM 调用参数（json_object / temp 0.1 / length 重试） | 同上 `L367-415` |
+| 意图归一与槽位白名单过滤 | 同上 `L287-290, 452-458` |
+| guidance 与"已追问过"判定 | 同上 `L460-476` |
+| 非对话任务旁路（`task_mode`） | 同上 `L134-140`；`WordSpiritLibraryArchiveHallController.gd:818-824` |
+| 置信度实为语种概率 | `whisper.py:136`（`info.language_probability`） |
+| 响应契约组装 | `src/api/routes/asr.py:31-67` |
+| 引擎优先级链 | `src/services/service_manager.py:63-75, 94-143` |
+
+---
+
+## 3. 支柱与反支柱
+
+### 支柱
+
+**P1 先度量后调参（Measure before tune）**
+任何 prompt / 规则 / 模型改动都必须带分桶 delta；"我觉得更准了"不进入代码库。
+*Design test*：在"换个更大的模型试试"与"先补 20 条同类失败样本"之间 → **选后者**。
+*张力与例外*：线上救火允许跳过，但 48h 内必须补样本，否则该改动**不得进入 baseline**（下次会被当作退步打回）。
+
+**P2 确定性优先，模型兜底（Deterministic first）**
+能用本地代码算出的判定（闭集候选匹配、姓名归一、整词边界、拼音/编辑距离）不问 LLM；LLM 只处理规则层明确弃权的样本。
+*Design test*：闭集题候选匹配 → **选本地短路**，即使 LLM 也能答对。
+*张力*：直接对撞 P3——规则层的假阳性就是新的 F1，且比 LLM 的 F1 更隐蔽。
+
+**P3 保守接收，但追问有上限（Conservative accept, bounded nagging）**
+判定层与规则层分歧时不接受；但"追问"全局最多一次（复用既有 `confirmation_already_asked` 机制，`asr_postprocess.py:460-476, 542`）。
+*Design test*：分歧时 → 判不通过并追问；**若本轮已追问过** → 放行但打 `low_confidence` 标记、不再追问。宁可放一次可疑答案进下游打分，也不让孩子被问第三次。
+
+**P4 每个判决带判据（Every verdict carries its evidence）**
+输出必须带 `verdict_source`（`rule`/`llm`）、`matched_rule` / `matched_candidate`、命中的闸门。没有判据的新标签不予合并。
+*Design test*：想加 `chitchat` 标签 → 先回答"它的判据字段与回归样本是什么"；答不上就不加。
+*张力*：与 P1 的"最快拿到数字"抢工时——判据字段是成本，收益要到规则层落地才兑现。
+
+### 反支柱
+
+- **A1 不以"换更强的模型"作为主解法** —— 同时打穿成本预算（预算批的是 2 次调用，不是 2 倍单价）与可复现性（换模型 = baseline 全部失效）。
+- **A2 不在 voice-service 里造值或持槽位状态** —— ADR-0001 的边界。一旦破了，值池、状态机、双端复用、水平扩展会一起塌。
+- **A3 不追求覆盖完整意图空间** —— voice-service 只回答"这个槽位被填了吗、是谁填的"。跑题的语义分类不是它的职责，否则 `intent` 会长成第二个 dialogue-service。
+- **A4 不用真实儿童语音做一期手感调参** —— 一期只用文字集；音频集二期再上，混着调会让变量不可分离。
+
+---
+
+## 4. 核心循环（以批次为主）
+
+**30 秒循环（原子动作）**
+- 评测侧：`python scripts/run_intent_eval.py --bucket open_slot` → 秒级出混淆矩阵与 baseline delta。
+- 规则侧：一条样本进来 → 规则层命中即短路（省一次 LLM、省 1–3 秒），未命中转 LLM 原路径。
+
+> **接口硬约束**：评测 runner 的输出 schema 必须**现在就为规则层预留字段**——`verdict_source`、`shortcut_hit`、`matched_rule`。否则规则层落地时要重造评测器数据结构。
+
+**5 分钟循环（一个批次）**
+一个分桶跑完 → 人工过一眼该桶全部失败样本 → 决定"改规则阈值"还是"改 prompt 措辞"。
+*裁决规则（必须有牙齿）*：**同一分桶内 ≥3 条同因失败 → 必须转成规则或判据字段，禁止再用 prompt 措辞打补丁。**
+
+**会话循环（一次迭代）**
+一个改动 → 全量分桶 → 与 baseline 对比 → **某桶退步 >2pt 则整体拒绝**（棘轮原则）→ baseline 更新作为一次显式 commit（进 diff、进 review）。
+
+**进度循环（长期）**
+棘轮基线 + 分桶扩充。**线上每发现一例新失败 → 立刻作为一条样本进对应桶。** "失败即样本"是评测集不脱节的唯一机制。
+
+**团队动机侧（SDT 适配）**
+自主性：阈值与 baseline 在仓库里，团队自己调，不依赖外部标注。胜任感：每次改动都有 delta 数字。关联性：样本来自客户端真实传的 context 组合。
+
+---
+
+## 5. 度量口径
+
+### 5.1 双门禁（回归门禁只看这两项）
+
+1. **最差桶准确率（min-bucket accuracy）** —— 防止"总体不错但某一桶坑死"。
+2. **抖动率（flip rate）** —— 同一输入重复 N 次，结论翻转的比例。这是 F5 的直接度量。
+
+> **成本硬约束**：抖动率**只在 nightly / slow 通道**跑（N=5），日常批次不跑。否则门禁一次要烧几十次 LLM 调用——不写进文档就会被违反。
+
+总体准确率、成本加权分数一并**记录**在报告中，但**不作为门禁**。
+
+### 5.2 分桶清单
+
+| 桶 | 覆盖内容 | 一期样本量 |
+|---|---|---|
+| `open_slot` | 开放题（无候选答案、无可委托值池） | 40–60 |
+| `closed_set` | `candidate_answers` 非空的封闭题 | 60–80 |
+| `person_name` | `expected_answer_type == "player_name"` / `person_name` 槽位，含可委托 | 50–70 |
+| `proposed_state` | PROPOSED 态下的接受 / 拒绝 / 换一个三分 | 30–50 |
+| `negative` | 负样本：NPC 问题回声、复读上一轮答案、纯语气词、中英混说、ASR 典型误听 | 60–80 |
+| `non_dialogue` | `task_mode != "dialogue"` 旁路 | 10–20 |
+
+合计 250–360 条。**每桶至少 3 条来自真实日志或手写**；另置 20–30 条真实样本作锚点。样本由 LLM 生成带来的分布偏差**写进文档，不假装它是真值**。
+
+### 5.3 样本 schema（含为规则层预留字段）
+
+```jsonc
+{
+  "id": "closed_set_0007",
+  "bucket": "closed_set",
+  "raw_text": "出发",                     // 一期为文字，不含音频
+  "context": {                           // 与客户端实际传参同构
+    "npc_question": "...",
+    "expected_slots": [{ "key": "answer", "type": "keyword", "description": "..." }],
+    "expected_answer_type": "keyword",
+    "target_intent": "provide_source_name",
+    "intent_description": "...",
+    "candidate_answers": ["出发", "Let's go", "继续"],
+    "recent_turns": [],
+    "task_mode": "dialogue"
+  },
+  "expect": {
+    "intent": "provide",
+    "extracted": { "answer": "出发" }
+  },
+  "provenance": "llm_generated | real_log | handwritten",
+  "note": "可选：这条样本要钉住什么"
+}
+```
+
+**运行期输出（评测报告每例）**
+
+```jsonc
+{
+  "id": "closed_set_0007",
+  "bucket": "closed_set",
+  "actual": { "intent": "provide", "extracted": { "answer": "出发" } },
+  "pass": true,
+  "verdict_source": "rule",      // rule | llm  ← 为规则层预留
+  "shortcut_hit": true,          //            ← 为规则层预留
+  "matched_rule": "closed_set_exact_zh",
+  "latency_ms": 12,
+  "llm_called": false
+}
+```
+
+**报告指标**：总体准确率、各桶准确率（含最差桶）、混淆矩阵（含新增 `accept`/`reject` 的 5×5）、抖动率、短路命中率、短路路径准确率、LLM 调用量与耗时。
+
+---
+
+## 6. 规则层设计
+
+### 6.1 依赖决策
+
+**引入 `pypinyin`。** 理由：一期文字集里中文名匹配是 F2 的主要来源（孩子说"艾灵"，期望值可能是 `Ailing`），自实现声母韵母近似覆盖面吃不住；代价仅镜像 +~5MB。约束：**拼音匹配只在 `closed_set` 与 `person_name` 启用**，且必须同时满足整词边界 + 候选白名单内 + 编辑距离阈值。
+
+### 6.2 匹配维度
+
+| 维度 | 用途 | 约束 |
+|---|---|---|
+| 精确匹配（归一化后） | 闭集题、候选答案 | 归一化：去空格/标点、大小写、全半角 |
+| 拼音 / 近音匹配 | 中文名与中文候选 | 声母韵母近似 + 声调忽略 |
+| 编辑距离 | ASR 轻微误听 | 阈值按词长分档，短词严、长词松 |
+| 中英混说归一 | `cn_en` 输入 | 语言无关的等价类（如 "出发" ↔ "let's go"） |
+| 整词边界 | 英文短标记 | **必须整词匹配**——子串匹配会把 `Nolan`/`Nora` 误判成 `no`（该坑已在 `BeginningFPController.gd:533` 注释中记录） |
+
+### 6.3 短路触发条件（三条件同时成立）
+
+1. **高置信**：匹配分数高于该维度阈值；
+2. **整词/完整命中**：不是子串或片段命中；
+3. **候选白名单内**：命中值必须来自 `candidate_answers` 或槽位声明的值池。
+
+条件不成立 → **弃权**，交回 LLM 原路径（规则层永不"猜"）。
+
+### 6.4 契约扩展（向后兼容的加法）
+
+`intent` 由 3 值扩至 5 值：`provide` / `delegate` / `off_topic` / **`accept`** / **`reject`**。
+
+**兼容性依据**：`HybridAPI.gd:429-437` 的实现是"`intent` 不在 `[provide, delegate, off_topic]` 白名单内时回退到 `intent_matched`"。因此旧客户端遇到 `accept` 会退化成 `provide`——**恰好是语义最接近的降级**；遇到 `reject`（`intent_matched=False`）退化为 `off_topic`，与客户端现有 `_is_decline_utterance` 兜底行为一致，不崩。
+
+**新增输出字段**：
+- `postprocess.verdict_source`: `rule` | `llm`
+- `postprocess.matched_rule` / `matched_candidate`
+- `postprocess.shortcut_hit`: bool
+- `postprocess.shortcut_confidence`: float（与 `confidence` 分离，避免继续混用 `language_probability`）
+
+**客户端配套改动**：`HybridAPI.gd` 的意图白名单扩展；`BeginningFPController.gd` 的 `_is_decline_utterance` 改为优先读 `reject`，但**保留兜底**以防旧 voice-service 版本。
+
+> 契约扩五值改的是 ADR-0001 定下的标签集，实施时**另立 ADR**（拟 `docs/adr/0009-*`），不并入本计划文档。
+
+### 6.5 delegate 不做规则化
+
+`delegate` 的判定**不从 LLM 手里拿走**——委托表达是开放集（"你帮我起一个吧" / "随便选一个" / "你想一个"），规则层盖不住，硬盖就是制造新的 F1。
+
+---
+
+## 7. MVP 定义与验收判据
+
+**MVP** = runner + 2 个桶（`negative`、`closed_set`）+ baseline 文件 + pytest 门禁（`@pytest.mark.intent_eval`）。
+
+**验收判据（唯一一条）**：面对一次 prompt 改动，它能说出"**最差桶是哪个、退步多少**"。
+
+做到了，说明这把尺子能用；做不到，后面所有工作都不必开始。
+
+---
+
+## 8. 风险与缓解
+
+| 类别 | 风险 | 缓解 |
+|---|---|---|
+| 技术 | golden set 由 LLM 生成 → 分布偏差 | 每桶 ≥3 条真实/手写样本；20–30 条真实样本锚点；偏差写入文档 |
+| 设计 | 抖动率需重复 N 次 → 成本 ×N | 抖动率只在 nightly / slow 通道跑（N=5），日常批次不跑 |
+| 工程 | 规则层假阳性 = 新 F1，且旧客户端会当 `provide` 接受 | 短路三条件同时成立才触发；返回 `verdict_source` 供线上回溯 |
+| 流程 | 评测集三个月后与实际输入分布脱节 | "失败即样本"：线上每例新失败立刻进桶 |
+| 流程 | 门禁退步被"顺手更新 baseline"绕过 | baseline 更新必须是显式 commit，进 diff 与 review |
+
+---
+
+## 9. 范围分层与时间
+
+**全量愿景**：5 桶文字集 + 规则层（闭集 + 名字）+ 契约扩 5 值 + 判据字段 + 双门禁进 CI。
+
+**砍一半**：3 桶（少 `proposed_state` / `open_slot`）+ 规则层只做闭集 + 契约只加 `reject`/`accept`，不加判据字段。
+
+**最小可交付**：runner + baseline + 门禁（**不含规则层**）。这是唯一"砍了也不亏"的部分——它是规则层的前置，而规则层砍掉后它依然独立成立。
+
+**时间（批次日节奏）**：MVP 0.5–1 天 → 规则层 2–3 天（含约 1 天标注与阈值校准）→ 契约双端同步 1–1.5 天。合计 **4–5.5 天**。
+
+---
+
+## 10. 不做什么
+
+1. **不换更强的模型当主解法**（A1）。
+2. **不在 voice-service 造值或持槽位状态**（A2 / ADR-0001）。
+3. **不扩到完整意图空间**：不加 `chitchat` / `question` / `letter_name` / `command` 标签（A3）。字母与指令分类继续留在客户端本地（该分工已有 `WordSpiritLibraryArchiveHallController.gd:14-21` 的偏离说明背书）。
+4. **一期不引入音频**：不做端到端音频评测，不碰离线深度补评的重跑 ASR 链路（A4）。
+5. **不用 `confidence` 冒充字级置信度**：新增 `shortcut_confidence` 与既有 `confidence` 分离；`language_probability` 的错位问题记录在案，一期不做重构。
+
+---
+
+## 11. 实施记录（2026-09-15，方向 A 的 MVP 已落地）
+
+### 11.1 交付物
+
+| 文件 | 作用 |
+|---|---|
+| `services/voice-service/tests/intent_eval/contexts.json` | 4 个场景上下文模板，形状从客户端真实构造点重建（各自标了 `_source`） |
+| `services/voice-service/tests/intent_eval/cases.jsonl` | 70 条可判分用例：`closed_set` 36 + `negative` 34 |
+| `services/voice-service/tests/intent_eval/cases_pending_ruling.jsonl` | 9 条待裁定用例（不计入门禁） |
+| `services/voice-service/tests/intent_eval/harness.py` | 装载 / 判分 / 指标 / 门禁（runner 与 pytest 共用） |
+| `services/voice-service/scripts/run_intent_eval.py` | CLI：报告、双门禁、预算闸门、基线棘轮 |
+| `services/voice-service/tests/test_intent_eval_gate.py` | 22 条离线测试（含 live 用例 opt-in） |
+| `services/voice-service/tests/intent_eval/baseline.json` | live 基线（首次由 `--update-baseline` 生成） |
+| `services/voice-service/tests/intent_eval/README.md` | 使用方式、门禁规则、样本约定与**偏差声明** |
+
+**MVP 验收判据已满足**：runner 能说出"最差桶是哪个、退步多少"（报告里 `最差桶 = …` 一行 + 每桶 `与基线` 列）。
+
+### 11.2 首次测量结果（模型 `qwen3.8-27b-fp8`）
+
+| 运行 | 规模 | 总耗时 | closed_set | negative | 总体 | 抖动率 |
+|---|---|---|---|---|---|---|
+| Run 1（N=1） | 70 次调用 | 46.4s（最慢单次 7.3s） | 0.972 (35/36) | 0.971 (33/34) | **0.971** | 未测 |
+| Run 2（N=5，写入基线） | 350 次调用 | 360.6s（最慢单次 37.8s） | 0.972 | 0.988 | **0.980** | **0.0143**（1 例翻转） |
+
+预算实耗：**420 次调用**，全部使用 `--max-calls` 闸门约束。
+
+**两个失败样本，恰好指向两个不同的靶子：**
+
+- **`cs_009`「接着走」→ `extracted = "接着走"`，期望规范化到候选「接着」。五次全错（确定性失败）。**
+  同一个 prompt 下 `cs_007`「我们启程吧」却被正确规范化到「启程」。所以问题不是"模型不会规范化"，而是**规范化行为不一致**——这正是方向 C 的规则层最直接的靶子：确定性 canonicalization 一次消掉整类不确定性，且不花钱。
+- **`neg_017`「我看到了糖葫芦」→ 判 `provide` 并回填 `糖葫芦`，期望 `off_topic`（F1 误接收）。**
+  上下文是 `recent_turns` 里已记录玩家上一轮答过同一句、而 NPC 已换了新问题。它同时也是**唯一抖动用例**：5 次里 3 次对、2 次错（40% 翻转）。这说明难点集中在**需要 `recent_turns` 推理的上下文相关判定**，而不在"识别语气词/复读"这类表层负样本。
+
+**结论（对下一批样本的指导）**：当前 97–98% 的数字**不可当作乐观信号**——这批用例由 agent 依上下文形状编写，负样本以表层跑题为主，偏易。下一步扩桶应优先 `proposed_state` 与 `person_name`（都是上下文相关），并把"复读上一轮"扩成 6–8 条独立小类。
+
+### 11.3 新发现的失败模式（计划文档原 §1 未覆盖）
+
+**F6：provider 返回非 completion 对象 → 未捕获异常 → HTTP 500。**
+根因是本仓库 `.env` 里 `ASR_POSTPROCESS_BASE_URL` 缺 `/v1` 后缀：请求打到网关站点首页并拿到 HTML（HTTP 200），OpenAI SDK 于是返回 `str`，`_complete_json` 的 `completion.choices[0]` 抛 `AttributeError`。该异常**不在** `process()` 的捕获列表（`APITimeoutError` / `APIStatusError` / `APIError` / `RuntimeError`）内，直接冒泡到路由 → 500。对儿童玩家的表现是"语音识别失败"，而不是既有的容错降级。
+
+- 影响：任何 provider 形状漂移（网关换首页、代理返回 HTML、上游 502 页面）都会复现，不只是配置写错。
+- **已处置（2026-09-15，用户裁定后实施）**：
+  1. `.env` 的 `ASR_POSTPROCESS_BASE_URL` 补上 `/v1`（`services/voice-service/.env`，仅此一处值变更）。
+  2. `_complete_json` 取 `choices` 前加守卫：
+     `if not hasattr(completion, "choices"): raise RuntimeError("provider returned non-completion response: ...")`
+     —— 复用既有的 `except RuntimeError` 分支，降级为 `provider_error`（容错放行）。
+  3. 回归测试：`tests/test_asr_postprocess_provider_shape.py`（8 条），覆盖 str/bytes/list 三种非 completion 形状、
+     降级语义（`intent_matched=True`、原样透传文本）、以及"有 `choices` 但为空"不被误伤的两个分支
+     （`player_name` 上下文走本地恢复 `confidence=0.75`；其他类型才落 `provider_error`）。
+- **端到端验证**：把 `ASR_POSTPROCESS_BASE_URL` 故意改回缺 `/v1` 的坏值跑评测，结果由"500"变为
+  `fallback 2 / 降级原因：provider_error`、`LLM 调用下界 0`——守卫在真实缺陷上生效，不再冒泡。
+- 这是本计划中**唯一一处生产代码改动**（MVP 的"零生产改动"约束在此处经用户显式裁定后放开）。
+- 附带缺口：`.env.example` 从未记录 `ASR_POSTPROCESS_*` 这套配置（已补，并写明 `/v1` 要求与症状）。
+
+**F7：无连接复用，且实测延迟可超过配置超时。**
+`ASRPostprocessor` 是模块级单例但 `client=None`，于是每次 `_call_llm` 都新建并关闭一个 `AsyncOpenAI`（`asr_postprocess.py:338-343, 394-396`）。Run 2 实测**单次最慢 37.8s**，超过 `ASR_POSTPROCESS_TIMEOUT_MS=30000` 的配置值——httpx 的超时是分阶段读超时，不是总时长上限。孩子在对话里等 37 秒不可接受，也会让客户端超时逻辑误判。
+
+- **已处置（2026-09-15，用户裁定 [A] 后实施）**：
+  1. `_resolve_client()` 按 `(api_key, base_url, timeout_ms)` **复用**同一个客户端（连接池）。该方法全是同步操作（无 await），在事件循环里天然原子，因此不需要加锁；配置变化时旧客户端进入 `_retired_clients`。
+  2. 新增 `aclose()`，并在 `src/main.py` 的 `shutdown` 事件里关闭——注入的客户端不缓存也不关闭（调用方持有生命周期）。
+  3. `timeout_ms` 升级为**总时长预算**：`process()` 用 `asyncio.wait_for` 兜住 `_call_llm` 整体（含 `finish_reason=length` 的重试），新增 `except asyncio.TimeoutError` → 既有 `timeout` 降级。httpx 的分阶段超时保留为单请求护栏。
+  4. 回归测试：`tests/test_asr_postprocess_client_lifecycle.py`（7 条）——复用、并发只建一个、配置变化才换、`aclose` 释放、注入不被关闭、200ms 预算切掉挂死请求、快请求不受影响。
+- **诚实记录：性能收益未被数据支持。** 改动前后各跑一次 live N=1 全量（70 例）：
+
+  | | 总耗时 | 最慢单次 |
+  |---|---|---|
+  | 改动前 | 46.4s | 7.32s |
+  | 改动后 | **51.5s** | 6.90s |
+
+  总耗时反而略高，两次都在同量级波动内。**结论：Run 2 那个 37.8s 的离群值应归因于 provider 侧排队/抖动，而不是建连开销**——"每次新建客户端"是确凿的架构缺陷（无连接池、每请求多一次 TLS 握手与关闭），但把它当作尾部延迟的主因**没有得到证据支持**。
+  真正兜住尾部的是第 3 条预算护栏（单测里 200ms 预算确实在 200ms 切断了 30s 的慢响应），而不是连接复用。准确率侧无回归：negative −1.8pt（阈值内）、closed_set ±0.0pt，门禁通过。
+
+### 11.4 相对本计划 §5.3 的 schema 扩展
+
+实测后确定的三处扩展（原设计保留可见，不追改原文）：
+
+1. 用例支持 `context_ref` + `context_patch`（引用 `contexts.json` 模板并打补丁），避免 70 条用例重复粘贴整块 context。
+2. `provenance` 枚举定为 `agent_authored` / `human_handwritten` / `real_log`。**当前 70 条全部是 `agent_authored`**，§5.2 要求的"20–30 条真实样本锚点"仍是 TODO，且已写入 README 的偏差声明。
+3. 抖动率抽样新增 `--sample-per-bucket N`（每桶等距抽，确定性）。用例文件按桶排块，取前 N 会只覆盖一个桶——这一点已由离线测试钉住。
+
+另外两条实现口径：
+
+- `verdict_source` 的语义定为 `rule` / `llm`，**降级路径不是判决**（`applied=False` 时为 `None`），规则层上线前恒为 `llm`、`shortcut_hit` 恒为 `False`。
+- 费用记账按**次**而非按**例**（N=5 的一次全量是 350 次调用，不是 70 次）。
+
+### 11.5 下一步（顺序即优先级）
+
+1. **裁定 9 条待裁定用例**（`cases_pending_ruling.jsonl`），其中 `pr_009` 直接决定 `cs_009` 的期望值是否翻转。
+2. **补 20–30 条真实样本锚点**（真实日志或人工记录），把分布偏差从"声明"变成"缩小"。
+3. **扩桶**：优先 `proposed_state`（PROPOSED 态接受/拒绝/换一个）与 `person_name`，并把"复读上一轮"扩成独立小类。
+4. ~~**裁定 F6 是否纳入**：一行守卫 + 一条"stub 返回 str"的单元测试。~~
+   **已完成（2026-09-15，用户裁定 [A]）**：`.env` 补 `/v1` + `_complete_json` 守卫 + 8 条回归测试，并已用坏 URL 端到端复现验证。见 §11.3。
+5. ~~**裁定 F7 是否纳入**：共享 client / 连接复用 / 总时长上限。~~
+   **已完成（2026-09-15，用户裁定 [A]）**：见 §11.3 F7，含"性能收益未被数据支持"的诚实记录。
+6. **nightly 接线**：基线现已含 `flip_rate`（0.0143），双门禁可以正式启用（N=5 全量）。
+   **已完成（2026-09-15）**：见 §11.6。
+7. 以上完成后才进入**方向 C**（规则层 + 契约扩五值）。
+
+---
+
+## 12. 评测的接线现状（2026-09-15）
+
+### 12.1 已接线
+
+| 场景 | 入口 | 说明 |
+|---|---|---|
+| 本地 / PR 离线门禁 | `python -m pytest`（`testpaths = tests`） | 37 条评测相关测试，零成本、不联网、秒级 |
+| PR CI | `.github/workflows/ci.yml` → job `voice-service-intent-eval` | 用 `requirements-eval.txt`（**不含** ASR/TTS 引擎）装最小依赖集跑上述离线门禁 |
+| nightly 真实评测 | `.github/workflows/intent-eval-nightly.yml`（UTC 18:00 = 北京 02:00）<br>本地等价：`bash scripts/run_nightly_intent_eval.sh` | N=5 全量 + 双门禁 + 费用闸门；产出 JSON 报告 artifact，并打印与上次的趋势对比 |
+
+- nightly 需要的 secrets：`ASR_POSTPROCESS_BASE_URL`（**必须带 `/v1`**）、`ASR_POSTPROCESS_API_KEY`、`ASR_POSTPROCESS_MODEL`。缺任一则只发 warning 并跳过，不会把 nightly 变红。
+- 报告落在 `tests/intent_eval/reports/`（已加入 `.gitignore`）；评测集与基线本身仍入库。
+- 手工触发：`workflow_dispatch`；省预算：`INTENT_EVAL_REPEATS=1 INTENT_EVAL_MAX_CALLS=80 bash scripts/run_nightly_intent_eval.sh`；零成本验管线：`INTENT_EVAL_STUB=perfect ...`。
+
+### 12.2 顺带修掉的两个接线缺口
+
+1. **`ci.yml` 里 `services/voice-service` 那个矩阵项对 Python 测试不生效**：该目录没有 `package.json`，且全仓库 `package.json` 中没有任何一处调用 `pytest`（已核实）。新增的 `voice-service-intent-eval` job 是目前唯一真正跑 voice-service 测试的 CI 步骤。
+2. **`pytest.ini` 未限定 `testpaths`**：默认会收集 `scripts/test_xfyun.py`（手动集成脚本：真加载 Whisper 模型、需要讯飞凭据），它在干净环境下必然失败（`WHISPER_CACHE=/models` 不可写）。加 `testpaths = tests` 后本地套件由 `1 failed / 129 passed` 变为 **`126 passed / 3 skipped / 0 failed`**；该脚本仍可显式运行。
+
+### 12.3 仍未接线（下一批）
+
+- voice-service 的**完整** Python 套件（`tests/test_voice.py`、`test_xfyun_services.py`、端到端路由测试等）需要 `faster-whisper` / `ctranslate2` 等重依赖，CI 尚未覆盖——这是 voice-service 目前最大的质量缺口。
+- 建议顺带把 `scripts/test_xfyun.py` 的 4 个用例标记为 `@pytest.mark.integration`（它们本就是手工集成脚本），这样"脚本 vs 测试"的边界由标记而非目录来保证。

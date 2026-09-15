@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -93,7 +94,53 @@ class ASRPostprocessResult(BaseModel):
 
 class ASRPostprocessor:
     def __init__(self, client: openai.AsyncOpenAI | None = None):
+        # 调用方注入的客户端（测试 / 上层复用）：不缓存、不关闭，由注入方持有生命周期。
         self.client = client
+        # 进程内复用的客户端：连接池复用，避免每请求新建 + 关闭（见 §11.3 F7）。
+        self._cached_client: openai.AsyncOpenAI | None = None
+        self._cached_key: tuple[str, str, int] | None = None
+        self._retired_clients: list[openai.AsyncOpenAI] = []
+
+    def _resolve_client(self, *, api_key: str, base_url: str, timeout_ms: int) -> openai.AsyncOpenAI:
+        """取客户端：注入优先，否则按 (api_key, base_url, timeout) 复用同一个实例。
+
+        这里全部是同步操作（无 await），在事件循环里天然原子，因此不需要加锁。
+        配置变化（极少）时旧客户端进入 retired，由 `aclose()` 统一关闭。
+        """
+        if self.client is not None:
+            return self.client
+        key = (api_key, base_url, timeout_ms)
+        if self._cached_client is None or self._cached_key != key:
+            if self._cached_client is not None:
+                self._retired_clients.append(self._cached_client)
+            self._cached_client = openai.AsyncOpenAI(
+                api_key=api_key,
+                base_url=base_url,
+                timeout=timeout_ms / 1000,
+            )
+            self._cached_key = key
+            logger.info(
+                "[ASR-POSTPROCESS] llm client created base_url=%s timeout_ms=%s",
+                base_url,
+                timeout_ms,
+            )
+        return self._cached_client
+
+    async def aclose(self) -> None:
+        """关闭本进程复用的客户端（服务关停时调用）。注入的客户端不在此列。"""
+        clients = [
+            client
+            for client in [self._cached_client, *self._retired_clients]
+            if client is not None
+        ]
+        self._cached_client = None
+        self._cached_key = None
+        self._retired_clients = []
+        for client in clients:
+            try:
+                await client.close()
+            except Exception:  # pragma: no cover - 关停路径不应抛错
+                logger.debug("[ASR-POSTPROCESS] closing llm client failed", exc_info=True)
 
     async def process(
         self,
@@ -203,16 +250,22 @@ class ASRPostprocessor:
         )
 
         try:
-            llm_payload = await self._call_llm(
-                api_key=api_key,
-                base_url=base_url,
-                model=model,
-                text=text,
-                asr_confidence=asr_confidence,
-                language=language,
-                context=parsed_context,
-                timeout_ms=timeout_ms,
-                max_tokens=max_tokens,
+            # timeout_ms 是**总时长预算**：httpx 的超时是分阶段读超时，不是总时长上限，
+            # 实测曾出现单次 37.8s 超过配置的 30s（§11.3 F7）。这里用 wait_for 兜总时长，
+            # 覆盖 finish_reason=length 的重试在内。
+            llm_payload = await asyncio.wait_for(
+                self._call_llm(
+                    api_key=api_key,
+                    base_url=base_url,
+                    model=model,
+                    text=text,
+                    asr_confidence=asr_confidence,
+                    language=language,
+                    context=parsed_context,
+                    timeout_ms=timeout_ms,
+                    max_tokens=max_tokens,
+                ),
+                timeout=timeout_ms / 1000,
             )
         except openai.APITimeoutError:
             logger.warning(
@@ -220,6 +273,14 @@ class ASRPostprocessor:
                 base_url,
                 model,
                 timeout_ms,
+            )
+            return self._fallback(text, "timeout", latency_ms=timeout_ms)
+        except asyncio.TimeoutError:
+            logger.warning(
+                "[ASR-POSTPROCESS] llm total budget exceeded budget_ms=%s base_url=%s model=%s",
+                timeout_ms,
+                base_url,
+                model,
             )
             return self._fallback(text, "timeout", latency_ms=timeout_ms)
         except openai.APIStatusError as exc:
@@ -335,12 +396,11 @@ class ASRPostprocessor:
         timeout_ms: int,
         max_tokens: int,
     ) -> str:
-        client = self.client or openai.AsyncOpenAI(
+        client = self._resolve_client(
             api_key=api_key,
             base_url=base_url,
-            timeout=timeout_ms / 1000,
+            timeout_ms=timeout_ms,
         )
-        should_close = self.client is None
         user_prompt = self._user_prompt(text, asr_confidence, language, context)
         logger.info(
             "[ASR-POSTPROCESS] llm request model=%s prompt_len=%s raw_text_len=%s expected_slot_count=%s candidate_answer_count=%s recent_turn_count=%s",
@@ -360,40 +420,36 @@ class ASRPostprocessor:
             json.dumps(messages, ensure_ascii=False, default=str),
         )
 
-        try:
+        content, raw_completion, finish_reason = await self._complete_json(
+            client, model, messages, max_tokens
+        )
+        if finish_reason == "length":
+            retry_tokens = max(max_tokens * 2, 2048)
+            logger.warning(
+                "[ASR-POSTPROCESS] llm finish_reason=length max_tokens=%s reasoning_truncated; retrying with max_tokens=%s",
+                max_tokens,
+                retry_tokens,
+            )
             content, raw_completion, finish_reason = await self._complete_json(
-                client, model, messages, max_tokens
+                client, model, messages, retry_tokens
             )
-            if finish_reason == "length":
-                retry_tokens = max(max_tokens * 2, 2048)
-                logger.warning(
-                    "[ASR-POSTPROCESS] llm finish_reason=length max_tokens=%s reasoning_truncated; retrying with max_tokens=%s",
-                    max_tokens,
-                    retry_tokens,
-                )
-                content, raw_completion, finish_reason = await self._complete_json(
-                    client, model, messages, retry_tokens
-                )
-            logger.info(
-                "[ASR-POSTPROCESS] llm raw_completion=%s",
-                json.dumps(raw_completion, ensure_ascii=False, default=str),
-            )
-            logger.info(
-                "[ASR-POSTPROCESS] llm raw_response_present=%s raw_response_len=%s finish_reason=%s",
-                isinstance(content, str) and bool(content),
-                len(content) if isinstance(content, str) else 0,
-                finish_reason,
-            )
-            if not isinstance(content, str) or not content:
-                local_payload = self._local_empty_content_fallback(text, context)
-                if local_payload:
-                    logger.info("[ASR-POSTPROCESS] llm empty content recovered locally")
-                    return local_payload
-                raise RuntimeError("Empty LLM response")
-            return content
-        finally:
-            if should_close:
-                await client.close()
+        logger.info(
+            "[ASR-POSTPROCESS] llm raw_completion=%s",
+            json.dumps(raw_completion, ensure_ascii=False, default=str),
+        )
+        logger.info(
+            "[ASR-POSTPROCESS] llm raw_response_present=%s raw_response_len=%s finish_reason=%s",
+            isinstance(content, str) and bool(content),
+            len(content) if isinstance(content, str) else 0,
+            finish_reason,
+        )
+        if not isinstance(content, str) or not content:
+            local_payload = self._local_empty_content_fallback(text, context)
+            if local_payload:
+                logger.info("[ASR-POSTPROCESS] llm empty content recovered locally")
+                return local_payload
+            raise RuntimeError("Empty LLM response")
+        return content
 
     async def _complete_json(
         self,
@@ -409,6 +465,16 @@ class ASRPostprocessor:
             temperature=0.1,
             max_tokens=max_tokens,
         )
+        # 网关/代理形状漂移时 SDK 可能返回非 completion 对象（典型：BASE_URL 少了 /v1，
+        # 请求打到站点首页拿到 HTML 且 HTTP 200，SDK 于是返回 str）。
+        # 直接取 .choices 会抛 AttributeError，而 process() 只捕获
+        # APITimeoutError / APIStatusError / APIError / RuntimeError，异常会冒泡成 ASR 端点 500。
+        # 这里转成 RuntimeError，复用既有的 provider_error 降级分支（容错放行）。
+        # 见 docs/plans/2026-09-15-intent-accuracy.md §11.3 F6。
+        if not hasattr(completion, "choices"):
+            raise RuntimeError(
+                "provider returned non-completion response: %s" % type(completion).__name__
+            )
         choice = completion.choices[0] if completion.choices else None
         content = choice.message.content if choice else None
         finish_reason = choice.finish_reason if choice else None

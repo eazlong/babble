@@ -1,0 +1,19 @@
+# 意图判定评测（Path A）所需的最小依赖集。
+#
+# 用途：CI 里跑离线门禁测试、以及 nightly 的真实评测 runner。
+# 刻意**不**包含 faster-whisper / ctranslate2 / elevenlabs / scipy 等重依赖——
+# 这套评测只碰 src/services/asr_postprocess.py，不需要 ASR/TTS 引擎。
+#
+# 只安装这套依赖时，以下测试可以跑（它们不 import src.main / service_manager / whisper）：
+#   tests/test_intent_eval_gate.py
+#   tests/test_asr_postprocess_provider_shape.py
+#   tests/test_asr_postprocess_client_lifecycle.py
+#
+# 不在此列的测试需要完整 requirements.txt：
+#   tests/test_asr_postprocess.py  ← `from src.main import app` → routes → service_manager → whisper/xfyun
+#   tests/test_voice.py、tests/test_xfyun_services.py 等同理
+openai>=1.40.0
+pydantic>=2.7.0
+python-dotenv>=1.0.0
+pytest>=8.2.0
+pytest-asyncio>=0.23.0

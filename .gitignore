@@ -40,6 +40,9 @@ __pycache__/
 venv/
 .venv/
 
+# 意图判定评测的本地/nightly 报告产物（评测集本身仍入库，产物不入库）
+services/voice-service/tests/intent_eval/reports/
+
 # ==================== Docker ====================
 docker-compose.override.yml
 

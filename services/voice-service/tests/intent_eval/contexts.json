@@ -1,0 +1,98 @@
+{
+  "_note": "场景上下文模板。形状从客户端真实构造点重建（见 _source），用例通过 context_ref 引用、context_patch 打补丁，避免 70 条用例重复粘贴整块 context。",
+  "resume_confirm": {
+    "_source": "apps/godot-client/assets/scripts/scenes/BeginningFPController.gd:843-858 (AWAIT_RESUME_CONFIRM)",
+    "session_id": "eval-session",
+    "user_id": "anonymous",
+    "npc_id": "feifei_beginning",
+    "scene_id": "mirage_inn_owner_room",
+    "npc_question": "请对腓腓说『出发』，我们就继续旅程。",
+    "expected_slots": [
+      {
+        "key": "answer",
+        "type": "keyword",
+        "description": "玩家对腓腓说出的继续旅程意图：出发/Let's go/继续"
+      }
+    ],
+    "expected_answer_type": "keyword",
+    "candidate_answers": [
+      "let's go", "lets go", "let us go", "let s go",
+      "出发", "走吧", "启程", "继续", "接着", "下一课",
+      "next lesson", "set off", "go now", "continue", "resume"
+    ],
+    "recent_turns": [],
+    "player_level": "A1",
+    "language": "zh",
+    "task_mode": "dialogue"
+  },
+  "source_name": {
+    "_source": "apps/godot-client/assets/scripts/scenes/BeginningFPController.gd:868-880 (AWAIT_SOURCE_NAME)",
+    "session_id": "eval-session",
+    "user_id": "anonymous",
+    "npc_id": "feifei_beginning",
+    "scene_id": "beginning",
+    "npc_question": "请告诉腓腓你的中文名。",
+    "expected_slots": [
+      {
+        "key": "name",
+        "type": "person_name",
+        "description": "玩家告诉腓腓的中文名"
+      }
+    ],
+    "expected_answer_type": "player_name",
+    "target_intent": "provide_source_name",
+    "intent_description": "The player should tell Feifei their source-language name. If the player does not provide a name, intent_matched must be false and guidance.npc_line should ask them to say their name.",
+    "candidate_answers": [],
+    "recent_turns": [],
+    "player_level": "A1",
+    "language": "zh",
+    "task_mode": "dialogue"
+  },
+  "market_lesson": {
+    "_source": "apps/godot-client/assets/scripts/scenes/ChangAnMarketController.gd:307-328",
+    "session_id": "eval-session",
+    "user_id": "anonymous",
+    "npc_id": "chang_an_market_lesson",
+    "scene_id": "chang_an_market_lesson_01",
+    "npc_question": "请跟老师读：Nice to meet you",
+    "expected_slots": [
+      {
+        "key": "answer",
+        "type": "keyword",
+        "description": "English lesson response for the current West Market step"
+      }
+    ],
+    "expected_answer_type": "keyword",
+    "candidate_answers": [
+      "Nice to meet you",
+      "Nice to meet you too",
+      "My name is Lily",
+      "I am fine, thank you"
+    ],
+    "recent_turns": [],
+    "player_level": "A1",
+    "language": "en",
+    "task_mode": "dialogue"
+  },
+  "open_dialogue": {
+    "_source": "apps/godot-client/assets/scripts/autoload/DialogueManager.gd:150-175",
+    "session_id": "eval-session",
+    "user_id": "anonymous",
+    "npc_id": "feifei",
+    "scene_id": "mirage_inn_hall",
+    "npc_question": "你今天在集市上看到了什么？",
+    "expected_slots": [
+      {
+        "key": "answer",
+        "type": "string",
+        "description": "玩家对 NPC 当前问题的回答"
+      }
+    ],
+    "expected_answer_type": "dialogue_answer",
+    "candidate_answers": [],
+    "recent_turns": [],
+    "player_level": "A1",
+    "language": "zh",
+    "task_mode": "dialogue"
+  }
+}
