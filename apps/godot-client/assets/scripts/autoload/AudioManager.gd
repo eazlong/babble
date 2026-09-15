@@ -3,6 +3,8 @@ extends Node
 var bgm_player: AudioStreamPlayer
 var sfx_player: AudioStreamPlayer
 var tts_player: AudioStreamPlayer
+var _ambient_player: AudioStreamPlayer
+var _sfx_by_name: Dictionary = {}
 
 var bgm_volume: float = 0.8
 var sfx_volume: float = 1.0
@@ -32,17 +34,62 @@ func _ready() -> void:
 
 	tts_player.finished.connect(_on_tts_finished)
 
+	_ambient_player = AudioStreamPlayer.new()
+	add_child(_ambient_player)
+	_ambient_player.volume_db = linear_to_db(0.6)
+	_register_sfx_names()
+
+const SFX_NAMES: Array[String] = [
+	"magic_sparkle", "badge_unlock", "bookshelf_awake", "library_enter",
+	"word_spirit_clear", "guest_distant_hello", "changan_mist_surge",
+	"ui_spirit_stone_listen", "ui_spirit_stone_success", "ui_spirit_stone_hint",
+	"celebration", "area_unlock", "changan_bell_ring",
+]
+
+func _register_sfx_names() -> void:
+	for name in SFX_NAMES:
+		var path := "res://assets/audio/sfx/%s.ogg" % name
+		if ResourceLoader.exists(path):
+			_sfx_by_name[name] = load(path)
+
 func play_bgm(stream: AudioStream) -> void:
 	if bgm_player.stream != stream:
 		bgm_player.stream = stream
 		bgm_player.play()
 
+func play_bgm_named(path: String) -> void:
+	if not ResourceLoader.exists(path):
+		push_warning("AudioManager: BGM not found: " + path)
+		return
+	play_bgm(load(path))
+
 func stop_bgm() -> void:
 	bgm_player.stop()
 
-func play_sfx(stream: AudioStream) -> void:
-	sfx_player.stream = stream
-	sfx_player.play()
+func play_sfx(sound_name) -> void:
+	if sound_name is String:
+		var name: String = sound_name
+		if _sfx_by_name.has(name):
+			sfx_player.stream = _sfx_by_name[name]
+			sfx_player.play()
+		else:
+			push_warning("AudioManager: unknown sfx name: " + name)
+		return
+	if sound_name is AudioStream:
+		sfx_player.stream = sound_name
+		sfx_player.play()
+	else:
+		push_warning("AudioManager: play_sfx expects an AudioStream or an sfx name (String)")
+
+func play_ambient_named(path: String) -> void:
+	if not ResourceLoader.exists(path):
+		push_warning("AudioManager: ambient not found: " + path)
+		return
+	var stream = load(path)
+	if stream is AudioStreamOggVorbis:
+		stream.loop = true
+	_ambient_player.stream = stream
+	_ambient_player.play()
 
 func play_tts(stream: AudioStream) -> void:
 	_tts_expected = false
