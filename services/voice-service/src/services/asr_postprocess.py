@@ -9,6 +9,8 @@ from typing import Any, Literal
 import openai
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from src.services.intent_rules import RuleOutcome, apply_rules
+
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +76,7 @@ FallbackReason = Literal[
 # - delegate: player hands the slot back to the NPC ("你帮我起一个吧")
 # - off_topic: not an answer to the current slot
 # voice-service only labels the intent; completing a delegate is the client's job.
-IntentLabel = Literal["provide", "delegate", "off_topic"]
+IntentLabel = Literal["provide", "delegate", "off_topic", "accept", "reject"]
 
 
 class ExpectedSlot(BaseModel):
@@ -137,6 +139,45 @@ class ASRPostprocessResult(BaseModel):
     # 实际发出的 provider 请求次数 - 1（0 = 首次即成）。降级为"容错放行"时，
     # 这个数字让运维能区分"第一次就失败"与"重试后仍失败"（§14.4）。
     retry_count: int = 0
+    # ── 判据字段（ADR-0009 §3）：每个判决都要能说清"凭什么" ──
+    #: "rule" | "llm"。降级放行（applied=False）时保持 None —— 降级不是判决。
+    #: 规则层弃权时也是 "llm"：弃权后取值归零、意图仍由模型承担。
+    verdict_source: str | None = None
+    #: 规则层命中的规则名（可复核：能在玩家话语里指出那一段）。未命中为 None。
+    matched_rule: str | None = None
+    #: 规则层确认命中的候选值（与 extracted 里的值一致，便于客户端直接回显）
+    matched_candidate: str | None = None
+    # NOTE: 契约 §3 还列了 `shortcut_hit` / `shortcut_confidence`（是否走本地短路、未调 LLM）。
+    # 本次落地**没有** LLM 之前的短路路径——规则层跑在模型之后，每次请求都已调用 LLM。
+    # `RuleOutcome.shortcut_hit` 的含义是"取值由规则层给出"，与契约里的"未调 LLM"不是一回事，
+    # 直接搬过来就是假判据，因此这两个字段暂不落地；将来真做本地短路时再加，并明确其含义。
+
+
+def _merge_rule_extracted(
+    model_extracted: dict[str, str | int | float | bool | None],
+    outcome: RuleOutcome,
+) -> dict[str, str | int | float | bool | None]:
+    """把规则层结论合并进模型取值 —— **只动规则层实际处理的键**。
+
+    规则层只推理 `expected_slots[0]`（见 `RuleOutcome.handled_key`）。因此不能整体替换
+    `extracted`：多槽位上下文里，规则层没推理过的槽位必须保持模型原判。三种情形：
+
+    - 意图被降级为非 provide → 整体清空（与既有 `intent != "provide"` 语义一致）
+    - 规则层给出取值 → 按它处理的键覆盖
+    - 规则层弃权（`extracted` 为空）→ **只清它处理的键**，其它槽位不动
+    """
+    if outcome.intent != "provide":
+        return {}
+    if outcome.extracted:
+        merged = dict(model_extracted)
+        merged.update(outcome.extracted)
+        return merged
+    key = outcome.handled_key
+    if key is None:
+        return dict(model_extracted)
+    merged = dict(model_extracted)
+    merged.pop(key, None)
+    return merged
 
 
 class ASRPostprocessor:
@@ -476,16 +517,47 @@ class ASRPostprocessor:
             )
             return self._fallback(text, "schema_error", latency_ms=self._elapsed_ms(started))
 
-        intent = output.intent or ("provide" if output.intent_matched else "off_topic")
-        extracted = {} if intent != "provide" else self._filter_extracted(output.extracted, parsed_context)
-        guidance = ASRGuidanceOutput() if intent == "delegate" else self._filter_guidance(output.guidance, parsed_context)
-        intent_matched = intent == "provide"
+        model_intent = output.intent or ("provide" if output.intent_matched else "off_topic")
+        model_extracted = {} if model_intent != "provide" else self._filter_extracted(output.extracted, parsed_context)
         logger.info(
             "[ASR-POSTPROCESS] extracted raw_keys=%s filtered_keys=%s allowed_keys=%s",
             sorted(output.extracted.keys()),
-            sorted(extracted.keys()),
+            sorted(model_extracted.keys()),
             [slot.key for slot in parsed_context.expected_slots],
         )
+
+        # ── 规则层（ADR-0009 §4）：取值规范化，外加三处**窄口径合法性归一** ──
+        # **两个文本，各司其职**：决策（命中判定/召回边界/撤回/合法性归一）用原始 ASR 文本 `text`，
+        # 只有自由槽的**表面形式**用模型的 corrected_text。混用会出事——实测教训：
+        # 模型已把孩子的学习错误（「Nice meet you」）纠成正确句子，规则层若在 corrected_text 上判定，
+        # 就会确认出一个"完美命中"，把学习错误改写成满分答案（rule_004 明令禁止）。
+        # 意图判定仍归模型（rule_003）；规则层只在 ADR §1 例外列出的三处降级为 off_topic。
+        outcome = apply_rules(
+            text=text,
+            context=parsed_context.model_dump(exclude_none=True),
+            model_intent=model_intent,
+            model_extracted=model_extracted,
+            corrected_text=output.corrected_text,
+        )
+        intent = outcome.intent
+        extracted = _merge_rule_extracted(model_extracted, outcome)
+        intent_matched = intent == "provide"
+        # guidance 依赖**最终**意图：delegate 被合法性归一降级为 off_topic 后，
+        # 代选建议必须一起丢掉，否则客户端会收到一个没有消费者的提议。
+        guidance = ASRGuidanceOutput() if intent == "delegate" else self._filter_guidance(output.guidance, parsed_context)
+
+        if outcome.intent != model_intent or extracted != model_extracted:
+            logger.info(
+                "[ASR-POSTPROCESS] rule layer intent=%s→%s extracted_keys=%s→%s verdict_source=%s matched_rule=%s matched_candidate=%s notes=%s",
+                model_intent,
+                intent,
+                sorted(model_extracted.keys()),
+                sorted(extracted.keys()),
+                outcome.verdict_source,
+                outcome.matched_rule,
+                outcome.matched_candidate,
+                outcome.notes,
+            )
         result = ASRPostprocessResult(
             applied=True,
             corrected_text=output.corrected_text,
@@ -499,6 +571,9 @@ class ASRPostprocessor:
             model=model,
             latency_ms=self._elapsed_ms(started),
             retry_count=attempt_log["attempts"] - 1,
+            verdict_source=outcome.verdict_source,
+            matched_rule=outcome.matched_rule,
+            matched_candidate=outcome.matched_candidate,
         )
         dumped = result.model_dump()
         logger.info(
@@ -771,11 +846,18 @@ class ASRPostprocessor:
             "You are an ASR post-processor for a children's language-learning RPG. "
             "Return one JSON object only. No reasoning. No markdown. "
             "Required keys: corrected_text, correction_applied, correction_reason, extracted, intent_matched, intent, guidance, confidence. "
-            "intent must be one of: provide, delegate, off_topic. "
+            "intent must be one of: provide, delegate, off_topic, accept, reject. "
             "Use provide when the player supplies a slot value or accepts/replaces a previous proposal. "
             "Use delegate when the player asks the NPC to choose from the slot's value pool, for example 你帮我起一个吧 or 随便选一个. "
+            "Use delegate only when the expected slot declares delegatable true; if the slot is not delegatable, treat such an utterance as off_topic. "
             "Use off_topic when the player does not answer the current slot. "
-            "For delegate, leave extracted empty, set intent_matched false, and do not write a proposal in guidance.npc_line. "
+            "Use accept only when the slot's slot_state is proposed and the player agrees to the proposed_value. "
+            "Use reject only when the slot's slot_state is proposed and the player declines the proposed_value or asks for a different one. "
+            "Never use accept or reject when no slot has slot_state proposed: without a proposal there is nothing to agree or disagree with, so use off_topic instead. "
+            "If the player merely repeats something they already said (see recent_turns) instead of answering the current question, use off_topic. "
+            "Filler-only utterances such as 嗯, 呃, 哦, um, uh are off_topic; never guess a slot value from them. "
+            "For delegate, accept or reject, leave extracted empty and set intent_matched false. "
+            "For delegate, also do not write a proposal in guidance.npc_line. "
             "guidance must be an object with npc_line. confidence must be 0..1. "
             "Correct ASR errors only when context strongly supports it. "
             "Extract only expected_slots keys. Do not invent extra keys. "

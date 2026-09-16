@@ -354,11 +354,21 @@ def test_degraded_stub_fails_gate_naming_the_bucket() -> None:
     good = baseline_from_metrics(_run_stub("perfect"))
     # 刻意共用 mode 标签：本用例要隔离验证的是「桶退步」这条，而不是模式不匹配那条
     bad = _run_stub("delegate", mode_label="stub:perfect")  # 一律 delegate：只有 delegate 期望的用例会通过
-    assert bad["overall_accuracy"] < 0.1, "退化的 stub 不该有可观的准确率"
+    # 2026-09-16 规则层接入后，这里的阈值不再能是 0.1：规则层是确定性层，退化模型仍能靠它
+    # 拿到相当一部分正确取值（实测 0.55）。也就是说**端到端准确率量的是"模型+规则层"这个系统**，
+    # 不再是模型单独的水平——要量模型本身得关掉规则层（回放器的 strict 模式 / 见计划文档 §18）。
+    # 本用例要守的是"退步能被检出"，故改为断言"相对满基线有大幅下降"。
+    assert bad["overall_accuracy"] < good["overall_accuracy"] - 0.2, (
+        f"退化的 stub 应被检出大幅退步（实际 {bad['overall_accuracy']} vs {good['overall_accuracy']}）"
+    )
     gate = check_gate(bad, good)
     assert not gate.passed
     joined = " ".join(gate.failures)
-    assert "negative" in joined and "closed_set" in joined, gate.failures
+    # 2026-09-16 起不再断言 "negative"：规则层接入后，"一律 delegate"的退化策略在 negative 桶上
+    # 反而**变对**了——rule_005 的合法性归一（未声明 delegatable 时 delegate→off_topic）正好
+    # 与 negative 桶的期望一致。这不是门禁失灵，而是"规则层能改变退化策略的得分结构"这一事实。
+    # 断言改为点名**真正退步**的桶（closed_set 降幅最大，是本用例要守的那条）。
+    assert "closed_set" in joined, gate.failures
 
 
 def test_degenerate_strategy_can_ace_one_bucket_which_is_why_gates_are_per_bucket() -> None:
@@ -521,7 +531,12 @@ class _MixedCompletions:
                     message=SimpleNamespace(
                         content=json.dumps(
                             {
-                                "corrected_text": raw,
+                                # corrected_text 与 raw_text 都必须能与候选自洽：
+                                # 规则层在**原始 ASR 文本**上判定（见 apply_rules 的"两个文本"），
+                                # 若 stub 声称"玩家说的是 BOOM，但我抽出了目标句"，规则层会（正确地）
+                                # 确认不了命中并清空取值。本文件要测的是降级 / 抖动 / 报告口径，
+                                # 不是取值本身，故让 stub 的假模型保持自洽。
+                                "corrected_text": "Nice to meet you",
                                 "correction_applied": False,
                                 "correction_reason": None,
                                 "extracted": {"answer": "Nice to meet you"},
@@ -552,7 +567,7 @@ def _mixed_metrics(
 ) -> dict:
     from src.services.asr_postprocess import ASRPostprocessor
 
-    cases = [_mixed_case("mx_ok", "Nice to meet you"), _mixed_case("mx_bad", "BOOM")]
+    cases = [_mixed_case("mx_ok", "Nice to meet you"), _mixed_case("mx_bad", "Nice to meet you too")]
     postprocessor = ASRPostprocessor(
         client=_MixedClient(fallback_texts, fallback_once=fallback_once)  # type: ignore[arg-type]
     )
@@ -562,7 +577,7 @@ def _mixed_metrics(
 
 def test_provider_fallback_does_not_count_as_a_wrong_answer() -> None:
     """网关 500 不是模型的判决：不得计入准确率（否则网关抖动会伪装成准确度回归）。"""
-    metrics = _mixed_metrics({"BOOM"})
+    metrics = _mixed_metrics({"Nice to meet you too"})
 
     assert metrics["buckets"]["closed_set"]["accuracy"] == 1.0, "降级用例被算成了答错"
     assert metrics["buckets"]["closed_set"]["n"] == 1, "分母应为已落地判决的用例数"
@@ -575,7 +590,7 @@ def test_fallback_rate_is_gated_separately() -> None:
     baseline = baseline_from_metrics(_mixed_metrics(set()))
     assert baseline["fallback_rate"] == 0.0
 
-    degraded = _mixed_metrics({"BOOM"})
+    degraded = _mixed_metrics({"Nice to meet you too"})
     gate = check_gate(degraded, baseline)
 
     assert not gate.passed
@@ -584,7 +599,7 @@ def test_fallback_rate_is_gated_separately() -> None:
 
 def test_fallback_repeat_is_not_counted_as_a_flip() -> None:
     """抖动率只看已落地判决：某次 repeat 降级不能让该例被判为"结论翻转"。"""
-    metrics = _mixed_metrics({"BOOM"}, repeats=3, fallback_once=True)
+    metrics = _mixed_metrics({"Nice to meet you too"}, repeats=3, fallback_once=True)
 
     assert metrics["flipped_cases"] == [], "降级的那一次 repeat 被误判成翻转"
     assert metrics["flippable_cases"] == 2, "两个用例都有 >=2 次落地，均可判定抖动"
@@ -600,9 +615,9 @@ def test_report_shows_first_landed_verdict_not_a_fallback_repeat() -> None:
     """
     from src.services.asr_postprocess import ASRPostprocessor
 
-    cases = [_mixed_case("mx_ok", "Nice to meet you"), _mixed_case("mx_bad", "BOOM")]
+    cases = [_mixed_case("mx_ok", "Nice to meet you"), _mixed_case("mx_bad", "Nice to meet you too")]
     postprocessor = ASRPostprocessor(
-        client=_MixedClient({"BOOM"}, fallback_once=True)  # type: ignore[arg-type]
+        client=_MixedClient({"Nice to meet you too"}, fallback_once=True)  # type: ignore[arg-type]
     )
     results = asyncio.run(run_eval(cases, postprocessor, repeats=3, concurrency=1))
     metrics = compute_metrics(results, repeats=3, mode="live", model="mixed")

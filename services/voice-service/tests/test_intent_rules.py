@@ -10,6 +10,7 @@ import pytest
 
 from src.services.intent_rules import (
     CHAR_EDIT_RATIO,
+    SHORT_CANDIDATE_LEN,
     Hit,
     RuleOptions,
     apply_rules,
@@ -332,3 +333,54 @@ def test_retraction_after_target_only_when_enabled_and_needs_a_hit() -> None:
 def test_no_slot_declaration_means_no_rule_interference() -> None:
     out = apply_rules(text="随便说点什么", context={}, model_intent="provide")
     assert out.extracted == {} and out.verdict_source == "llm"
+
+
+# ── 短候选必须精确匹配（2026-09-16 修复，生产接入时发现）──────────────────────
+# `CHAR_EDIT_MIN = 1` 的本意是"避免 3 字候选被 0 容忍卡死"，但对长度 1 的候选，
+# 容忍 1 个编辑等于"任何字都算命中"。字母识别（A/B/C）与单字答案都是真实存在的候选形态。
+
+
+def test_single_char_candidate_does_not_match_every_character() -> None:
+    assert find_hits("我觉得是B", ["A"]) == [], "单字候选不得命中每个字"
+    assert find_hits("我不知道", ["床"]) == [], "单字候选不得命中无关文本"
+
+
+def test_single_char_candidate_still_matches_exactly() -> None:
+    hits = find_hits("我说的是A", ["A"])
+    assert {h.candidate for h in hits} == {"A"}, "精确说出的单字候选必须命中"
+    assert all(h.exact for h in hits)
+
+
+def test_two_char_candidate_requires_exact_match() -> None:
+    # 一个编辑就换掉半个值（书架↔书桌），不该算识别误差
+    assert find_hits("书桌", ["书架"]) == []
+    assert {h.candidate for h in find_hits("书架", ["书架"])} == {"书架"}
+
+
+def test_candidate_at_short_length_boundary_keeps_fuzzy_budget() -> None:
+    # 阈值上方的候选仍走原有预算（这里是 3 字候选的锚定，不是随手取的值）
+    assert SHORT_CANDIDATE_LEN == 3
+    assert find_hits("启程", ["启程"]) != [], "3 字候选精确命中"
+    assert find_hits("我们启程", ["启程"]) != [], "3 字候选应能在句中被召回"
+
+
+def test_long_candidate_fuzzy_correction_still_works() -> None:
+    # 修复不能把 rule_004 的召回边界一起关掉：长候选的近音误听仍要能纠
+    hits = find_hits("nice to meat you", ["nice to meet you"])
+    assert {h.candidate for h in hits} == {"nice to meet you"}
+    assert all(not h.exact for h in hits), "这一条本来就是模糊命中"
+
+
+def test_short_candidate_gate_closes_the_over_match_at_apply_level() -> None:
+    """端到端后果：单字候选不得让规则层"确认"出玩家没说过的值。"""
+    context = {
+        "npc_question": "这个家具是什么？",
+        "expected_slots": [{"key": "answer", "type": "string"}],
+        "candidate_answers": ["书架", "椅子", "桌子", "床"],
+    }
+    out = apply_rules(
+        text="这个我不知道", context=context, model_intent="provide",
+        model_extracted={"answer": "这个我不知道"},
+    )
+    assert out.extracted == {}, "确认不了命中就必须弃权，而不是把 床/桌 之类硬塞进来"
+    assert out.intent == "provide", "弃权不得改判意图（rule_003 情形 2）"

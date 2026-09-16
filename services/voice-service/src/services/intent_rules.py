@@ -43,6 +43,9 @@ from typing import Any, Iterable, Sequence
 CHAR_EDIT_RATIO = 0.20
 #: 短候选的最小容忍编辑数（避免 3 字候选被 0 容忍卡死）
 CHAR_EDIT_MIN = 1
+#: 低于此归一化长度的候选**必须精确匹配**（见 `_max_edits`：长度 1 时容忍 1 个编辑
+#: 等于"任何字都算命中"，实测会把整句话的每个字都判成命中单字候选）
+SHORT_CANDIDATE_LEN = 3
 #: 候选对齐跨度与候选之间的词数差上限。0 = 候选内部不得增删词（rule_004/rule_009 的核心）
 TOKEN_DELTA = 0
 
@@ -100,6 +103,10 @@ class RuleOutcome:
     shortcut_hit: bool = False
     shortcut_confidence: float | None = None
     notes: list[str] = field(default_factory=list)
+    #: 本层**实际处理**的槽位键（当前实现只处理 `expected_slots[0]`）。
+    #: 生产侧据此做按键合并：本层给出取值时按键覆盖；弃权（`extracted` 为空）时**只清这个键**，
+    #: 不动其它槽位——否则多槽位上下文会被本层的单槽位推理误伤。无槽位声明时为 None。
+    handled_key: str | None = None
 
 
 # ─────────────────────────────── 归一化与距离 ───────────────────────────────
@@ -156,7 +163,19 @@ def edit_distance(a: str, b: str) -> int:
 
 
 def _max_edits(candidate: str) -> int:
-    return max(CHAR_EDIT_MIN, int(len(normalize(candidate)) * CHAR_EDIT_RATIO))
+    """候选对齐跨度内允许的字符级差异数。
+
+    **短候选必须精确匹配**（2026-09-16 修复）：`CHAR_EDIT_MIN = 1` 的本意是"避免 3 字候选被
+    0 容忍卡死"（见常量注释），但对**长度 1** 的候选，容忍 1 个编辑等于"任何字都算命中"——
+    实测 `find_hits("我觉得是B", ["A"])` 返回 5 个命中（每个字一个），
+    `find_hits("这个我不知道", [..."床"])` 返回 6 个。字母识别（归卷厅 A/B/C）与单字答案
+    都是生产上真实存在的候选形态，这个洞会让规则层"确认"出一个玩家根本没说的值。
+    长度 2 同理：一个编辑就换掉了半个值（书架↔书桌），不该算识别误差。
+    """
+    candidate_length = len(normalize(candidate))
+    if candidate_length < SHORT_CANDIDATE_LEN:
+        return 0
+    return max(CHAR_EDIT_MIN, int(candidate_length * CHAR_EDIT_RATIO))
 
 
 # ─────────────────────────────── 去壳（候选之外） ───────────────────────────────
@@ -204,6 +223,26 @@ def strip_trailing_question(text: str) -> tuple[str, bool]:
 
 def _is_cjk(text: str) -> bool:
     return any("\u4e00" <= ch <= "\u9fff" for ch in text or "")
+
+
+def _is_tighter_free_value(model_value: str, rule_value: str) -> bool:
+    """模型给自由槽的值是否比本层重算值**更紧**（归一化后是它的真子串）。
+
+    实测依据（2026-09-16，生产接入时由集成测试发现的本层缺陷）：
+    文本「我叫小北，你是谁？」——模型正确给出「小北」，而本层重算得到「小北你是谁」
+    （`_QUESTION_TAIL` 不匹配「你是谁」，两个分句被拼接）。本层按壳与标点重算，认不出
+    "哪一段是名字"；模型能。所以"更紧"时以模型为准（rule_013）。
+
+    为什么必须限定**更紧**，而不是"模型值看起来干净就用"：模型也可能给出更脏的值
+    （整句、漏去壳），那时本层的重算正是要修它——条件反向不成立。
+    """
+    if not model_value or not rule_value:
+        return False
+    norm_model = normalize(model_value)
+    norm_rule = normalize(rule_value)
+    if not norm_model or not norm_rule:
+        return False
+    return norm_model != norm_rule and norm_model in norm_rule
 
 
 # ─────────────────────────────── 召回边界（候选之内） ───────────────────────────────
@@ -359,6 +398,24 @@ def normalize_delegate(intent: str, context: dict[str, Any]) -> tuple[str, str |
     return "off_topic", "delegate_requires_delegatable"
 
 
+def normalize_proposal_labels(intent: str, context: dict[str, Any]) -> tuple[str, str | None]:
+    """`accept` / `reject` 只在**提议态**（某槽位 `slot_state == "proposed"`）才成立。
+
+    同属**标签合法性归一**：没有提议可表态时，这两个标签没有消费者——客户端只会在
+    PROPOSED 分支里读它们（`_classify_proposal_reaction`），其它状态下按"没作答"处理。
+    实测触发：§2 扩五值后，模型对『再换一个』（封闭题、未声明可委托）输出了 `reject`，
+    而该用例的裁定结论是 `off_topic`（`cs_046`）。
+
+    方向同样受 ADR §1 的硬边约束：**只能降级为 `off_topic`**。
+    """
+    if intent not in ("accept", "reject"):
+        return intent, None
+    slots = context.get("expected_slots") or []
+    if any(str(slot.get("slot_state") or "") == "proposed" for slot in slots):
+        return intent, None
+    return "off_topic", "proposal_label_requires_proposed"
+
+
 def detect_retraction(intent: str, text: str, hits: Sequence[Hit]) -> tuple[str, str | None]:
     """rule_010：口令之后紧跟撤回性内容 → 不作数。
 
@@ -384,18 +441,33 @@ def apply_rules(
     context: dict[str, Any],
     model_intent: str,
     model_extracted: dict[str, Any] | None = None,
+    corrected_text: str | None = None,
     options: RuleOptions | None = None,
 ) -> RuleOutcome:
     """把规则层应用到一次模型判决上。
 
-    `text` 在生产路径上应为 `corrected_text`（纠错后的话语）；回放验证时可用原始 `raw_text`。
+    **两个文本，各司其职**（2026-09-16 接入生产时才发现它们不能合一）：
+
+    - `text`：**原始 ASR 文本**，一切**决策**都用它——命中判定 / 召回边界（rule_004）/
+      撤回检测（rule_010）/ 合法性归一。理由：模型的 `corrected_text` 里可能已经把孩子的
+      **学习错误**改成了正确答案，在它上面判定等于让模型自己给自己判卷。实测代价：
+      cs_044「Nice meet you」在 corrected_text 上成了候选的完美匹配 → 规则层确认命中 →
+      正是 rule_004 明令禁止的"把学习错误改写成满分答案"。
+    - `corrected_text`：模型的纠错文本，仅用于**自由槽取值的表面形式**（姓名等）。
+      留空则退回 `text`。理由：自由槽的值会进存档，ASR 噪声应当在表层被模型修掉。
+
+    `model_extracted` 用于**保护模型已经给出的更紧的值**（自由槽，见 `_is_tighter_free_value`）：
+    本层的正则只认壳与标点，认不出"哪一段是名字"，所以模型更紧时就不重算。
     """
     options = options or RuleOptions()
     context = context or {}
+    surface = corrected_text or text
     intent = model_intent
 
     if options.intent_vetoes:
         intent, veto_rule = normalize_delegate(intent, context)
+        if veto_rule is None:
+            intent, veto_rule = normalize_proposal_labels(intent, context)
     else:
         veto_rule = None
     notes: list[str] = []
@@ -430,6 +502,7 @@ def apply_rules(
                     verdict_source="llm",
                     matched_rule=retract_rule,
                     notes=notes + ["撤回性附带内容 → 不作数"],
+                    handled_key=key,
                 )
         if not hits:
             # rule_003 情形 2：确认不了命中 → 保留 provide、清空取值，绝不改判 off_topic
@@ -438,6 +511,7 @@ def apply_rules(
                 extracted={},
                 verdict_source="llm",
                 notes=notes + ["候选未确认命中 → 清空 extracted"],
+                handled_key=key,
             )
         value, rule_name = arbitrate(hits, candidates, context.get("npc_question"))
         best = min(hits, key=lambda h: h.distance)
@@ -450,21 +524,39 @@ def apply_rules(
             shortcut_hit=True,
             shortcut_confidence=round(1.0 - best.distance / max(1, len(normalize(value))), 4),
             notes=notes + (["去壳:" + ",".join(shells)] if shells else []),
+            handled_key=key,
         )
 
     # 自由槽（rule_001 例外 / rule_006）：保留玩家说出的值，只去壳 + 丢附带内容
+    # 去壳与取值用 **surface**（模型的纠错文本）：自由槽的值会进存档，ASR 噪声应在表层被修掉。
+    # 注意决策仍用 text（见 apply_rules 的"两个文本"说明）——这里只取表面形式。
+    stripped, shells = strip_shell(surface)
     cleaned, dropped = strip_trailing_question(stripped)
     value = cleaned.strip().strip("，,。.!！?？、;；:：")
     trimmed_particles = value.rstrip(_TRAILING_PARTICLES)
     if trimmed_particles:
         dropped = dropped or trimmed_particles != value
         value = trimmed_particles
+
+    # 模型给出**更紧**的值时采用模型值（rule_013，见 _is_tighter_free_value 的实测依据）。
+    # 注意方向：只有模型值是本层重算值的真子串才采纳；模型给整句/带壳时仍以本层重算为准。
+    model_value = str((model_extracted or {}).get(key) or "").strip()
+    if _is_tighter_free_value(model_value, value):
+        return RuleOutcome(
+            intent=intent,
+            extracted={key: model_value},
+            verdict_source="llm",
+            matched_rule="free_slot_model_value_tighter",
+            handled_key=key,
+            notes=notes + [f"模型取值更紧（{model_value} ⊂ {value}）→ 采用模型值"],
+        )
     if not value:
         return RuleOutcome(
             intent=intent,
             extracted={},
             verdict_source="llm",
             notes=notes + ["自由槽去壳后为空 → 清空 extracted"],
+            handled_key=key,
         )
     return RuleOutcome(
         intent=intent,
@@ -474,4 +566,5 @@ def apply_rules(
         matched_candidate=None,
         shortcut_hit=bool(shells or dropped),
         notes=notes + (["去壳:" + ",".join(shells)] if shells else []) + (["丢弃附带问句"] if dropped else []),
+        handled_key=key,
     )

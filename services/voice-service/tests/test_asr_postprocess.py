@@ -77,6 +77,10 @@ async def test_multipart_asr_returns_postprocess_missing_context(path):
         "model": None,
         "latency_ms": 0,
         "retry_count": 0,
+        # 判据字段（ADR-0009 §3）：降级放行不是判决，故一律为 None
+        "verdict_source": None,
+        "matched_rule": None,
+        "matched_candidate": None,
     }
 
 

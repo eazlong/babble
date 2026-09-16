@@ -1,4 +1,5 @@
 import json
+from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import httpx
@@ -121,7 +122,9 @@ async def test_postprocessor_surfaces_delegate_intent(monkeypatch):
         language="cn_en",
         context={
             "npc_question": "你的英文名是什么？",
-            "expected_slots": [{"key": "english_name", "type": "person_name"}],
+            # delegatable: rule_005 的门控——未声明可委托时 delegate 会被降级为 off_topic，
+            # 这三个用例要验证的是 delegate 的**透传**，所以必须显式声明可委托。
+            "expected_slots": [{"key": "english_name", "type": "person_name", "delegatable": True}],
             "expected_answer_type": "player_name",
         },
     )
@@ -178,7 +181,9 @@ async def test_postprocessor_sanitizes_delegate_payload(monkeypatch):
         language="cn_en",
         context={
             "npc_question": "你的英文名是什么？",
-            "expected_slots": [{"key": "english_name", "type": "person_name"}],
+            # delegatable: rule_005 的门控——未声明可委托时 delegate 会被降级为 off_topic，
+            # 这三个用例要验证的是 delegate 的**透传**，所以必须显式声明可委托。
+            "expected_slots": [{"key": "english_name", "type": "person_name", "delegatable": True}],
             "expected_answer_type": "player_name",
         },
     )
@@ -626,7 +631,9 @@ async def test_postprocessor_retries_when_llm_truncated_by_length(monkeypatch):
         language="cn_en",
         context={
             "npc_question": "你的英文名是什么？",
-            "expected_slots": [{"key": "english_name", "type": "person_name"}],
+            # delegatable: rule_005 的门控——未声明可委托时 delegate 会被降级为 off_topic，
+            # 这三个用例要验证的是 delegate 的**透传**，所以必须显式声明可委托。
+            "expected_slots": [{"key": "english_name", "type": "person_name", "delegatable": True}],
             "expected_answer_type": "player_name",
         },
     )
@@ -712,7 +719,10 @@ async def test_postprocessor_maps_valid_llm_output(monkeypatch):
     postprocessor = ASRPostprocessor(client=client)
 
     result = await postprocessor.process(
-        text="暑假",
+        # 原始文本必须自身可确认命中：规则层的**决策**跑在原始 ASR 文本上（见 apply_rules 的
+        # "两个文本"说明），若这里写「暑假」，同音改写会因拼音维尚未实现而弃权（见边界用例
+        # test_postprocessor_abstains_on_homophone_it_cannot_verify）。本用例考的是字段映射。
+        text="书架吧",
         asr_confidence=0.9,
         language="cn_en",
         context=CONTEXT,
@@ -837,7 +847,7 @@ async def test_postprocessor_drops_extracted_keys_not_declared_in_expected_slots
     postprocessor = ASRPostprocessor(client=client)
 
     result = await postprocessor.process(
-        text="暑假",
+        text="书架吧",  # 同上：原始文本需自身可确认命中（本用例考的是键过滤）
         asr_confidence=0.9,
         language="cn_en",
         context=CONTEXT,
@@ -1494,3 +1504,225 @@ async def test_dialogue_task_mode_still_uses_llm(monkeypatch):
 
     assert result["applied"] is True
     assert result["fallback_reason"] is None
+
+
+# ────────────────── 规则层接入生产路径（ADR-0009 §4，2026-09-16）──────────────────
+# 此前规则层只有两层证据：单元测试（tests/test_intent_rules.py）与离线回放
+# （scripts/replay_intent_rules.py，跑在存量模型输出上）。下面把**生产路径**钉住：
+# 判据字段要真的发出去、两处合法性归一要真的生效、且规则层不得覆盖模型的好值。
+
+
+def _stub_client(payload: dict) -> tuple[openai.AsyncOpenAI, dict]:
+    """构造只回一段固定 JSON 的 provider 客户端。"""
+    captured: dict = {}
+
+    async def create(**kwargs):
+        captured.update(kwargs)
+        return SimpleNamespace(
+            choices=[
+                SimpleNamespace(
+                    message=SimpleNamespace(content=json.dumps(payload, ensure_ascii=False)),
+                    finish_reason="stop",
+                )
+            ],
+            model_dump=lambda mode="json": {"model": "stub"},
+        )
+
+    client = openai.AsyncOpenAI(api_key="test-key", base_url="https://llm.test/v1")
+    client.chat = SimpleNamespace(completions=SimpleNamespace(create=create))
+    return client, captured
+
+
+def _payload(**overrides) -> dict:
+    base = {
+        "corrected_text": "书架",
+        "correction_applied": False,
+        "correction_reason": None,
+        "extracted": {"answer": "书架"},
+        "intent_matched": True,
+        "intent": "provide",
+        "guidance": {"npc_line": None},
+        "confidence": 0.9,
+    }
+    base.update(overrides)
+    return base
+
+
+@pytest.mark.asyncio
+async def test_postprocessor_surfaces_rule_verdict_fields(monkeypatch):
+    """规则层确认命中时，判决来源与判据必须随响应发出去（客户端据此复核）。"""
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    client, _ = _stub_client(_payload())
+
+    result = await ASRPostprocessor(client=client).process(
+        text="书架",
+        asr_confidence=0.9,
+        language="cn_en",
+        context=CONTEXT,
+    )
+
+    assert result["intent"] == "provide"
+    assert result["extracted"] == {"answer": "书架"}
+    assert result["verdict_source"] == "rule", "命中候选应由规则层给出取值"
+    assert result["matched_candidate"] == "书架"
+    assert result["matched_rule"] is not None, "判决必须带可复核的规则名"
+
+
+@pytest.mark.asyncio
+async def test_postprocessor_clears_value_when_candidate_unconfirmed_but_keeps_intent(monkeypatch):
+    """确认不了命中 → 弃权清空取值，但**绝不改判意图**（rule_003 情形 2）。
+
+    把"答对了的孩子"判成没作答（F2）比留下一个可疑取值更糟，所以意图必须保持 provide。
+    """
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    client, _ = _stub_client(
+        _payload(corrected_text="这个我不知道", extracted={"answer": "这个我不知道"})
+    )
+
+    result = await ASRPostprocessor(client=client).process(
+        text="这个我不知道",
+        asr_confidence=0.9,
+        language="cn_en",
+        context=CONTEXT,
+    )
+
+    assert result["intent"] == "provide", "规则层不得把 provide 改判成 off_topic"
+    assert result["extracted"] == {}, "确认不了命中时应清空取值，让客户端退回 corrected_text"
+    assert result["verdict_source"] == "llm", "弃权后判决仍归模型"
+
+
+@pytest.mark.asyncio
+async def test_postprocessor_downgrades_delegate_on_non_delegatable_slot(monkeypatch):
+    """rule_005 合法性归一：槽位没声明 delegatable 时 delegate 没有完成器 → off_topic。"""
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    client, _ = _stub_client(
+        _payload(intent="delegate", intent_matched=False, extracted={})
+    )
+
+    result = await ASRPostprocessor(client=client).process(
+        text="你帮我起一个吧",
+        asr_confidence=0.9,
+        language="cn_en",
+        context={
+            "npc_question": "你的英文名是什么？",
+            # 注意：这里**故意**不写 delegatable，与上面三个透传用例形成对照
+            "expected_slots": [{"key": "english_name", "type": "person_name"}],
+            "expected_answer_type": "player_name",
+        },
+    )
+
+    assert result["intent"] == "off_topic"
+    assert result["intent_matched"] is False
+    assert result["matched_rule"] == "delegate_requires_delegatable"
+    assert result["guidance"] == {"npc_line": None}, "降级后不得留下没有消费者的代选建议"
+
+
+@pytest.mark.asyncio
+async def test_postprocessor_downgrades_retraction_after_target(monkeypatch):
+    """rule_010 合法性归一：命中口令后紧跟撤回 → off_topic。
+
+    这是客户端 `_is_retraction_downgrade`（续行门控）赖以生效的前置条件：
+    缺少 `matched_rule` 时客户端只能放行，玩家会在"出发…等一下"时被切场景。
+    """
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    client, _ = _stub_client(
+        _payload(corrected_text="出发，等一下", extracted={"answer": "出发"})
+    )
+
+    result = await ASRPostprocessor(client=client).process(
+        text="出发，等一下",
+        asr_confidence=0.9,
+        language="cn_en",
+        context={
+            "npc_question": "准备好了就说出发。",
+            "expected_slots": [{"key": "answer", "type": "keyword"}],
+            "expected_answer_type": "keyword",
+            "candidate_answers": ["出发", "走吧", "继续"],
+        },
+    )
+
+    assert result["intent"] == "off_topic"
+    assert result["matched_rule"] == "retraction_after_target"
+    assert result["extracted"] == {}
+
+
+@pytest.mark.asyncio
+async def test_postprocessor_keeps_clean_free_slot_value_from_model(monkeypatch):
+    """回归：自由槽的好值不该被规则层重算覆盖（生产接入时由集成测试发现的缺陷）。
+
+    实测：文本「我叫小北，你是谁？」时模型正确给出「小北」，而规则层按壳与标点重算会得到
+    「小北你是谁」——把 NPC 的问句粘进了名字。规则层只该修坏值，不该覆盖好值。
+    """
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    client, _ = _stub_client(
+        _payload(corrected_text="我叫小北，你是谁？", extracted={"name": "小北"})
+    )
+
+    result = await ASRPostprocessor(client=client).process(
+        text="我叫小北，你是谁？",
+        asr_confidence=0.9,
+        language="cn_en",
+        context={
+            "npc_question": "告诉腓腓你的中文名就可以。",
+            "expected_slots": [{"key": "name", "type": "person_name"}],
+            "expected_answer_type": "player_name",
+        },
+    )
+
+    assert result["extracted"] == {"name": "小北"}, "模型给出的更紧取值必须被采纳"
+    # 判决仍归模型（值也是模型给的），但"采纳"这个动作由 rule_013 做，故记规则名供复核
+    assert result["verdict_source"] == "llm", "采纳模型值不等于规则层做了判决"
+    assert result["matched_rule"] == "free_slot_model_value_tighter"
+
+
+@pytest.mark.asyncio
+async def test_postprocessor_abstains_on_homophone_it_cannot_verify(monkeypatch):
+    """**已知边界**：ADR-0009 §9 声明的"拼音/近音"匹配维**尚未实现**。
+
+    规则层里只有 `RuleOptions.phonetic` 这个配置项，没有任何实现（需 pypinyin 依赖）。
+    因此当模型的 corrected_text 与玩家原话之间是**同音改写**（暑假→书架）时，规则层在
+    **原始文本**上确认不了命中 → 弃权清空 extracted。后果是安全的：
+
+    - `corrected_text` 原样透出，客户端 `_asr_answer_text` 在 extracted 为空时回退到它 →
+      玩家看到的仍然是「书架」；
+    - 只是这条取值**没有**规则层背书（verdict_source=llm、extracted={}），客户端按"待确认"处理，
+      不会直接落定槽位。
+
+    这个边界是被"决策跑原始 ASR 文本"这条正确改动**暴露**出来的：此前决策跑在 corrected_text 上，
+    模型的纠正被当成了玩家原话，同音维的缺失因此被掩盖——同时也掩盖了 rule_004 最怕的那种误判
+    （模型把学习错误纠成满分答案后，规则层在纠正后的文本上"确认"它）。
+    """
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+
+    async def create(**kwargs):
+        return openai_completion(
+            json.dumps(
+                {
+                    "corrected_text": "书架",
+                    "correction_applied": True,
+                    "correction_reason": "家具题且候选答案书架与暑假音近。",
+                    "extracted": {"answer": "书架"},
+                    "intent_matched": True,
+                    "intent": "provide",
+                    "guidance": {"npc_line": None},
+                    "confidence": 0.88,
+                },
+                ensure_ascii=False,
+            ),
+            "mock-model",
+        )
+
+    client = openai.AsyncOpenAI(api_key="test-key", base_url="https://llm.test/v1")
+    client.chat = type("Chat", (), {"completions": type("Completions", (), {"create": AsyncMock(side_effect=create)})()})()
+
+    result = await ASRPostprocessor(client=client).process(
+        text="暑假",
+        asr_confidence=0.9,
+        language="cn_en",
+        context=CONTEXT,
+    )
+
+    assert result["intent"] == "provide", "意图仍归模型，规则层弃权不改判"
+    assert result["extracted"] == {}, "确认不了命中 → 弃权清空（而不是照抄模型的值）"
+    assert result["corrected_text"] == "书架", "模型的纠错文本原样透出，客户端据此回退"
+    assert result["verdict_source"] == "llm"
