@@ -111,3 +111,33 @@ if __name__ == "__main__":
     test_extend_bottom_removes_sawn_off_cut()
     test_faint_stragglers_do_not_inflate_content_box()
     print("ALL PACK_FRAME TESTS PASS")
+
+
+# ——— fit_height: character frames must normalise by HEIGHT (T30-T34) ———
+
+def _tall_frame(w: int = 50, h: int = 100) -> Image.Image:
+    """Portrait content block on a 400x400 transparent canvas."""
+    im = Image.new("RGBA", (400, 400), (0, 0, 0, 0))
+    block = Image.new("RGBA", (w, h), (200, 120, 90, 255))
+    im.paste(block, (100, 100))
+    return im
+
+
+def test_fit_height_normalises_content_height() -> None:
+    out = pack_frame(_tall_frame(), size=256, fit_height=200)
+    bbox = out.getchannel("A").point(lambda v: 255 if v >= 128 else 0).getbbox()
+    assert bbox is not None
+    height = bbox[3] - bbox[1]
+    width = bbox[2] - bbox[0]
+    assert abs(height - 200) <= 1, height
+    assert abs(width - 100) <= 1, width          # aspect preserved (50x100 -> 100x200)
+
+
+def test_fit_height_and_width_together_contain() -> None:
+    """Both budgets given = fit inside both (never overflow the canvas)."""
+    out = pack_frame(_tall_frame(w=100, h=200), size=256, fit_width=100, fit_height=100)
+    bbox = out.getchannel("A").point(lambda v: 255 if v >= 128 else 0).getbbox()
+    assert bbox is not None
+    assert bbox[3] - bbox[1] <= 100
+    assert bbox[2] - bbox[0] <= 100
+    assert bbox[3] - bbox[1] == 100              # the tighter budget wins

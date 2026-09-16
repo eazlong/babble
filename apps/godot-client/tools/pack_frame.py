@@ -26,7 +26,8 @@ from PIL import Image
 
 def pack_frame(im: Image.Image, size: int = 256, margin: int = 4,
                anchor: str = "bottom", fit_width: int | None = None,
-               extend_bottom: bool = False, bbox_thresh: int = 128) -> Image.Image:
+               extend_bottom: bool = False, bbox_thresh: int = 128,
+               fit_height: int | None = None) -> Image.Image:
     """Pack a cut-out frame into a square canvas.
 
     anchor="bottom"  : scale to fit inside (size - 2*margin), bottom-anchored.
@@ -35,6 +36,11 @@ def pack_frame(im: Image.Image, size: int = 256, margin: int = 4,
     fit_width=N      : scale by WIDTH to exactly N px (normalises hand span across
                        frames whose source panels expose different forearm lengths),
                        ignoring the height budget.
+    fit_height=N     : scale by HEIGHT to exactly N px — the right normalisation for
+                       standing characters (NPC cards): a child and an adult sage end
+                       up the same height regardless of robe width.
+                       Given BOTH fit_width and fit_height = fit inside both (contain),
+                       so a wildly-off-aspect cell can never overflow the canvas.
     extend_bottom    : continue the last rows straight down to the canvas bottom when
                        the content stops short of it (no sawn-off arms).
     bbox_thresh      : alpha level that counts as "solid" when measuring the content
@@ -50,8 +56,13 @@ def pack_frame(im: Image.Image, size: int = 256, margin: int = 4,
     content = im.crop(bbox)
     cw, ch = content.size
 
+    budgets: list[float] = []
     if fit_width:
-        ratio = fit_width / cw
+        budgets.append(fit_width / cw)
+    if fit_height:
+        budgets.append(fit_height / ch)
+    if budgets:
+        ratio = min(budgets)
     else:
         fit = max(1, size - 2 * margin)
         ratio = min(fit / cw, fit / ch)
@@ -92,6 +103,8 @@ def main() -> int:
     ap.add_argument("--anchor", choices=["bottom", "top", "center"], default="bottom")
     ap.add_argument("--fit-width", type=int, default=None,
                     help="scale by width to exactly N px (normalises hand span)")
+    ap.add_argument("--fit-height", type=int, default=None,
+                    help="scale by height to exactly N px (normalises standing characters)")
     ap.add_argument("--extend-bottom", action="store_true",
                     help="continue the last rows down to the canvas bottom (no sawn-off arms)")
     ap.add_argument("--bbox-thresh", type=int, default=128,
@@ -110,7 +123,7 @@ def main() -> int:
             dst = (out_dir / f.name) if args.output is None else (out_dir / f.name)
             pack_frame(Image.open(f), args.size, args.margin, args.anchor,
                        args.fit_width, args.extend_bottom,
-                       args.bbox_thresh).save(dst)
+                       args.bbox_thresh, args.fit_height).save(dst)
             print(f"packed {dst.name}")
         return 0
 
@@ -119,7 +132,8 @@ def main() -> int:
     src = Path(args.input)
     dst = Path(args.output) if args.output else src.with_name(src.stem + f"_{args.size}.png")
     pack_frame(Image.open(src), args.size, args.margin, args.anchor,
-               args.fit_width, args.extend_bottom, args.bbox_thresh).save(dst)
+               args.fit_width, args.extend_bottom, args.bbox_thresh,
+               args.fit_height).save(dst)
     print(f"Saved: {dst}")
     return 0
 
