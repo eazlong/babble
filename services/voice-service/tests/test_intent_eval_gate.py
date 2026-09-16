@@ -39,6 +39,19 @@ from tests.intent_eval.harness import (
 EVAL_DIR = Path(__file__).resolve().parent / "intent_eval"
 
 
+@pytest.fixture(autouse=True)
+def _postprocess_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """让本文件的测试**不依赖环境与执行顺序**。
+
+    背景：用 `_MixedClient` 的用例直接构造 ASRPostprocessor，而 post-processor 会先过
+    `ASR_POSTPROCESS_API_KEY` 闸门。此前它们能通过，只是因为别的用例（走 stub 路径时
+    `ensure_stub_env()`）把占位 key 漏进了进程环境 —— 顺序一变就集体变成
+    `missing_api_key` 降级。这里显式设定，monkeypatch 保证用完还原。
+    """
+    monkeypatch.setenv("ASR_POSTPROCESS_ENABLED", "true")
+    monkeypatch.setenv("ASR_POSTPROCESS_API_KEY", "test-key")
+
+
 def _run_stub(mode: str, *, repeats: int = 1, cases=None, mode_label: str | None = None) -> dict:
     cases = cases if cases is not None else load_cases()
     postprocessor = build_postprocessor(stub=mode, cases=cases)

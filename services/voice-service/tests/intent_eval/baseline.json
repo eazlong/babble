@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
-  "created_at": "2026-09-16T16:26:23+0800",
+  "created_at": "2026-09-16T17:01:08+0800",
   "mode": "live",
   "model": "qwen3.8-27b-fp8",
   "repeats": 5,
   "buckets": {
     "closed_set": {
       "n": 54,
-      "accuracy": 0.8259
+      "accuracy": 0.8296
     },
     "negative": {
       "n": 34,
-      "accuracy": 0.9882
+      "accuracy": 0.9941
     },
     "open_slot": {
       "n": 3,
@@ -24,9 +24,9 @@
   },
   "min_bucket": {
     "bucket": "closed_set",
-    "accuracy": 0.8259
+    "accuracy": 0.8296
   },
-  "overall_accuracy": 0.903,
+  "overall_accuracy": 0.9069,
   "scored_cases": 101,
   "fallback_rate": 0.0198,
   "flip_rate": 0.0396,
@@ -35,5 +35,5 @@
     "flip_rate_delta_pt": 2.0,
     "fallback_rate_delta_pt": 2.0
   },
-  "note": "2026-09-15 增量合并（第三次，裁定序列收尾）：并入 rule_010/rule_011 的 cs_062-cs_067 并**开 open_slot 桶**。新增 3 例 closed_set 中 cs_065/cs_066（口令后撤回）是靶子 → closed_set 51→54 例、0.8549→0.8259；open_slot 3 例全通过（1.000）。已知未过用例 = 方向 C 验收目标（12 项）：cs_009, cs_040, cs_041, cs_044, cs_045, cs_046, cs_047, cs_058, cs_061, cs_065, cs_066, neg_017。"
+  "note": "2026-09-16 增量合并（第三次）：并入并发写入者的 cs_062-cs_067（rule_011 的 3 条 open_slot + rule_010 的 3 条 closed_set），并把 10 项验收靶子用定标重测的最新值覆盖（其中 neg_017/cs_046 两例为已知不稳定用例、向上浮动）。定标验证：8/10 靶子逐位一致、确定性失败项全部未变 → 09-16 的 src 改动（启动期探针 + 5xx 有界重试）未影响判定行为，合并前提成立。open_slot 桶由 rule_011 开桶（3/3 通过）。已知未过用例 = 方向 C 验收目标（12 项）：cs_009/cs_040/cs_041/cs_044/cs_045/cs_046部分/cs_047/cs_058部分/cs_061/cs_065/cs_066/neg_017。"
 }
