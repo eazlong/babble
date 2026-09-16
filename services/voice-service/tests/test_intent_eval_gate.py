@@ -73,13 +73,22 @@ def test_every_case_has_a_note_and_provenance() -> None:
 
 
 def test_pending_rulings_are_not_graded() -> None:
+    """待裁定集可以**为空**（11 条已全部裁定），但不能与可判分集重叠。
+
+    这条断言最初写成"必须非空"，那是把"当前有积压"当成了不变量。真正的意图是：
+    边界用例要么带着 `ruling_question` 待在待裁定集里，要么已被裁定并进了可判分集，
+    不允许两者都不是（= 被悄悄塞进评测集当判据）。
+    """
     pending = load_pending_rulings()
-    assert pending, "待裁定用例文件为空，说明边界裁定被悄悄塞进了评测集"
     for case in pending:
-        assert case.get("expect") is None
+        assert case.get("expect") is None, f"{case['id']} 在待裁定集里却有期望值"
         assert case.get("ruling_question"), f"{case['id']} 必须写清待裁定的问题"
     graded_ids = {c["id"] for c in load_cases()}
     assert not (graded_ids & {c["id"] for c in pending}), "待裁定用例不得同时出现在可判分集里"
+
+    # 反向检查：已裁定的用例不得还赖在待裁定集里（裁定等于没做）
+    superseded = {r["supersedes"] for r in load_rulings() if r.get("supersedes")}
+    assert not (superseded & {c["id"] for c in pending}), "存在已裁定却仍在待裁定集的用例"
 
 
 def test_rulings_are_recorded_and_consistent() -> None:

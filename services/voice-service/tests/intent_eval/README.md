@@ -9,7 +9,7 @@
 | 文件 | 作用 |
 |---|---|
 | `contexts.json` | 场景上下文模板，形状从客户端真实构造点重建（每个模板都标了 `_source`） |
-| `cases.jsonl` | 可判分用例：`closed_set` 51 条 + `negative` 34 条 + `person_name` 10 条（合计 95 条） |
+| `cases.jsonl` | 可判分用例：`closed_set` 54 条 + `negative` 34 条 + `open_slot` 3 条 + `person_name` 10 条（合计 101 条） |
 | `cases_pending_ruling.jsonl` | **待裁定**用例：边界需要产品决策，**不计入门禁** |
 | `rulings.jsonl` | **已生效裁定**：每条写清 decision / rationale / exception / 受影响用例 |
 | `baseline.json` | 棘轮基线（首次由 `--update-baseline` 生成） |
@@ -58,7 +58,7 @@ cd services/voice-service
 ## 样本约定
 
 - `provenance`：`agent_authored` / `human_handwritten` / `real_log`。
-  **当前 95 条全部是 `agent_authored`**（由编码 agent 依客户端真实上下文形状编写，**不是**真实玩家语音，也不是运行期 LLM 采样）。这意味着分布偏差是真实存在的：儿童真实表达、口音、ASR 误听模式都未覆盖。计划文档 §8 要求的"20–30 条真实样本锚点"仍是 TODO。（当前待裁定 2 条）
+  **当前 101 条全部是 `agent_authored`**（由编码 agent 依客户端真实上下文形状编写，**不是**真实玩家语音，也不是运行期 LLM 采样）。这意味着分布偏差是真实存在的：儿童真实表达、口音、ASR 误听模式都未覆盖。计划文档 §8 要求的"20–30 条真实样本锚点"仍是 TODO。（当前待裁定 0 条——11 条已全部裁定）
 - 每条样本必须有 `note`：说明它钉住什么失败模式。没有 note 的样本会在测试里被拒绝。
 - 边界模糊的样本**不放这里**，放 `cases_pending_ruling.jsonl`，`ruling_question` 写清要裁定什么。用它避免"用一条自己也拿不准的样本去卡门禁"。
 - 一期只有文字样本，`asr_confidence` 固定注入 `0.9`（干净音频假设）。音频集是二期。
@@ -81,6 +81,8 @@ cd services/voice-service
 - **`rule_007`（原 `pr_005`）**：含名字的**否定句**（『我不想叫小明』）判 `off_topic`、绝不回填 —— 否则等于用孩子明确拒绝的名字给他命名并落盘。与 `rule_006` 成对：附带提问不改意图，附带否定则改。锚点 `cs_052`/`cs_053`。
 - **`rule_008`（原 `pr_002`）**：候选值 + 额外内容（自报姓名/寒暄）→ `provide` + **候选值**；额外内容留在 `corrected_text`。判据是**候选句本身是否完整**。注意实测的**不对称**：模型会丢前置引导词、**不**丢后置附带内容 → 规则层必须两个方向都处理。锚点 `cs_058`（靶子）/`cs_060`。
 - **`rule_009`（原 `pr_003`）**：引导词/指令回声算"候选之外"，按去壳丢弃，**不**算 `rule_004` 的"多词"；**候选之内**的增删乱序仍禁止（`rule_003` 情形 2：保留 `provide`、清空 `extracted`）。锚点 `cs_059`/`cs_060`（通过）、`cs_061`（靶子）。同时**细化 `rule_004`**：其"词数变化"应读作"候选内部"。
+- **`rule_010`（原 `pr_007`）**：口令后紧跟**撤回/迟疑**（『等一下』）→ `off_topic`；不撤回的附带内容（同向加强）仍按 `rule_008` 判 `provide`。判据是**附带内容是否抵消候选所表达的承诺**。理由含行为后果不对称：判 provide 会直接切场景把孩子传送走。锚点 `cs_065`/`cs_066`（靶子）、`cs_067`（对照）。
+- **`rule_011`（原 `pr_008`）**：开放题里**内容层面**的否定（『我今天没去集市』）仍是作答 → `provide` + 原话；只有**元层面**的拒绝/不会（『我不想说』『不知道』）才 `off_topic`。判据是**是否在回答这个问题**。本裁定**开 `open_slot` 桶**。锚点 `cs_062`/`cs_063`/`cs_064`。
 - **`rule_005`（原 `pr_006`）**：`delegate` 的成立条件是**槽位声明可委托**（`delegatable: true`），不是"存在 `candidate_answers`"。封闭题的候选表只说明"有值池"，不构成可委托槽位 → 未声明可委托时说「再换一个」「随便选一个」判 `off_topic`。锚点：`cs_046`/`cs_047`（封闭题 → `off_topic`）与 `cs_048`–`cs_050`（可委托槽位 → `delegate`），其中 `cs_047` 与 `cs_049` **同句不同槽位、结论相反**。`delegatable` 与 `value_pool` 已在 prompt 文本中，因此这条**不需要改 src**。
 
 **为什么这两条边界重要**：`extracted` 优先于 `corrected_text` 被客户端用作判定文本。把孩子的学习错误（`Meet you nice`）改写成满分句子，客户端连错误都看不到——教学纠错与掌握度统计会同时失效。这类改写是**篡改证据**，不是"宽容"。同理，输出一个客户端没有完成器的 `delegate`，就是把"没作答"伪装成一个能推进的意图。
@@ -93,3 +95,12 @@ cd services/voice-service
 
 - 离线门禁测试（`tests/test_intent_eval_gate.py`，无标记）随 `pnpm test` 常跑。
 - 真实评测默认跳过，需显式开启：`INTENT_EVAL_LIVE=1 .venv/bin/python -m pytest -m intent_eval`
+
+## 裁定序列已完成（11 条）
+
+`cases_pending_ruling.jsonl` 现为空：11 条边界问题全部裁定并落成 11 条 rule（见计划文档 §15 的总表）。
+**基线现状（N=5，101 例）**：closed_set 0.826 (54) / negative 0.988 (34) / person_name 1.000 (10) / open_slot 1.000 (3)；
+总体 0.903；flip_rate 0.0396；fallback_rate 0.0198。
+
+**方向 C 的 12 项验收目标**（全部已编码在基线里，转绿即方向 C 完成）：
+`cs_009`、`cs_040`、`cs_041`、`cs_044`、`cs_045`、`cs_046`、`cs_047`、`cs_058`、`cs_061`、`cs_065`、`cs_066`、`neg_017`。

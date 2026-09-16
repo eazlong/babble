@@ -1,17 +1,21 @@
 {
   "schema_version": 1,
-  "created_at": "2026-09-16T16:17:49+0800",
+  "created_at": "2026-09-16T16:26:23+0800",
   "mode": "live",
   "model": "qwen3.8-27b-fp8",
   "repeats": 5,
   "buckets": {
     "closed_set": {
-      "n": 51,
-      "accuracy": 0.8549
+      "n": 54,
+      "accuracy": 0.8259
     },
     "negative": {
       "n": 34,
       "accuracy": 0.9882
+    },
+    "open_slot": {
+      "n": 3,
+      "accuracy": 1.0
     },
     "person_name": {
       "n": 10,
@@ -20,16 +24,16 @@
   },
   "min_bucket": {
     "bucket": "closed_set",
-    "accuracy": 0.8549
+    "accuracy": 0.8259
   },
-  "overall_accuracy": 0.9179,
-  "scored_cases": 95,
-  "fallback_rate": 0.0211,
-  "flip_rate": 0.0421,
+  "overall_accuracy": 0.903,
+  "scored_cases": 101,
+  "fallback_rate": 0.0198,
+  "flip_rate": 0.0396,
   "thresholds": {
     "bucket_drop_pt": 2.0,
     "flip_rate_delta_pt": 2.0,
     "fallback_rate_delta_pt": 2.0
   },
-  "note": "2026-09-15 增量合并（第二次）：并入 rule_008/rule_009 的 cs_058-cs_061，用三次运行的逐例数据精确重算。cs_058（后置附带内容返回整句，且 5 次里 3 次如此 → 翻转）与 cs_061（候选内部漏词被模型修复）是新增验收靶子：closed_set 老 47 例准确率 0.8766 未变，并入后 51 例为 0.8549，降幅全部由新增靶子解释（同口径举证）。翻转用例：cs_040, cs_046, cs_058, neg_017。已知未过用例 = 方向 C 验收目标（10 项）：cs_009/cs_040/cs_041/cs_044/cs_045/cs_046部分/cs_047/cs_058部分/cs_061/neg_017。"
+  "note": "2026-09-15 增量合并（第三次，裁定序列收尾）：并入 rule_010/rule_011 的 cs_062-cs_067 并**开 open_slot 桶**。新增 3 例 closed_set 中 cs_065/cs_066（口令后撤回）是靶子 → closed_set 51→54 例、0.8549→0.8259；open_slot 3 例全通过（1.000）。已知未过用例 = 方向 C 验收目标（12 项）：cs_009, cs_040, cs_041, cs_044, cs_045, cs_046, cs_047, cs_058, cs_061, cs_065, cs_066, neg_017。"
 }
