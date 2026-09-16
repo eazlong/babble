@@ -10,6 +10,7 @@ const Config = preload("res://assets/scripts/components/scene_config/beginning_c
 const DialogueFlowLoaderScript = preload("res://assets/scripts/core/dialogue_flow_loader.gd")
 const CoachContextTrackerScript = preload("res://assets/scripts/components/coach/CoachContextTracker.gd")
 const VoiceFailureInterventionScript = preload("res://assets/scripts/components/voice/VoiceFailureIntervention.gd")
+const StoryContinueMarkersScript = preload("res://assets/scripts/core/story_continue_markers.gd")
 const DISTANT_CONTINENTS_TEXTURE: Texture2D = preload("res://assets/textures/backgrounds/beginning_mist_continents.png")
 const WAKE_EYE_SHADER: Shader = preload("res://assets/resources/shaders/effects/wake_eye_open.gdshader")
 const MIC_IDLE_TEXTURE: Texture2D = preload("res://assets/textures/ui/fp/ui_mic_button_idle.png")
@@ -22,7 +23,16 @@ enum PrologueState {
 	WORLD_REVEAL,
 	DISTANT_CONTINENTS,
 	INN_EXPLANATION,
-	COMPLETED
+	COMPLETED,
+	AWAIT_RESUME_CONFIRM
+}
+
+## 提议态下玩家对 NPC 提议的表态（ADR-0009 §2：accept/reject 为精确标签，
+## provide 在提议态仍表示「对提议表态」）。
+enum ProposalReaction {
+	ACCEPT,
+	DECLINE,
+	NOT_UNDERSTOOD,
 }
 
 const SCENE_ID: String = "beginning"
@@ -84,6 +94,8 @@ var asr_request_active: bool = false
 var special_name_slot_state: String = SLOT_AWAITING
 var proposed_special_name: String = ""
 var recent_proposed_special_names: Array[String] = []
+## 主人房续行确认的录音上下文。避免读档目标是学习场景时误开对应 learning session。
+var voice_recording_context: Dictionary = {}
 
 var wake_overlay: ColorRect
 var distant_continents: Node2D
@@ -96,9 +108,10 @@ func _ready() -> void:
 	if AudioManager:
 		AudioManager.play_ambient_named("res://assets/audio/amb/beginning_ambient.ogg")
 	if GameManager.should_resume_to_scene("BeginningFP"):
-		# CLAUDE.md §11：不要在 _ready() 中直接抢切场景，
-		# 否则会报 "Parent node is busy adding/removing children"。
-		call_deferred("_resume_to_saved_scene")
+		# 启动时不直接跳存档点：先回到主人房，
+		# 与腓腓交互确认后再继续剧情。
+		# CLAUDE.md §11：不要在 _ready() 中直接抢切场景。
+		call_deferred("_start_resume_room")
 		return
 
 	GameManager.set_checkpoint("BeginningFP", not GameManager.is_test_mode_skip_auto_load_save())
@@ -112,12 +125,38 @@ func _ready() -> void:
 		mic_button.visible = false
 	_start_prologue()
 
-## 延迟到节点树空闲后再切换场景（CLAUDE.md §11）。
-func _resume_to_saved_scene() -> void:
+## 有可继续的存档点时，启动后先留在主人房；
+## 玩家通过对话说出「出发 / Let's go / 继续」后，再切回存档场景。
+func _start_resume_room() -> void:
+	_load_dialogue_flows()
+	_setup_voice_failure_intervention()
+	_connect_runtime_signals()
+	_set_quest_text(_loc("quest_resume_room"))
+	_set_compass_label("客栈")
+	if mic_button:
+		mic_button.visible = false
+	if feifei:
+		feifei.visible = false
+		await feifei.play_entry_fly_in()
+	await _speak_flow("beginning.resume_prompt", 2.5)
+	state = PrologueState.AWAIT_RESUME_CONFIRM
+	_set_quest_text(_loc("quest_resume_depart"))
+	_start_voice_listening(_build_resume_recording_context())
+
+func _confirm_resume_from_room() -> void:
+	if completion_started:
+		return
+	completion_started = true
+	_stop_voice_listening()
+	state = PrologueState.COMPLETED
+	if feifei:
+		feifei.play_happy()
+	await _speak_flow("beginning.resume_ack", 1.5)
 	var resume_path: String = GameManager.get_scene_path()
 	if resume_path.is_empty():
-		push_error("[BeginningFP] Resume requested but saved scene path is empty.")
+		push_error("[BeginningFP] Resume confirmed but saved scene path is empty.")
 		return
+	await get_tree().create_timer(0.35).timeout
 	var resume_result := get_tree().change_scene_to_file(resume_path)
 	if resume_result != OK:
 		push_error("[BeginningFP] Failed to resume saved scene: %s" % error_string(resume_result))
@@ -136,7 +175,11 @@ func _process(delta: float) -> void:
 	else:
 		silence_timer += delta
 		record_duration = 0.0
-		if state in [PrologueState.AWAIT_SOURCE_NAME, PrologueState.AWAIT_SPECIAL_NAME] and silence_timer > HELLO_HINT_DELAY:
+		if state in [
+			PrologueState.AWAIT_SOURCE_NAME,
+			PrologueState.AWAIT_SPECIAL_NAME,
+			PrologueState.AWAIT_RESUME_CONFIRM,
+		] and silence_timer > HELLO_HINT_DELAY:
 			silence_timer = 0.0
 			await _handle_voice_attempt_failed("silence")
 
@@ -357,7 +400,9 @@ func _reveal_distant_continents() -> void:
 		tween.tween_property(main_camera, "position", Vector2(960, 430), 1.2).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
 	await tween.finished
 
-func _start_voice_listening() -> void:
+func _start_voice_listening(recording_context: Dictionary = {}) -> void:
+	if not recording_context.is_empty():
+		voice_recording_context = recording_context.duplicate(true)
 	if voice_listening or asr_request_active:
 		return
 	voice_listening = true
@@ -367,7 +412,17 @@ func _start_voice_listening() -> void:
 		mic_button.visible = true
 	if mic_button_icon:
 		mic_button_icon.texture = MIC_IDLE_TEXTURE
-	VoicePipeline.start_listening()
+	VoicePipeline.start_listening(voice_recording_context)
+
+func _build_resume_recording_context() -> Dictionary:
+	return {
+		"scene_id": "mirage_inn_owner_room",
+		"quest_id": "boot_resume",
+		"content_id": "boot_resume_confirm",
+		"prompt_text_snapshot": _loc("quest_resume_depart"),
+		"attempt_type": "short_answer",
+		"expected_answer_type": "keyword",
+	}
 
 func _stop_voice_listening() -> void:
 	if not voice_listening:
@@ -390,7 +445,10 @@ func _repeat_current_prompt() -> void:
 	match state:
 		PrologueState.AWAIT_SOURCE_NAME, PrologueState.AWAIT_SPECIAL_NAME:
 			if feifei:
-				feifei.show_hint(_get_asr_retry_hint_for_state(), FeifeiShoulder.STATE_HINT, 0.0)
+				feifei.show_hint(_get_asr_retry_hint_for_state(), FeifeiBody.STATE_HINT, 0.0)
+		PrologueState.AWAIT_RESUME_CONFIRM:
+			if feifei:
+				feifei.show_hint(_loc("resume_retry"), FeifeiBody.STATE_HINT, 0.0)
 		_:
 			pass
 	await _continue_voice_listening()
@@ -405,7 +463,7 @@ func _on_voice_ended(audio_data: PackedByteArray) -> void:
 		return
 	_stop_voice_listening()
 	if feifei:
-		feifei.show_hint(_loc("recognizing"), FeifeiShoulder.STATE_HINT, 0.0)
+		feifei.show_hint(_loc("recognizing"), FeifeiBody.STATE_HINT, 0.0)
 	asr_request_active = true
 	HybridAPI.recognize_speech(audio_data, _get_asr_language_for_state(), _build_asr_context_for_state())
 	_watch_asr_timeout()
@@ -414,6 +472,9 @@ func _on_asr_received(result: Dictionary) -> void:
 	if not asr_request_active:
 		return
 	asr_request_active = false
+	if state == PrologueState.AWAIT_RESUME_CONFIRM:
+		await _handle_resume_asr_result(result)
+		return
 	if state not in [
 		PrologueState.AWAIT_SOURCE_NAME,
 		PrologueState.AWAIT_SPECIAL_NAME,
@@ -459,15 +520,17 @@ func _handle_special_name_asr_result(result: Dictionary) -> void:
 		return
 
 	if special_name_slot_state == SLOT_PROPOSED:
-		# 提议态：provide 表示玩家对提议表态（voice-service 契约：
-		# "Use provide when the player ... accepts/replaces a previous proposal"）。
-		if _is_decline_utterance(text):
+		# 提议态：accept/reject 是精确标签；provide 表示玩家对提议表态
+		# （voice-service 契约："Use provide when the player ... accepts/replaces
+		# a previous proposal"），仍作兼容路径保留。
+		# NOTE: 不要用 extracted 回填判断接受——服务端在 intent != "provide" 时会清空 extracted。
+		var reaction: int = _classify_proposal_reaction(intent, text)
+		if reaction == ProposalReaction.DECLINE:
 			await _decline_proposed_special_name()
-			return
-		if intent == "provide" and not text.is_empty():
+		elif reaction == ProposalReaction.ACCEPT:
 			await _accept_proposed_special_name()
-			return
-		await _handle_proposal_not_understood(text)
+		else:
+			await _handle_proposal_not_understood(text)
 		return
 
 	if intent == "provide" and not text.is_empty():
@@ -477,9 +540,23 @@ func _handle_special_name_asr_result(result: Dictionary) -> void:
 
 	await _handle_asr_intent_not_matched(result)
 
-## 提议态下的拒绝判定。
-## voice-service 只产出 provide/delegate/off_topic（asr_postprocess.py IntentLabel），
-## 没有 reject 标签，因此这里按玩家原话做客户端判定，避免"我说不好→她再问一次"的死循环。
+## 提议态表态的唯一判定表（纯函数，便于单测）。
+## 优先级：reject/accept 精确标签 > 文本标记兜底。
+## 文本兜底仍然必要：它同时覆盖「旧服务端不产出 reject」与「模型漏判 reject」两种情况。
+func _classify_proposal_reaction(intent: String, text: String) -> int:
+	if intent == "reject":
+		return ProposalReaction.DECLINE
+	if intent == "accept":
+		return ProposalReaction.ACCEPT
+	if _is_decline_utterance(text):
+		return ProposalReaction.DECLINE
+	if intent == "provide" and not text.is_empty():
+		return ProposalReaction.ACCEPT
+	return ProposalReaction.NOT_UNDERSTOOD
+
+## 提议态下的拒绝判定（文本兜底路径，见 _classify_proposal_reaction）。
+## voice-service 自 ADR-0009 起产出 accept/reject，但该兜底保留：
+## 旧服务端没有 reject 标签，模型也可能漏判，缺了它会出现"我说不好→她再问一次"的死循环。
 ## NOTE: 英文必须整词匹配——子串匹配会把 "Nolan"/"Nora" 这类名字误判成 "no"，
 ## 导致孩子报自己名字却被当成拒绝。中文短标记（换/别的）保留子串匹配，中文无词边界问题。
 func _is_decline_utterance(text: String) -> bool:
@@ -569,10 +646,40 @@ func _watch_asr_timeout() -> void:
 	push_warning("[BeginningFP] Voice service ASR timed out.")
 	await _handle_voice_attempt_failed("asr_timeout")
 
+func _handle_resume_asr_result(result: Dictionary) -> void:
+	if result.has("error"):
+		await _handle_voice_attempt_failed("asr_error")
+		return
+	var text: String = HybridAPI.get_asr_corrected_text(result).strip_edges()
+	var extracted: String = HybridAPI.get_asr_extracted_value(result, "answer", "").strip_edges()
+	if not extracted.is_empty():
+		text = extracted
+	if _is_retraction_downgrade(result):
+		# rule_010：命中口令但紧跟撤回/迟疑内容时按「没作答」重问。
+		# 切场景不可逆，宁可多问一次（ADR-0009 §1 例外，降级只往保守方向走）。
+		await _handle_voice_attempt_failed("wrong_answer")
+		return
+	if _is_resume_call(text):
+		voice_failure_intervention.reset_failures()
+		voice_failure_intervention.add_turn("player", text)
+		await _confirm_resume_from_room()
+		return
+	await _handle_voice_attempt_failed("wrong_answer")
+
+func _is_resume_call(text: String) -> bool:
+	return StoryContinueMarkersScript.matches(text)
+
+## rule_010 的客户端缺口（docs/adr/0009 §1 例外）：规则层把「命中口令后紧跟撤回」降级为 off_topic。
+## 门控只认这条明确的 matched_rule，不拿 intent 本身做判定——否则模型一旦把口令句判成
+## off_topic，玩家就会被卡在主人房。规则层未接入时 matched_rule 为空，本门控自然失效（零行为变更）。
+func _is_retraction_downgrade(result: Dictionary) -> bool:
+	return HybridAPI.get_asr_matched_rule(result) == HybridAPI.ASR_RULE_RETRACTION_AFTER_TARGET
+
 func _handle_voice_attempt_failed(reason: String) -> void:
 	if state not in [
 		PrologueState.AWAIT_SOURCE_NAME,
 		PrologueState.AWAIT_SPECIAL_NAME,
+		PrologueState.AWAIT_RESUME_CONFIRM,
 	]:
 		return
 
@@ -584,6 +691,8 @@ func _handle_voice_attempt_failed(reason: String) -> void:
 	await _repeat_current_prompt()
 
 func _coach_failure_turn_text(reason: String) -> String:
+	if state == PrologueState.AWAIT_RESUME_CONFIRM:
+		return "[voice_retry] Player needs help with the resume journey prompt."
 	match reason:
 		"silence":
 			return "[no_voice_detected] Player did not speak during the prologue name prompt."
@@ -644,7 +753,7 @@ func _say_text(text: String, fallback_seconds: float = 2.0, voice: String = "spi
 	if text.is_empty():
 		return
 	if feifei:
-		feifei.show_hint(text, FeifeiShoulder.STATE_HINT, 0.0)
+		feifei.show_hint(text, FeifeiBody.STATE_HINT, 0.0)
 		# TTS 播报态：飞飞音（spirit）时身体 idle + 嘴部 talk_mouth 循环（其他 voice 不动嘴）
 		if voice == "spirit":
 			feifei.talk_speaking_start()
@@ -769,6 +878,26 @@ func _get_asr_language_for_state() -> String:
 	return GameManager.SOURCE_LANGUAGE_CODE
 
 func _build_asr_context_for_state() -> Dictionary:
+	if state == PrologueState.AWAIT_RESUME_CONFIRM:
+		return {
+			"session_id": voice_failure_intervention.get_session_id() if voice_failure_intervention else "",
+			"user_id": GameManager.player_name if GameManager.player_name != "" else "anonymous",
+			"npc_id": "feifei_beginning",
+			"scene_id": "mirage_inn_owner_room",
+			"npc_question": _loc("resume_retry"),
+			"expected_slots": [
+				{
+					"key": "answer",
+					"type": "keyword",
+					"description": "玩家对腓腓说出的继续旅程意图：出发/Let's go/继续",
+				}
+			],
+			"expected_answer_type": "keyword",
+			"candidate_answers": StoryContinueMarkersScript.MARKERS.duplicate(),
+			"recent_turns": voice_failure_intervention.get_recent_turns() if voice_failure_intervention else [],
+			"player_level": GameManager.player_cefr_level,
+			"language": GameManager.SOURCE_LANGUAGE_CODE,
+		}
 	var expected_language_name := GameManager.SPECIAL_LANGUAGE_NAME if state == PrologueState.AWAIT_SPECIAL_NAME else GameManager.SOURCE_LANGUAGE_NAME
 	var expected_slot := _build_special_name_slot(expected_language_name) if state == PrologueState.AWAIT_SPECIAL_NAME else {
 		"key": "name",
@@ -807,6 +936,8 @@ func _build_special_name_slot(expected_language_name: String) -> Dictionary:
 func _get_asr_retry_hint_for_state() -> String:
 	if state == PrologueState.AWAIT_SPECIAL_NAME:
 		return _language_hint_text("special_name_retry")
+	if state == PrologueState.AWAIT_RESUME_CONFIRM:
+		return _loc("resume_retry")
 	return _language_hint_text("name_retry")
 
 func _get_asr_target_intent_for_state() -> String:
@@ -833,6 +964,9 @@ func _loc(key: String) -> String:
 		"quest_continents": {"zh": "任务：看腓腓投影中的六道光", "en": "Quest: Watch the six lights in Feifei's vision"},
 		"quest_inn": {"zh": "任务：了解蜃影客栈与阵法", "en": "Quest: Learn about Mirage Inn and its formation"},
 		"quest_complete": {"zh": "序章完成：蜃影初醒", "en": "Prologue complete: First Awakening at Mirage Inn"},
+		"quest_resume_room": {"zh": "欢迎回到蜃影客栈", "en": "Welcome back to Mirage Inn"},
+		"quest_resume_depart": {"zh": "任务：对腓腓说“出发”，继续旅程", "en": "Quest: Say \"Let's go\" to feifei to continue"},
+		"resume_retry": {"zh": "准备好继续旅程，就对腓腓说“出发”或“Let's go”。", "en": "When you are ready, say \"Let's go\" or \"出发\" to feifei."},
 		"name_retry": {"zh": "告诉腓腓你的%s名就可以。", "en": "Tell feifei your %s name."},
 		"special_name_retry": {"zh": "告诉腓腓你的%s名，或者说“你帮我取一个”。", "en": "Tell feifei your %s name, or ask feifei to choose one."},
 		"special_name_proposal": {"zh": "那就叫%s，你觉得怎么样？", "en": "How about %s? Do you like it?"},

@@ -185,3 +185,55 @@ func test_recognize_speech_does_not_short_circuit_in_test_mode() -> void:
 	HybridAPI.asr_default_answer_test_enabled = original_enabled
 
 	assert_false(fake_override_seen, "测试模式不应再短路 emit 带 test_override 的假结果")
+
+
+# --- ADR-0009 intent 五值契约 ---
+
+func test_get_asr_intent_reads_new_contract_labels() -> void:
+	# ADR-0009 §2：intent 扩至五值，accept/reject 必须原样透出，
+	# 供提议态做精确判定（退化成 provide/off_topic 会让"接受提议"被当成没听懂）。
+	for label in ["accept", "reject"]:
+		assert_eq(
+			HybridAPI.get_asr_intent({"postprocess": {"intent": label, "intent_matched": false}}),
+			label,
+			"新契约标签 %s 应原样返回" % label
+		)
+
+
+func test_get_asr_intent_unknown_label_still_falls_back_to_legacy_field() -> void:
+	# 白名单扩到五值后，未知标签（未来新增）仍必须回退，不能直接透出。
+	var result := {"postprocess": {"intent": "some_future_label", "intent_matched": true}}
+	assert_eq(HybridAPI.get_asr_intent(result), "provide", "未知标签应回退到 intent_matched")
+
+
+func test_get_asr_intent_matched_treats_new_labels_as_not_matched() -> void:
+	# 契约固定 intent_matched ≡ (intent == "provide")，因此 accept/reject 均为未达成。
+	# 这不是缺陷而是契约：提议态的接受判定请用 get_asr_intent() == "accept"。
+	assert_false(
+		HybridAPI.get_asr_intent_matched({"postprocess": {"intent": "accept", "intent_matched": false}}, true),
+		"accept 不是 provide，intent_matched 应为 false"
+	)
+	assert_false(
+		HybridAPI.get_asr_intent_matched({"postprocess": {"intent": "reject", "intent_matched": false}}, true),
+		"reject 不是 provide，intent_matched 应为 false"
+	)
+	assert_true(
+		HybridAPI.get_asr_intent_matched({"postprocess": {"intent": "provide", "intent_matched": true}}, false),
+		"provide 应视为达成"
+	)
+
+
+func test_get_asr_matched_rule_reads_rule_layer_verdict() -> void:
+	assert_eq(
+		HybridAPI.get_asr_matched_rule({"postprocess": {"matched_rule": "retraction_after_target"}}),
+		"retraction_after_target",
+		"应透出规则层判据"
+	)
+
+
+func test_get_asr_matched_rule_missing_or_null_is_empty() -> void:
+	# 契约声明 matched_rule 可为 null；JSON null 解析成 null，不过滤会得到 "<null>" 假判据。
+	assert_eq(HybridAPI.get_asr_matched_rule({"postprocess": {"matched_rule": null}}), "", "null 判据应为空串")
+	assert_eq(HybridAPI.get_asr_matched_rule({"postprocess": {}}), "", "缺失判据应为空串")
+	assert_eq(HybridAPI.get_asr_matched_rule({}), "", "缺少 postprocess 应为空串")
+

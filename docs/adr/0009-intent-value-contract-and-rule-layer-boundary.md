@@ -51,8 +51,11 @@ voice-service 的目标意图判定（`target_intent` / `intent_description` / `
 `intent`：`provide` / `delegate` / `off_topic` / **`accept`** / **`reject`**。
 
 - `accept`：PROPOSED 态下玩家接受 NPC 的提议；`reject`：拒绝提议。
-- **向后兼容依据**（不是猜测）：`HybridAPI.gd:433`（白名单判定；同函数 429-437 行） 的实现是"`intent` 不在 `[provide, delegate, off_topic]` 白名单内时回退到 `intent_matched`"。因此旧客户端遇到 `accept` 会退化成 `provide`（语义最接近的降级）；遇到 `reject`（`intent_matched=False`）退化为 `off_topic`，与客户端现有 `_is_decline_utterance` 兜底一致，不崩。
-- `intent_matched` 保留为兼容字段，语义固定为 `intent == "provide"`。
+- `intent_matched` 保留为兼容字段，语义固定为 `intent == "provide"`（`asr_postprocess.py:482` 即 `intent_matched = intent == "provide"`）。
+- **向后兼容依据**（2026-09-16 修正，原论断有误）：旧客户端 `HybridAPI.gd` 的白名单是 `[provide, delegate, off_topic]`，不在其中时回退到 `intent_matched`。由于 `intent_matched` 恒等于 `intent == "provide"`，**`accept` 与 `reject` 都退化为 `off_topic`**（原稿称 `accept` 会退化成 `provide`，与上述等式矛盾，已作废）。
+  - 后果可接受：PROPOSED 态下旧客户端把 `accept` 走成"没听懂"分支（`_handle_proposal_not_understood` → 重问一次），既不崩、也不会写错槽位值；`reject` 则与既有 `_is_decline_utterance` 文本兜底同向（重问/换一个）。
+  - 因此 `accept`/`reject` 的**实际收益只对升级后的客户端生效**，且升级项已落地（`HybridAPI.ASR_INTENT_VALUES` 五值 + `_classify_proposal_reaction` 判定表）。
+- **`extracted` 在非 provide 时被清空**（`asr_postprocess.py:480`：`extracted = {} if intent != "provide" else ...`）。所以提议态的接受判定**不得**依赖 `extracted[key] == proposed_value` 回填，必须认 `intent == "accept"`。
 - 在 `reject` 落地前，含名字的否定句一律 `off_topic`（`rule_007`）；扩标签时是**细化**该裁定，不是推翻。
 
 ### 3. 新增判据字段（每个判决都要能说清"凭什么"）
@@ -132,10 +135,14 @@ voice-service 的目标意图判定（`target_intent` / `intent_description` / `
 - `_system_prompt` 需按本契约调整措辞（尤其"仅在槽位声明可委托时才用 delegate"）。
 - **无状态边界不变**（ADR-0001），不新增存储。
 
-**客户端侧（Godot；Cocos 后续同步）**
-- `HybridAPI.gd:433`（白名单判定；同函数 429-437 行） 意图白名单 3 → 5。
-- `BeginningFPController.gd` 的 `_is_decline_utterance` 改为**优先读 `reject`**，保留兜底以兼容旧 voice-service。
-- **`rule_010.client_gap`（产品决策，未决）**：resume/出发路径 `_handle_resume_asr_result` 只做 `_is_resume_call(text)` 的 containment 判定、**完全不读 `intent`**，因此"迟疑句判 `off_topic`"在该路径上**行为空转**（`extracted` 为空时退回 `corrected_text`，仍含口令 → 照样切场景）。要让 `rule_010` 真正生效，需给该路径加 intent 门控，或收窄 `_is_resume_call` 要求"整句即口令"。
+**客户端侧（Godot；Cocos 后续同步）· 2026-09-16 已实现（工作树，提交顺序待协调）**
+> 说明：`BeginningFPController.gd` 此刻含他人未提交的「主人房续行」特性，本节的 `rule_010` 门控插在该特性新增的 `_handle_resume_asr_result` 内，两者在 diff 上属于同一 hunk，无法分别提交；故本节描述的是**已实现并测试通过**的代码，提交时点取决于该特性的落地。
+- `HybridAPI.gd` 意图白名单 3 → 5：新增 `ASR_INTENT_VALUES` 常量与 `get_asr_matched_rule()`（读 §3 的 `matched_rule`，`null`/缺失统一归空串）。`get_asr_intent_matched()` 语义不变，仍为 `intent == "provide"`，并在注释中固定"`accept`/`reject` 一律返回 false"这一契约事实。
+- `BeginningFPController.gd` 提议态表态收敛为**单一判定表** `_classify_proposal_reaction(intent, text)`（纯函数，便于单测）：`reject` → 拒绝；`accept` → 接受；否则退回 `_is_decline_utterance(text)` 文本兜底（兼容旧 voice-service 与模型漏判）；`provide` + 有内容 → 接受。
+- **`rule_010.client_gap` 已闭合，但采用的门控与本节原建议不同**：原建议"给 resume 路径加 intent 门控"存在真实回归风险——模型一旦把合法口令句判成 `off_topic`，玩家会被**卡在主人房**（该路径的失败后果是切不了场景，不可自愈）。因此改为只认**明确判据**：`_is_retraction_downgrade(result)` 比较 `matched_rule == "retraction_after_target"`。
+  - 精确性：只有规则层真的做了那一次降级才拦截，模型自身的 `off_topic` 不参与判定。
+  - 零回归：规则层未接入时 `matched_rule` 为空 → 门控失效 → 行为与今天完全一致（已由 `test_beginning_fp_intent_contract.gd` 固化）。
+  - `matched_rule` 因此从"可复核判据"升级为**有真实消费者的契约字段**（此前 §3 的五个字段均无消费者）。
 
 **待决项**
 - `cs_043`（`meetchu`，2 处编辑 / 15.4%）是**阈值校准探针**：当前模型能纠正它，采用 15% 起步阈值会让它从通过变为不通过。纳入（阈值提到 ~20%）或排除都可接受，但必须**显式决定并记录**。

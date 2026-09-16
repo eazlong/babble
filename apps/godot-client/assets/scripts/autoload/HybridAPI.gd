@@ -8,6 +8,14 @@ const SUMMARY_SERVICE_URL = "http://localhost:8303"
 # ASR 测试模式：跳过麦克风，直接用 res://assets/test_audio/ 下的 wav 文件做真实 ASR。
 const DEFAULT_ASR_TEST_AUDIO_DIR: String = "res://assets/test_audio/"
 
+## 目标意图标签（voice-service 契约，见 docs/adr/0009-intent-value-contract-and-rule-layer-boundary.md §2）。
+## accept/reject 用于 PROPOSED 态下对 NPC 提议的表态；provide/delegate/off_topic 语义不变。
+const ASR_INTENT_VALUES: Array[String] = ["provide", "delegate", "off_topic", "accept", "reject"]
+
+## 规则层命中的规则名（ADR-0009 §3）。客户端只在需要精确门控时使用，
+## 例如 rule_010 的 retraction_after_target；缺失时返回空串。
+const ASR_RULE_RETRACTION_AFTER_TARGET: String = "retraction_after_target"
+
 var http_request: HTTPRequest
 var error_panel: PanelContainer
 var error_label: Label
@@ -27,6 +35,9 @@ var coach_http_request: HTTPRequest
 var tts_http_request: HTTPRequest
 var parallel_asr_http_request: HTTPRequest
 var summary_http_request: HTTPRequest
+var summary_session_http_request: HTTPRequest
+var summary_prompt_turn_http_request: HTTPRequest
+var summary_interaction_attempt_http_request: HTTPRequest
 var _ping_in_progress: bool = false
 var services_ready_done: bool = false
 var asr_default_answer_test_enabled: bool = false
@@ -63,6 +74,20 @@ func _ready() -> void:
 	summary_http_request = HTTPRequest.new()
 	add_child(summary_http_request)
 	summary_http_request.request_completed.connect(_on_summary_request_completed)
+
+	# summary 三个上报接口各自独立请求节点，避免 _end_session 连续上报时
+	# 共用同一 HTTPRequest 触发 ERR_BUSY 导致数据静默丢失（与 TTS 独立请求同理）。
+	summary_session_http_request = HTTPRequest.new()
+	add_child(summary_session_http_request)
+	summary_session_http_request.request_completed.connect(_on_summary_request_completed)
+
+	summary_prompt_turn_http_request = HTTPRequest.new()
+	add_child(summary_prompt_turn_http_request)
+	summary_prompt_turn_http_request.request_completed.connect(_on_summary_request_completed)
+
+	summary_interaction_attempt_http_request = HTTPRequest.new()
+	add_child(summary_interaction_attempt_http_request)
+	summary_interaction_attempt_http_request.request_completed.connect(_on_summary_request_completed)
 
 	# Create error notification UI
 	_create_error_ui()
@@ -212,7 +237,7 @@ func ping_services() -> void:
 	var error = http_request.request(API_BASE_URL + "/ping", [], HTTPClient.METHOD_GET)
 	if error != OK:
 		_ping_in_progress = false
-		push_error("[HybridAPI] Failed to ping services: " + str(error))
+		push_warning("[HybridAPI] Failed to ping services: " + str(error))
 
 func synthesize_tts(text: String, voice_id: String = "spirit", lang: String = "zh") -> void:
 	var body = JSON.stringify({
@@ -409,16 +434,24 @@ func get_asr_extracted_value(asr_result: Dictionary, key: String, fallback: Stri
 				return value
 	return fallback
 
+## 目标意图（ADR-0009 §2 五值）。
+## 未知取值（含服务端未来新增标签）回退到兼容字段 intent_matched，
+## 其语义在服务端固定为 intent == "provide"（asr_postprocess.py），
+## 因此 accept/reject 对尚未升级的旧客户端会分别退化：accept→off_topic、reject→off_topic。
 func get_asr_intent(asr_result: Dictionary) -> String:
 	var postprocess = asr_result.get("postprocess", {})
 	if postprocess is Dictionary:
 		var intent := str(postprocess.get("intent", "")).strip_edges()
-		if intent in ["provide", "delegate", "off_topic"]:
+		if intent in ASR_INTENT_VALUES:
 			return intent
 		if postprocess.has("intent_matched"):
 			return "provide" if bool(postprocess.get("intent_matched", true)) else "off_topic"
 	return "provide"
 
+## 玩家话语是否达成了「可落定取值」的作答。
+## NOTE: 按契约 intent_matched ≡ (intent == "provide")，故 accept/reject 一律为 false。
+## 提议态的接受判定请直接比较 get_asr_intent() == "accept"（见 BeginningFPController），
+## 不要依赖 extracted 回填——服务端在 intent != "provide" 时会清空 extracted。
 func get_asr_intent_matched(asr_result: Dictionary, fallback: bool = true) -> bool:
 	var postprocess = asr_result.get("postprocess", {})
 	if postprocess is Dictionary and postprocess.has("intent"):
@@ -426,6 +459,19 @@ func get_asr_intent_matched(asr_result: Dictionary, fallback: bool = true) -> bo
 	if postprocess is Dictionary and postprocess.has("intent_matched"):
 		return bool(postprocess.get("intent_matched", fallback))
 	return fallback
+
+## 规则层命中的规则名（ADR-0009 §3，可复核判据）。
+## 规则层未接入或未命中时为空串——调用方必须把空串当作「无判据」而非「未命中」。
+func get_asr_matched_rule(asr_result: Dictionary) -> String:
+	var postprocess = asr_result.get("postprocess", {})
+	if postprocess is Dictionary:
+		var rule = postprocess.get("matched_rule", "")
+		if rule == null:
+			# 契约声明 matched_rule 可为 null（ADR-0009 §3），JSON null 会解析成 null
+			# 而非空串；不过滤会得到 "<null>" 这种假判据。
+			return ""
+		return str(rule).strip_edges()
+	return ""
 
 ## ASR 置信度（CLAUDE.md §7 helper）。
 ## 读取 postprocess.confidence，回退到顶层 confidence。
@@ -751,7 +797,7 @@ func _create_error_ui() -> void:
 	error_panel.visible = false  # 面板默认隐藏，有错误时才显示
 
 func _on_api_error(message: String) -> void:
-	push_error("[HybridAPI] " + message)
+	push_warning("[HybridAPI] " + message)
 	_show_error("⚠️ 连接服务器失败：" + message)
 
 func _show_error(message: String) -> void:
@@ -782,7 +828,7 @@ func _on_services_ready() -> void:
 func post_summary_session(payload: Dictionary) -> void:
 	var body := JSON.stringify(payload)
 	var headers := ["Content-Type: application/json"]
-	summary_http_request.request(
+	summary_session_http_request.request(
 		SUMMARY_SERVICE_URL + "/api/v1/summary/sessions",
 		headers, HTTPClient.METHOD_POST, body
 	)
@@ -790,7 +836,7 @@ func post_summary_session(payload: Dictionary) -> void:
 func post_summary_prompt_turn(payload: Dictionary) -> void:
 	var body := JSON.stringify(payload)
 	var headers := ["Content-Type: application/json"]
-	summary_http_request.request(
+	summary_prompt_turn_http_request.request(
 		SUMMARY_SERVICE_URL + "/api/v1/summary/prompt-turns",
 		headers, HTTPClient.METHOD_POST, body
 	)
@@ -798,7 +844,7 @@ func post_summary_prompt_turn(payload: Dictionary) -> void:
 func post_summary_interaction_attempt(payload: Dictionary) -> void:
 	var body := JSON.stringify(payload)
 	var headers := ["Content-Type: application/json"]
-	summary_http_request.request(
+	summary_interaction_attempt_http_request.request(
 		SUMMARY_SERVICE_URL + "/api/v1/summary/interaction-attempts",
 		headers, HTTPClient.METHOD_POST, body
 	)
