@@ -59,7 +59,7 @@ Layer 3 驱动层   Controller 脚本（随机时序 + 状态机）  → 什么�
 | 三尾 | ⬜ 未实现 | 设计稿三条尾巴，场景只有一组 `tail→tail1`。见 §4.3 |
 | 独立 `hint` 骨骼动画 | ⬜ 未实现 | `_play_state_anim(STATE_HINT)` 目前复用 `fly` 的翅膀扇动 |
 | **全部 6 个场景迁移** | ✅ 已完成（2026-09-15） | `BeginningFP` / `MirageInnIntroduction` / `MirageInnHub` / `ChangAnMarket` / `ChangAnMarketLesson02` / `WordSpiritLibraryArchiveHall` 均直接实例化 `FeifeiBody.tscn`。旧 `FeifeiShoulder.gd` / `feifei_frames.tres` / `FeifeiCompanion.tscn` 已删除 |
-| 六场景腓腓落点校验 | ✅ 已完成（2026-09-16，T6 实测） | 六场景统一 `position (1656, 598)`、`scale 0.1` → 内容 bbox `x 1625..1885 / y 500..740`（屏上 260×240 px，占屏宽 13.5%），右边距 35 px、与麦克风按钮零重叠。**原值 `(1952, 648)` 是错的**：腓腓绘制内容相对实例原点有 `(+99, +22)` 偏移（骨骼根在 `-1352,184`），拿旧精灵中心当实例位置会把内容推到 `x 1921..2181` —— 1920 宽的屏幕**完全看不见**；序章 `scale 0.6` 则放大到 1561×1268 并 100% 盖住麦克风。另修 3 个控制器：场景美术建在 `CanvasLayer(layer=0)` 里，同层时 Godot 把它绘制在默认画布**之上**，会整片遮死世界空间的 `FeifeiBody` → 改 `layer = -50` |
+| 六场景腓腓落点校验 | ✅ 已完成（2026-09-16，T6 实测） | 六场景统一 `position (1542, 587)`、`scale 0.15`（用户选定档位）→ 内容 bbox `x 1495..1885 / y 457..799`（屏上 390×342 px，占屏宽 20.3%），右边距 35 px、与麦克风按钮零重叠。**原值 `(1952, 648)` 是错的**：腓腓绘制内容相对实例原点有 `(+99, +22)` 偏移（骨骼根在 `-1352,184`），拿旧精灵中心当实例位置会把内容推到 `x 1921..2181` —— 1920 宽的屏幕**完全看不见**；序章 `scale 0.6` 则放大到 1561×1268 并 100% 盖住麦克风。另修 3 个控制器：场景美术建在 `CanvasLayer(layer=0)` 里，同层时 Godot 把它绘制在默认画布**之上**，会整片遮死世界空间的 `FeifeiBody` → 改 `layer = -50` |
 
 ### 1.3 必须知道的现状约束（5 条）
 
@@ -68,7 +68,7 @@ Layer 3 驱动层   Controller 脚本（随机时序 + 状态机）  → 什么�
 2. **现有动画的面部轨道清单（实测）**：`eyes`/`mouth` 的 `rotation/scale/position` 跟随轨道只在 `RESET` 和 `fly` 里（fly 让眼睛/嘴跟随头部）；`idle`/`talk` 是纯骨骼动画，无面部轨道。新增的 `polygon` 顶点属性与它们零重叠 → 无需删任何轨道（原"先删静态面部轨道"的计划经实测取消）。
 3. **Godot 4.6 的 `AnimationPlayer` 是单播放状态**（无图层 API，`play(name)` 独占替换当前动画）→ 要并行的动画必须分给**多个 AnimationPlayer 节点**或改用 **Tween**（§2 并发修正、§6.2、§7.1）。
 4. **`FeifeiBody` 是「世界空间」节点，不是 UI 层**（迁移前旧的 `FeifeiShoulder` 自己住在 `CanvasLayer(20)` 里）。两条推论：
-   - 落点必须写**内容**坐标：节点原点不是内容中心，内容相对原点偏 `(+99, +22)`（scale 0.1 时）。要表达"腓腓在这里"，就把 `position` 取目标点再减去该偏移。
+   - 落点必须写**内容**坐标：节点原点不是内容中心，内容相对原点偏 `(+99, +22)`（scale 0.1）；该偏移**随实例 scale 等比放大**（0.15 时为 `(+148.5, +33)`，实测 bbox 与换算一致）。要表达"腓腓在这里"，就把 `position` 取目标点再减去该偏移。
    - **同层里 CanvasLayer 画在默认画布之上**：任何把场景美术放进 `CanvasLayer(layer = 0)` 的控制器都会整片盖住腓腓（T6 实测：5 个场景腓腓 `visible_in_tree=true`、`modulate.a=1.00` 却一个像素都看不见）。场景美术层应取负值（本项目 `-50`），保留 `ParallaxBackground(-100)` 之下、世界内容(0) 与所有 UI(HUD 10 / dialogue 20 / overlay 30 / mic 90) 之上。
 5. **呼吸 tween 与骨骼动画不能同属性**：现有代码已在 `go_idle()` 里停 breathe tween 再播 idle（注释"避免与骨骼浮动叠加"）——这是踩过的坑，新代码禁止对 `FeifeiLayer:position/scale` 再开 tween。
 
