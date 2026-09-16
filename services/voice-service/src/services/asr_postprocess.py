@@ -13,6 +13,50 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 logger = logging.getLogger(__name__)
 
 
+# 探针默认预算：启动 / 健康检查只等这么久，不能把启动拖住
+DEFAULT_PROBE_TIMEOUT_MS = 10000
+
+
+def describe_non_completion(response: Any) -> str:
+    """把"不是 completion"的响应压成一行可读预览。
+
+    事故教训（docs/plans/2026-09-15-intent-accuracy.md §15）：网关少写 `/v1` 时返回的是
+    站点首页 HTML，而日志里只有 `non-completion response: str` —— 一眼看不出是打错了地址。
+    带上预览就能直接看到 `<!doctype html>`。截断并折行，避免整页 HTML 淹掉日志。
+    """
+    if isinstance(response, (bytes, bytearray)):
+        text = bytes(response).decode("utf-8", errors="replace")
+    elif isinstance(response, str):
+        text = response
+    else:
+        return f"<{type(response).__name__}>"
+    flat = " ".join(text.split())
+    if not flat:
+        return "<empty>"
+    return flat[:160] + ("…" if len(flat) > 160 else "")
+
+
+def resolve_provider_config() -> tuple[str | None, str, str]:
+    """解析 postprocess 的 (api_key, base_url, model)。
+
+    `process()` 与 `check_provider()` 共用，避免探针与实际请求解析出不同配置
+    —— 那样探针就会报"正常"而真实请求照样挂。
+    """
+    api_key = os.environ.get("ASR_POSTPROCESS_API_KEY") or os.environ.get("OPENAI_API_KEY")
+    base_url = (
+        os.environ.get("ASR_POSTPROCESS_BASE_URL")
+        or os.environ.get("COACH_LLM_BASE_URL")
+        or os.environ.get("OPENAI_BASE_URL")
+        or "https://api.openai.com/v1"
+    )
+    model = (
+        os.environ.get("ASR_POSTPROCESS_MODEL")
+        or os.environ.get("COACH_LLM_MODEL")
+        or "gpt-5.5"
+    )
+    return api_key, base_url, model
+
+
 FallbackReason = Literal[
     "disabled",
     "missing_context",
@@ -142,6 +186,71 @@ class ASRPostprocessor:
             except Exception:  # pragma: no cover - 关停路径不应抛错
                 logger.debug("[ASR-POSTPROCESS] closing llm client failed", exc_info=True)
 
+    async def check_provider(self, *, timeout_ms: int | None = None) -> dict[str, Any]:
+        """启动期 / 健康检查用的 provider 探针。
+
+        存在理由（docs/plans/2026-09-15-intent-accuracy.md §15.4）：F6 的守卫把 provider
+        故障从"每个请求 500"变成了"安静降级"，于是意图判定可以整体失效而现场只有一行
+        WARNING。这个探针让同一类故障在**启动 1 秒内**被喊出来，并暴露在 `/health` 里。
+
+        绝不抛异常：探针失败不能把服务带崩，但必须能被看到。
+        返回 {"status": "ok"|"error"|"disabled"|"missing_api_key", ...}
+        """
+        api_key, base_url, model = resolve_provider_config()
+        info = {"model": model, "base_url": base_url}
+
+        if os.environ.get("ASR_POSTPROCESS_ENABLED", "true").lower() == "false":
+            return {"status": "disabled", "reason": "ASR_POSTPROCESS_ENABLED=false", **info}
+        if not api_key:
+            return {
+                "status": "missing_api_key",
+                "reason": "未配置 ASR_POSTPROCESS_API_KEY / OPENAI_API_KEY",
+                **info,
+            }
+
+        # 探针必须用与真实请求**相同的 (base_url, timeout)** 键取客户端，
+        # 否则会在缓存里多建一个客户端并把原来的挤退休；键不同探针也就失去代表性。
+        request_timeout_ms = int(os.environ.get("ASR_POSTPROCESS_TIMEOUT_MS", "30000"))
+        probe_budget_ms = timeout_ms or int(
+            os.environ.get("ASR_POSTPROCESS_PROBE_TIMEOUT_MS", str(DEFAULT_PROBE_TIMEOUT_MS))
+        )
+        budget_ms = min(probe_budget_ms, request_timeout_ms)
+        client = self._resolve_client(
+            api_key=api_key, base_url=base_url, timeout_ms=request_timeout_ms
+        )
+
+        started = time.monotonic()
+        try:
+            completion = await asyncio.wait_for(
+                client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": 'Reply with JSON: {"ok": true}'}],
+                    response_format={"type": "json_object"},
+                    temperature=0.0,
+                    max_tokens=32,
+                ),
+                timeout=budget_ms / 1000,
+            )
+        except asyncio.TimeoutError:
+            return {"status": "error", "reason": f"探针超时（{budget_ms}ms）", **info}
+        except Exception as exc:  # noqa: BLE001 - 探针只负责描述，不负责抛
+            return {"status": "error", "reason": f"{type(exc).__name__}: {str(exc)[:200]}", **info}
+
+        latency_ms = int((time.monotonic() - started) * 1000)
+        if not hasattr(completion, "choices"):
+            # 典型：BASE_URL 少了 /v1 → 打到站点首页拿到 HTML。预览让现场一眼看出。
+            return {
+                "status": "error",
+                "reason": "provider returned non-completion response: type=%s preview=%s"
+                % (type(completion).__name__, describe_non_completion(completion)),
+                "latency_ms": latency_ms,
+                **info,
+            }
+        if not completion.choices:
+            return {"status": "error", "reason": "provider returned empty choices",
+                    "latency_ms": latency_ms, **info}
+        return {"status": "ok", "latency_ms": latency_ms, **info}
+
     async def process(
         self,
         *,
@@ -204,22 +313,11 @@ class ASRPostprocessor:
             )
             return self._fallback(text, "missing_context")
 
-        api_key = os.environ.get("ASR_POSTPROCESS_API_KEY") or os.environ.get("OPENAI_API_KEY")
+        api_key, base_url, model = resolve_provider_config()
         if not api_key:
             logger.info("[ASR-POSTPROCESS] fallback reason=missing_api_key text_len=%s", len(text))
             return self._fallback(text, "missing_api_key")
 
-        base_url = (
-            os.environ.get("ASR_POSTPROCESS_BASE_URL")
-            or os.environ.get("COACH_LLM_BASE_URL")
-            or os.environ.get("OPENAI_BASE_URL")
-            or "https://api.openai.com/v1"
-        )
-        model = (
-            os.environ.get("ASR_POSTPROCESS_MODEL")
-            or os.environ.get("COACH_LLM_MODEL")
-            or "gpt-5.5"
-        )
         timeout_ms = int(os.environ.get("ASR_POSTPROCESS_TIMEOUT_MS", "30000"))
         max_tokens = int(os.environ.get("ASR_POSTPROCESS_MAX_TOKENS", "2048"))
         started = time.monotonic()
@@ -471,9 +569,11 @@ class ASRPostprocessor:
         # APITimeoutError / APIStatusError / APIError / RuntimeError，异常会冒泡成 ASR 端点 500。
         # 这里转成 RuntimeError，复用既有的 provider_error 降级分支（容错放行）。
         # 见 docs/plans/2026-09-15-intent-accuracy.md §11.3 F6。
+        # 预览是给现场排障用的：网关少写 /v1 时会直接看到站点首页内容（§15）。
         if not hasattr(completion, "choices"):
             raise RuntimeError(
-                "provider returned non-completion response: %s" % type(completion).__name__
+                "provider returned non-completion response: type=%s preview=%s"
+                % (type(completion).__name__, describe_non_completion(completion))
             )
         choice = completion.choices[0] if completion.choices else None
         content = choice.message.content if choice else None

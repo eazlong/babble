@@ -523,7 +523,7 @@ docker compose up -d --force-recreate voice-service
 ### 15.4 三条教训
 
 1. **配置不走 git，就必然漂移。** 新增环境变量必须同时更新 `.env.example`（本次已做）并写进部署清单；`.env` 的改动必须配合容器 **recreate**，而不是 restart。
-2. **F6 守卫把 500 变成了静默降级——正确，但不够响。** 降级率门禁（§14.2）能在 nightly 抓到，可部署环境里没人看 nightly。缺的是**启动期/健康检查期的 provider 探针**：一个极小的调用，若返回的不是 completion（例如拿到站点首页 HTML）就在启动日志里报 ERROR，并在 `/health` 里暴露。这次事故本可在启动 1 秒内被喊出来。
+2. **F6 守卫把 500 变成了静默降级——正确，但不够响。** 降级率门禁（§14.2）能在 nightly 抓到，可部署环境里没人看 nightly。**已实施报警机制（见 §15.6）**：启动期 provider 探针 + `/health` 暴露 + 容器健康检查读该状态。
 3. **镜像把 `.env`（含 API key）烘进了层。** `Dockerfile` 的 `COPY . .` + 构建上下文是整个服务目录 → `/app/.env` 703 字节随镜像分发，且那份**过期**的 `.env` 是暗雷（compose 的 `env_file` 目前盖得住，但只要某个变量漏写，`load_dotenv()` 就会用旧值静默生效）。已新增 `services/voice-service/.dockerignore` 排除 `.env` / `.venv` / `tests` 等；**需重建镜像才生效**，且建议评估该密钥是否已随镜像外流、是否需要轮换。
 
 ### 15.5 开发循环提示
@@ -532,3 +532,29 @@ docker compose up -d --force-recreate voice-service
 
 - **改代码** → 重启容器即可（模块重新加载）；
 - **改 `.env`** → 必须 `--force-recreate`，否则进程仍用旧环境变量。
+
+### 15.6 报警机制（已实施，2026-09-15）
+
+针对教训 2 补了两条"让故障自己喊出来"的通道：
+
+| 机制 | 位置 | 行为 |
+|---|---|---|
+| **启动期 provider 探针** | `src/main.py` startup → `ASRPostprocessor.check_provider()` | 发一个极小请求（`max_tokens=32`）；不是 completion / 超时 / 抛错 → `logger.error`，并把结论写进 `/health` 的 `postprocess` 字段 |
+| **容器健康检查读该状态** | `Dockerfile` HEALTHCHECK | `/health` 的 `postprocess.status == "error"` → 退出码 1 → `docker ps` 显示 **unhealthy**（仍返回 HTTP 200，避免编排器重启风暴） |
+| **响应预览** | `describe_non_completion()` | 非 completion 响应压成一行、截断 160 字符 —— 下次日志里直接看到 `<!doctype html>`，不必再猜 |
+
+设计取舍：
+
+- 探针**只在启动时**跑（另有 `GET /health?probe=1` 手动重跑），不做周期性探测：避免常态化的 provider 调用与状态抖动；持续性的退化由 nightly 的降级率门禁（§14.2）盯。
+- 探针**绝不抛异常**（失败只描述），且用与真实请求**相同的 `(base_url, timeout)` 缓存键**取客户端，否则会把连接池挤退休、探针也失去代表性。
+- 新环境变量 `ASR_POSTPROCESS_PROBE_TIMEOUT_MS`（默认 10000）已按教训 1 同步进 `.env.example`。
+
+**验证（都在容器内用容器自己的 env 跑）**：
+
+| 场景 | 结果 |
+|---|---|
+| 正确配置启动 | 启动日志 `provider probe ok base_url=https://tokens.netgpu.com/v1 latency_ms=3898`；`/health` → `postprocess.status=ok` |
+| **反证**：注入坏 URL（缺 `/v1`）跑探针 | `status=error`，`reason=provider returned non-completion response: type=str preview=<!doctype html> <html lang="en"> …` —— 一次调用即定位根因 |
+| 健康检查脚本逻辑 | `status=error` → 退出码 1；`ok` → 0；无该字段（旧版本）→ 0 |
+
+> 注意：`Dockerfile` 的 HEALTHCHECK 改动**需重建镜像**才生效（当前运行中的容器仍用旧命令）；`/health` 的字段与启动探针已即时生效。
