@@ -16,9 +16,21 @@
     ],
     "expected_answer_type": "keyword",
     "candidate_answers": [
-      "let's go", "lets go", "let us go", "let s go",
-      "出发", "走吧", "启程", "继续", "接着", "下一课",
-      "next lesson", "set off", "go now", "continue", "resume"
+      "let's go",
+      "lets go",
+      "let us go",
+      "let s go",
+      "出发",
+      "走吧",
+      "启程",
+      "继续",
+      "接着",
+      "下一课",
+      "next lesson",
+      "set off",
+      "go now",
+      "continue",
+      "resume"
     ],
     "recent_turns": [],
     "player_level": "A1",
@@ -89,6 +101,40 @@
       }
     ],
     "expected_answer_type": "dialogue_answer",
+    "candidate_answers": [],
+    "recent_turns": [],
+    "player_level": "A1",
+    "language": "zh",
+    "task_mode": "dialogue"
+  },
+  "special_name_delegatable": {
+    "_source": "apps/godot-client/assets/scripts/scenes/BeginningFPController.gd:868-898 (AWAIT_SPECIAL_NAME；槽位带 delegatable/value_pool，是全仓库唯一的可委托槽位)",
+    "session_id": "eval-session",
+    "user_id": "anonymous",
+    "npc_id": "feifei_beginning",
+    "scene_id": "beginning",
+    "npc_question": "请告诉腓腓你用通用语的名字；如果你想不出来，也可以让腓腓替你选一个。",
+    "expected_slots": [
+      {
+        "key": "name",
+        "type": "person_name",
+        "description": "玩家告诉腓腓的通用语名",
+        "delegatable": true,
+        "value_pool": [
+          "Carl",
+          "Wendy",
+          "Leo",
+          "Mia",
+          "Luna"
+        ],
+        "pick_strategy": "exclude_recent",
+        "proposal_template": "那就叫{value}，你觉得怎么样？",
+        "slot_state": "AWAITING"
+      }
+    ],
+    "expected_answer_type": "player_name",
+    "target_intent": "provide_special_language_name_or_request_default",
+    "intent_description": "The player should tell Feifei their special-language name, or explicitly ask Feifei to choose one for them. If neither happens, intent_matched must be false and guidance.npc_line should guide them to say a special-language name or ask Feifei to choose.",
     "candidate_answers": [],
     "recent_turns": [],
     "player_level": "A1",

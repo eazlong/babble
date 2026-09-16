@@ -52,7 +52,8 @@ def test_cases_are_wellformed_and_cover_mvp_buckets() -> None:
     cases = load_cases()
     assert len(cases) >= 60, "MVP 要求两个桶合计 60–80 例"
     buckets = {c["bucket"] for c in cases}
-    assert buckets == {"closed_set", "negative"}, f"MVP 只覆盖两个桶，实际 {buckets}"
+    # MVP 的两个桶必须始终在（后续扩桶不得把它们删掉），但不排斥新增桶
+    assert {"closed_set", "negative"} <= buckets, f"MVP 桶缺失，实际 {buckets}"
     ids = [c["id"] for c in cases]
     assert len(ids) == len(set(ids)), "用例 id 必须唯一"
     for case in cases:
@@ -271,11 +272,15 @@ def test_sample_per_bucket_is_stratified_and_deterministic() -> None:
     """抖动率抽样必须等距覆盖每个桶——用例文件按桶排块，取前 N 会只覆盖一个桶。"""
     cases = load_cases()
     sampled = sample_per_bucket(cases, 5)
-    assert len(sampled) == 10
+    by_bucket: dict[str, list] = {}
+    for case in cases:
+        by_bucket.setdefault(case["bucket"], []).append(case)
+    expected_total = sum(min(5, len(group)) for group in by_bucket.values())
+    assert len(sampled) == expected_total, "每桶应等距抽 min(5, 桶大小) 例"
     counts: dict[str, int] = {}
     for case in sampled:
         counts[case["bucket"]] = counts.get(case["bucket"], 0) + 1
-    assert counts == {"closed_set": 5, "negative": 5}, counts
+    assert counts == {b: min(5, len(g)) for b, g in by_bucket.items()}, counts
     assert sample_per_bucket(cases, 5) == sampled, "抽样必须确定性可复现"
     head = {c["id"] for c in cases[:10]}
     assert {c["id"] for c in sampled} != head, "抽样退化成取前 N 会漏掉整个 negative 桶"
@@ -326,8 +331,8 @@ def test_perfect_stub_passes_against_perfect_baseline() -> None:
 def test_degraded_stub_fails_gate_naming_the_bucket() -> None:
     good = baseline_from_metrics(_run_stub("perfect"))
     # 刻意共用 mode 标签：本用例要隔离验证的是「桶退步」这条，而不是模式不匹配那条
-    bad = _run_stub("delegate", mode_label="stub:perfect")  # 一律 delegate：没有任何用例期望它
-    assert bad["overall_accuracy"] == 0.0
+    bad = _run_stub("delegate", mode_label="stub:perfect")  # 一律 delegate：只有 delegate 期望的用例会通过
+    assert bad["overall_accuracy"] < 0.1, "退化的 stub 不该有可观的准确率"
     gate = check_gate(bad, good)
     assert not gate.passed
     joined = " ".join(gate.failures)
