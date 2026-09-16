@@ -31,6 +31,21 @@ voice-service 的目标意图判定（`target_intent` / `intent_description` / `
   - 绝不因为"规则层确认不了命中"就改判 `off_topic` —— 那会把答对的孩子判成没作答（F2）。
 - 规则层的产出有两种：**收窄取值**（能确认命中时改写 `extracted`，标 `verdict_source="rule"`）或**弃权**（确认不了就清空 `extracted`，保留模型的 `intent`，标 `verdict_source="llm"`，客户端自动退回 `corrected_text`）。
 
+**唯一的例外：两处窄口径"合法性归一"（2026-09-16 裁定入契约）**
+
+上面两个"绝不"管的是**意图推断**；以下两处不是推断，而是"该标签在当前上下文**没有消费者**"的合法性修正。收窄原则是硬的：
+
+> **规则层只能把"没有消费者的意图"降级为 `off_topic`；绝不能把 `off_topic` 升级成任何标签。**
+
+降级是保守方向（客户端只需重问一次，可逆），升级则可能把"没作答"伪装成能推进的意图。允许的归一只有这两条，且必须各自带 `matched_rule`：
+
+| 归一 | `matched_rule` | 依据 | 为什么模型做不到 |
+|---|---|---|---|
+| 未声明 `delegatable` 的槽位上，`delegate` → `off_topic` | `delegate_requires_delegatable` | `rule_005`：没有可委托槽位就没有完成器，客户端只能当"没作答"处理 | 实测模型按**句子形态**判（同一句「随便选一个」在两种槽位上输出相同） |
+| 命中候选之后紧跟撤回性内容，`provide` → `off_topic` | `retraction_after_target` | `rule_010`：迟疑不算确认；判 provide 会直接切场景（不可逆） | 实测模型把口令当命中就收工，不看后面的撤回（`cs_065`/`cs_066`） |
+
+实现上由 `RuleOptions(intent_vetoes=True)` 控制，**默认开启**；置 `False` 可回到纯规则_003 模式（评测回放器用两种模式并列对比，`strict` 模式保留为对照）。新增归一必须走 ADR 修订，不得就地扩表。
+
 ### 2. 意图标签扩至五值
 
 `intent`：`provide` / `delegate` / `off_topic` / **`accept`** / **`reject`**。
@@ -54,6 +69,7 @@ voice-service 的目标意图判定（`target_intent` / `intent_description` / `
 | 步骤 | 谁做 | 依据 |
 |---|---|---|
 | 1. 意图判定（provide / delegate / off_topic …） | **模型** | `rule_003` |
+| 1b. 合法性归一：两处**只能降级为 `off_topic`** 的修正 | 规则层 | `rule_005`/`rule_010`（见 §1 例外） |
 | 2. 去壳：丢弃候选**之外**的内容（前置引导词、后置附带内容） | 规则层 | `rule_006`/`rule_008`/`rule_009` |
 | 3. 召回边界：候选**之内**只纠识别误差，不纠学习错误 | 规则层 | `rule_004`/`rule_009` |
 | 4. 多候选仲裁 → 唯一候选 | 规则层 | `rule_002` |

@@ -108,9 +108,15 @@ def main() -> int:
     print(f"用例 {len(cases)} 例；报告覆盖 {len(outputs)} 例")
 
     summary = {}
-    for label, options in (("strict", RuleOptions()), ("vetoes", RuleOptions(intent_vetoes=True))):
+    # 注意：strict 必须**显式**关闭归一 —— RuleOptions 的默认为 True（2026-09-16 入契约），
+    # 若这里写 RuleOptions() 两个模式会完全重合，回放就失去对照意义（曾踩到）。
+    modes = (
+        ("strict", "strict（关闭合法性归一）", RuleOptions(intent_vetoes=False)),
+        ("default", "default（默认开启归一）", RuleOptions(intent_vetoes=True)),
+    )
+    for key, label, options in modes:
         result = run_mode(cases, outputs, options)
-        summary[label] = result
+        summary[key] = result
         print()
         print(f"── 模式 {label} ───────────────────────────────────────────")
         print(f"  回放用例 {result['total']} 例"
@@ -131,13 +137,14 @@ def main() -> int:
                     print(f"    ✗ {row['id']}: 模型 {row['model']} → 规则层 {row['after']}"
                           f"（期望 {row['expect']}, 规则 {row['rule']}）")
 
+    # 验收目标清单与 docs/adr/0009 的"定义完成"保持一致（13 项）
     print()
-    print("── 12 项验收目标在两种模式下的状态 ──────────────────────")
-    targets = ["cs_009", "cs_041", "cs_044", "cs_045", "cs_047", "cs_061", "cs_065", "cs_066",
-               "cs_040", "cs_058", "neg_017", "cs_046"]
+    print("── 13 项验收目标在两种模式下的状态 ──────────────────────")
+    targets = ["cs_009", "cs_040", "cs_041", "cs_043", "cs_044", "cs_045", "cs_046", "cs_047",
+               "cs_058", "cs_061", "cs_065", "cs_066", "neg_017"]
     strict_rows = {r["id"]: r for r in summary["strict"]["rows"]}
-    veto_rows = {r["id"]: r for r in summary["vetoes"]["rows"]}
-    print(f"{'用例':<9}{'模型':<10}{'strict':<10}{'vetoes':<10}规则")
+    veto_rows = {r["id"]: r for r in summary["default"]["rows"]}
+    print(f"{'用例':<9}{'模型':<10}{'strict':<10}{'default':<10}规则")
     for cid in targets:
         s, v = strict_rows.get(cid), veto_rows.get(cid)
         if not s:

@@ -74,10 +74,16 @@ _TRAILING_PARTICLES = "吧呀啊哦噢嘛啦哟喔呢"
 
 @dataclass(frozen=True)
 class RuleOptions:
-    """规则层的开关。默认严格遵循 rule_003：不碰意图。"""
+    """规则层的开关。
 
-    #: 开启后允许两处**窄口径合法性归一**（不是意图推断，详见 normalize_delegate / detect_retraction）
-    intent_vetoes: bool = False
+    `intent_vetoes` **默认开启**（2026-09-16 裁定入契约，见 ADR-0009 §1 例外）：
+    允许两处**窄口径合法性归一** —— 未声明 `delegatable` 时的 `delegate`、命中候选后的撤回性内容。
+    收窄原则是硬的：**只能把"没有消费者的意图"降级为 `off_topic`，绝不能把 `off_topic` 升级成任何标签。**
+    置 False 可回到纯 rule_003 模式（评测回放器用它做对照）。
+    """
+
+    #: 两处合法性归一（非意图推断；新增归一必须走 ADR 修订，不得就地扩表）
+    intent_vetoes: bool = True
     #: 是否启用拼音/近音匹配（需 pypinyin；未装则自动跳过）
     phonetic: bool = True
 

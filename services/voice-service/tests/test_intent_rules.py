@@ -260,21 +260,44 @@ def test_free_slot_negation_from_model_stays_off_topic() -> None:
 
 # ─────────────────────────── 合法性归一（可选，默认关） ───────────────────────────
 
-def test_delegate_on_non_delegatable_slot_only_normalised_when_enabled() -> None:
-    """rule_005：默认严格 rule_003（不碰意图）；显式开启做窄口径合法性归一。"""
+def test_delegate_normalisation_is_default_and_can_be_disabled() -> None:
+    """rule_005 + ADR-0009 §1 例外：合法性归一**默认开启**，可显式关闭回到纯 rule_003。"""
     context = {
         "npc_question": "请对腓腓说『出发』",
         "expected_slots": [{"key": "answer", "type": "keyword"}],
         "candidate_answers": RESUME_CANDIDATES,
     }
     default = apply_rules(text="随便选一个", context=context, model_intent="delegate")
-    assert default.intent == "delegate" and default.matched_rule is None
+    assert default.intent == "off_topic"
+    assert default.matched_rule == "delegate_requires_delegatable"
 
-    vetoed = apply_rules(
+    strict = apply_rules(
         text="随便选一个", context=context, model_intent="delegate",
-        options=RuleOptions(intent_vetoes=True),
+        options=RuleOptions(intent_vetoes=False),
     )
-    assert vetoed.intent == "off_topic" and vetoed.matched_rule == "delegate_requires_delegatable"
+    assert strict.intent == "delegate" and strict.matched_rule is None
+
+
+def test_rule_layer_only_downgrades_never_upgrades_off_topic() -> None:
+    """ADR-0009 §1 例外的硬边：只能把"没有消费者的意图"降到 off_topic，绝不反向。
+
+    这是防止"合法性归一"被慢慢扩成"意图推断"的关键不变量 —— 即使在默认（开启归一）模式下，
+    off_topic 也必须原样保留，哪怕句中出现候选、哪怕槽位可委托。
+    """
+    closed = {
+        "npc_question": "请对腓腓说『出发』，我们就继续旅程。",
+        "expected_slots": [{"key": "answer", "type": "keyword"}],
+        "candidate_answers": RESUME_CANDIDATES,
+    }
+    delegatable = {
+        "npc_question": "请告诉腓腓你用通用语的名字。",
+        "expected_slots": [{"key": "name", "type": "person_name", "delegatable": True, "value_pool": ["Carl"]}],
+        "candidate_answers": [],
+    }
+    for text, context in (("我不想出发", closed), ("我不想叫小明", delegatable)):
+        out = apply_rules(text=text, context=context, model_intent="off_topic")
+        assert out.intent == "off_topic", f"{text!r} 被升级成了 {out.intent}"
+        assert out.extracted == {}
 
 
 def test_delegatable_slot_keeps_delegate() -> None:

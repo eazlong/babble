@@ -1023,3 +1023,26 @@ docker compose up -d --force-recreate voice-service
 1. **裁定那两处"合法性归一"是否入契约**（§16.3）—— 这是接入生产路径前必须回答的。
 2. `src/` 归属确定后接入 `process()`（后处理段）+ `_system_prompt` 两处窄改，并把 `replay` 换成真评测跑一遍。
 3. 客户端侧清单（`HybridAPI` 白名单 3→5、`_is_decline_utterance` 优先读 `reject`、resume 路径 intent 门控）。
+
+### 16.7 决议落地：合法性归一入契约（2026-09-16，用户裁定 A）
+
+§16.6 的问题 1 已关闭：**两处"合法性归一"入契约**，`RuleOptions(intent_vetoes=True)` 成为实现默认。
+
+ADR-0009 §1 增补了一条**硬边**，防止这个口子被慢慢扩成"意图推断"：
+
+> **规则层只能把"没有消费者的意图"降级为 `off_topic`；绝不能把 `off_topic` 升级成任何标签。**
+
+降级是保守方向（客户端只需重问一次，可逆）；升级则可能把"没作答"伪装成能推进的意图。允许的归一只有两条（`delegate_requires_delegatable`、`retraction_after_target`），且**新增归一必须走 ADR 修订，不得就地扩表**。该硬边已写成不变量测试 `test_rule_layer_only_downgrades_never_upgrades_off_topic`。
+
+**回放结果（101 例真实模型输出）**：
+
+| 模式 | 模型原判 | 规则层处理后 | 修好 | 弄坏 |
+|---|---|---|---|---|
+| `strict`（显式关闭归一） | 90 | 98 | 8 | 0 |
+| `default`（开启归一，即实现默认） | 90 | **101（全通过）** | 11 | 0 |
+
+**13 项验收目标在 `default` 模式下全部转绿**；其中 `cs_047`/`cs_065`/`cs_066` 只能靠那两处归一（模型自己判不出，实测）。
+
+**顺带修掉一个回放器自身的 bug**：默认值由 `False` 翻成 `True` 后，回放器的 `strict` 模式仍在用 `RuleOptions()`，导致"两个模式结果完全相同"。这种**重合本身就是异常信号**（对照失去意义），已改为显式关闭并加注释。这与本项目早先那条教训同源：**默认值翻转后必须找出所有依赖旧默认的调用点**。
+
+**剩余两件事**：① `src/` 归属确定后接入 `process()` 后处理段 + `_system_prompt` 两处窄改；② 客户端侧清单（`HybridAPI` 白名单 3→5、`_is_decline_utterance` 优先读 `reject`、resume 路径 intent 门控）。
