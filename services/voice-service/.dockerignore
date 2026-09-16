@@ -1,0 +1,31 @@
+# 构建上下文裁剪。
+#
+# 背景（2026-09-15）：Dockerfile 用 `COPY . .` 且构建上下文是整个服务目录，
+# 于是把 `.env`（含 API key 与配置）与 macOS 的 `.venv` 一起烘进了镜像层：
+#   - 密钥进镜像 = 一旦镜像被推送/共享即泄露；
+#   - 镜像里那份**过期的** `.env` 还是个暗雷——compose 的 env_file 目前盖得住它，
+#     但只要哪个变量没写进 env_file，进程启动时 load_dotenv() 就会用旧值静默生效。
+#   - .venv 白白撑大镜像。
+#
+# 注意：本文件只影响**后续构建**。已构建的镜像里 .env 依然存在，重建镜像后才会消失。
+# 另：排除 `.env` 后，脱离 compose 单独 `docker run` 该镜像将没有配置——
+# 请用 `-e` / `--env-file` 显式传入（可用 `.env.example` 作模板）。
+
+.env
+.env.*
+!.env.example
+
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+
+# 测试与评测产物不进镜像（在开发机/CI 跑）
+tests/
+test_silent.wav
+
+# 构建工具
+Dockerfile
+.dockerignore
