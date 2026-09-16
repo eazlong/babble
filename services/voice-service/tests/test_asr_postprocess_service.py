@@ -462,7 +462,14 @@ async def test_postprocessor_missing_api_key_does_not_call_llm(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_postprocessor_provider_error_does_not_retry(monkeypatch):
+async def test_postprocessor_provider_5xx_retries_once_then_degrades(monkeypatch):
+    """网关 5xx 属瞬时故障：重试一次（§14.4 裁定），仍失败才降级。
+
+    这条取代了旧的 `test_postprocessor_provider_error_does_not_retry`
+    （当时的口径是"provider_error 一律不重试"）。裁定改为"一次有界重试"后，
+    原来的保护性意图由两条用例承接：4xx 不重试（下一条）与超时不重试
+    （`test_postprocessor_timeout_does_not_retry`）。
+    """
     calls = 0
 
     async def fake_create(**_kwargs):
@@ -473,6 +480,7 @@ async def test_postprocessor_provider_error_does_not_retry(monkeypatch):
         raise openai.APIStatusError("provider down", response=response, body={"error": "provider down"})
 
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("ASR_POSTPROCESS_RETRY_BACKOFF_MS", "0")
     client = openai.AsyncOpenAI(api_key="test-key", base_url="https://llm.test/v1")
     client.chat = type("Chat", (), {"completions": type("Completions", (), {"create": AsyncMock(side_effect=fake_create)})()})()
     postprocessor = ASRPostprocessor(client=client)
@@ -487,7 +495,37 @@ async def test_postprocessor_provider_error_does_not_retry(monkeypatch):
     assert result["applied"] is False
     assert result["corrected_text"] == "暑假"
     assert result["fallback_reason"] == "provider_error"
+    assert calls == 2, "5xx 应重试一次，且**只**重试一次（有界）"
+    assert result["retry_count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_postprocessor_provider_4xx_does_not_retry(monkeypatch):
+    """4xx 是配置/鉴权错误，重试只会掩盖它（例如 F6 那种 BASE_URL 写错）。"""
+    calls = 0
+
+    async def fake_create(**_kwargs):
+        nonlocal calls
+        calls += 1
+        request = httpx.Request("POST", "https://llm.test/v1/chat/completions")
+        response = httpx.Response(401, request=request, json={"error": "invalid api key"})
+        raise openai.APIStatusError("invalid api key", response=response, body={"error": "invalid api key"})
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    client = openai.AsyncOpenAI(api_key="test-key", base_url="https://llm.test/v1")
+    client.chat = type("Chat", (), {"completions": type("Completions", (), {"create": AsyncMock(side_effect=fake_create)})()})()
+    postprocessor = ASRPostprocessor(client=client)
+
+    result = await postprocessor.process(
+        text="暑假",
+        asr_confidence=0.9,
+        language="cn_en",
+        context=CONTEXT,
+    )
+
+    assert result["fallback_reason"] == "provider_error"
     assert calls == 1
+    assert result["retry_count"] == 0
 
 
 @pytest.mark.asyncio

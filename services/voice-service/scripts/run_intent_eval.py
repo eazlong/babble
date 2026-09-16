@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import sys
 import time
 import unicodedata
@@ -111,7 +112,12 @@ def print_report(metrics: dict, gate, baseline: dict | None, *, with_matrix: boo
     print(
         f"调用统计：LLM 调用下界 {metrics['llm_calls_lower_bound']}  "
         f"fallback {metrics['fallback_count']}  短路命中 {metrics['shortcut_hits']}  "
-        f"最慢 {metrics['max_latency_ms']}ms  总耗时 {metrics.get('duration_ms') or 0}ms"
+        + (
+            f"有界重试 {metrics['retries_total']} 次（救回 {metrics['retry_recovered']} 例）  "
+            if metrics.get("retries_total") is not None
+            else ""
+        )
+        + f"最慢 {metrics['max_latency_ms']}ms  总耗时 {metrics.get('duration_ms') or 0}ms"
     )
     if metrics["fallback_reasons"]:
         print("降级原因：" + ", ".join(metrics["fallback_reasons"]))
@@ -162,11 +168,16 @@ async def main_async(args: argparse.Namespace) -> int:
         return 2
 
     partial = bool(args.bucket or args.limit or args.sample_per_bucket)
-    planned_calls = len(cases) * args.repeats
+    # 预算闸门按**最坏情况**算：瞬时故障重试会额外发请求（§14.4），
+    # 所以计划调用数要乘上 (1 + max_retries)，否则闸门会被重试绕过。
+    max_retries = max(0, int(os.environ.get("ASR_POSTPROCESS_MAX_RETRIES", "1")))
+    planned_calls = len(cases) * args.repeats * (1 + max_retries)
     if args.max_calls and planned_calls > args.max_calls:
         print(
-            f"预算闸门：本次计划 {len(cases)} 例 × {args.repeats} 次 = {planned_calls} 次调用，"
-            f"超过 --max-calls {args.max_calls}。请调小 --limit/--repeats 或提高 --max-calls。",
+            f"预算闸门：本次最坏情况 {len(cases)} 例 × {args.repeats} 次 × {1 + max_retries} "
+            f"（含至多 {max_retries} 次重试）= {planned_calls} 次调用，"
+            f"超过 --max-calls {args.max_calls}。请调小 --limit/--repeats、"
+            f"降低 ASR_POSTPROCESS_MAX_RETRIES，或提高 --max-calls。",
             file=sys.stderr,
         )
         return 2

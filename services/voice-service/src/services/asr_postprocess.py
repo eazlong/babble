@@ -134,6 +134,9 @@ class ASRPostprocessResult(BaseModel):
     fallback_reason: FallbackReason | None
     model: str | None
     latency_ms: int
+    # 实际发出的 provider 请求次数 - 1（0 = 首次即成）。降级为"容错放行"时，
+    # 这个数字让运维能区分"第一次就失败"与"重试后仍失败"（§14.4）。
+    retry_count: int = 0
 
 
 class ASRPostprocessor:
@@ -320,6 +323,11 @@ class ASRPostprocessor:
 
         timeout_ms = int(os.environ.get("ASR_POSTPROCESS_TIMEOUT_MS", "30000"))
         max_tokens = int(os.environ.get("ASR_POSTPROCESS_MAX_TOKENS", "2048"))
+        # 网关 5xx / 连接错误的一次有界重试（§14.4）。默认 1 次、带 300ms 退避；
+        # 设 ASR_POSTPROCESS_MAX_RETRIES=0 可关闭。重试不延长总时长预算（见 _call_llm_with_retry）。
+        max_retries = max(0, int(os.environ.get("ASR_POSTPROCESS_MAX_RETRIES", "1")))
+        retry_backoff_ms = max(0, int(os.environ.get("ASR_POSTPROCESS_RETRY_BACKOFF_MS", "300")))
+        attempt_log: dict[str, int] = {"attempts": 0}
         started = time.monotonic()
         logger.info(
             "[ASR-POSTPROCESS] context npc_question_present=%s npc_question_len=%s expected_answer_type=%s expected_slot_count=%s expected_slot_keys=%s target_intent=%s intent_description_present=%s candidate_answer_count=%s recent_turn_count=%s session_present=%s user_present=%s npc_id=%s scene_id=%s turn_present=%s player_level=%s",
@@ -349,65 +357,90 @@ class ASRPostprocessor:
 
         try:
             # timeout_ms 是**总时长预算**：httpx 的超时是分阶段读超时，不是总时长上限，
-            # 实测曾出现单次 37.8s 超过配置的 30s（§11.3 F7）。这里用 wait_for 兜总时长，
-            # 覆盖 finish_reason=length 的重试在内。
-            llm_payload = await asyncio.wait_for(
-                self._call_llm(
-                    api_key=api_key,
-                    base_url=base_url,
-                    model=model,
-                    text=text,
-                    asr_confidence=asr_confidence,
-                    language=language,
-                    context=parsed_context,
-                    timeout_ms=timeout_ms,
-                    max_tokens=max_tokens,
-                ),
-                timeout=timeout_ms / 1000,
+            # 实测曾出现单次 37.8s 超过配置的 30s（§11.3 F7）。这里用截止时间兜总时长，
+            # 覆盖 finish_reason=length 的重试与 §14.4 的瞬时故障重试在内。
+            llm_payload = await self._call_llm_with_retry(
+                deadline=time.monotonic() + timeout_ms / 1000,
+                max_retries=max_retries,
+                backoff_ms=retry_backoff_ms,
+                attempt_log=attempt_log,
+                api_key=api_key,
+                base_url=base_url,
+                model=model,
+                text=text,
+                asr_confidence=asr_confidence,
+                language=language,
+                context=parsed_context,
+                timeout_ms=timeout_ms,
+                max_tokens=max_tokens,
             )
         except openai.APITimeoutError:
             logger.warning(
-                "[ASR-POSTPROCESS] provider timeout base_url=%s model=%s timeout_ms=%s",
+                "[ASR-POSTPROCESS] provider timeout base_url=%s model=%s timeout_ms=%s attempts=%s",
                 base_url,
                 model,
                 timeout_ms,
+                attempt_log["attempts"],
             )
-            return self._fallback(text, "timeout", latency_ms=timeout_ms)
+            return self._fallback(
+                text, "timeout", latency_ms=timeout_ms, retry_count=attempt_log["attempts"] - 1
+            )
         except asyncio.TimeoutError:
             logger.warning(
-                "[ASR-POSTPROCESS] llm total budget exceeded budget_ms=%s base_url=%s model=%s",
+                "[ASR-POSTPROCESS] llm total budget exceeded budget_ms=%s base_url=%s model=%s attempts=%s",
                 timeout_ms,
                 base_url,
                 model,
+                attempt_log["attempts"],
             )
-            return self._fallback(text, "timeout", latency_ms=timeout_ms)
+            return self._fallback(
+                text, "timeout", latency_ms=timeout_ms, retry_count=attempt_log["attempts"] - 1
+            )
         except openai.APIStatusError as exc:
             message = getattr(exc, "message", str(exc))[:500]
             logger.warning(
-                "[ASR-POSTPROCESS] provider api_status_error base_url=%s model=%s status_code=%s message=%r",
+                "[ASR-POSTPROCESS] provider api_status_error base_url=%s model=%s status_code=%s attempts=%s message=%r",
                 base_url,
                 model,
                 getattr(exc, "status_code", None),
+                attempt_log["attempts"],
                 message,
             )
-            return self._fallback(text, "provider_error", latency_ms=self._elapsed_ms(started))
+            return self._fallback(
+                text,
+                "provider_error",
+                latency_ms=self._elapsed_ms(started),
+                retry_count=attempt_log["attempts"] - 1,
+            )
         except openai.APIError as exc:
             message = getattr(exc, "message", str(exc))[:500]
             logger.warning(
-                "[ASR-POSTPROCESS] provider api_error base_url=%s model=%s error_type=%s message=%r",
+                "[ASR-POSTPROCESS] provider api_error base_url=%s model=%s error_type=%s attempts=%s message=%r",
                 base_url,
                 model,
                 exc.__class__.__name__,
+                attempt_log["attempts"],
                 message,
             )
-            return self._fallback(text, "provider_error", latency_ms=self._elapsed_ms(started))
+            return self._fallback(
+                text,
+                "provider_error",
+                latency_ms=self._elapsed_ms(started),
+                retry_count=attempt_log["attempts"] - 1,
+            )
         except RuntimeError as exc:
             logger.warning(
-                "[ASR-POSTPROCESS] provider runtime_error model=%s error=%s",
+                "[ASR-POSTPROCESS] provider runtime_error model=%s attempts=%s error=%s",
                 model,
+                attempt_log["attempts"],
                 str(exc),
             )
-            return self._fallback(text, "provider_error", latency_ms=self._elapsed_ms(started))
+            return self._fallback(
+                text,
+                "provider_error",
+                latency_ms=self._elapsed_ms(started),
+                retry_count=attempt_log["attempts"] - 1,
+            )
 
         try:
             parsed = json.loads(llm_payload)
@@ -465,6 +498,7 @@ class ASRPostprocessor:
             fallback_reason=None,
             model=model,
             latency_ms=self._elapsed_ms(started),
+            retry_count=attempt_log["attempts"] - 1,
         )
         dumped = result.model_dump()
         logger.info(
@@ -641,7 +675,13 @@ class ASRPostprocessor:
         confirmation_markers = ["没听明白", "没听清", "怎么拼", "拼写", "是不是", "确认", "confirm", "spell", "did you say"]
         return any(marker in normalized for marker in confirmation_markers)
 
-    def _fallback(self, text: str, reason: FallbackReason, latency_ms: int = 0) -> dict[str, Any]:
+    def _fallback(
+        self,
+        text: str,
+        reason: FallbackReason,
+        latency_ms: int = 0,
+        retry_count: int = 0,
+    ) -> dict[str, Any]:
         # missing_context: 上下文不充分，无法判定意图，不应声称玩家提供了槽位值
         #   （applied=False 与 intent_matched=True 自相矛盾）。
         # 其他系统故障（disabled/timeout/provider_error/...）: 保持容错放行，
@@ -659,10 +699,72 @@ class ASRPostprocessor:
             fallback_reason=reason,
             model=None,
             latency_ms=latency_ms,
+            retry_count=retry_count,
         ).model_dump()
 
     def _elapsed_ms(self, started: float) -> int:
         return int((time.monotonic() - started) * 1000)
+
+    @staticmethod
+    def _is_retryable_provider_error(exc: BaseException) -> bool:
+        """只有"瞬时"的 provider 故障才值得重试。
+
+        重试白名单：5xx、连接错误。
+        刻意不重试：
+        - 超时（`APITimeoutError` 是 `APIConnectionError` 的子类，**必须先排除**）——
+          它已经吃掉了孩子的等待与预算；
+        - 4xx —— 配置/鉴权错误，重试只会掩盖它；
+        - 响应形状漂移（走 `RuntimeError` 分支，如 F6 的 HTML 200）—— 那是配置问题，不是抖动。
+        """
+        if isinstance(exc, openai.APITimeoutError):
+            return False
+        if isinstance(exc, openai.APIStatusError):
+            status = getattr(exc, "status_code", None)
+            return isinstance(status, int) and status >= 500
+        return isinstance(exc, openai.APIConnectionError)
+
+    async def _call_llm_with_retry(
+        self,
+        *,
+        deadline: float,
+        max_retries: int,
+        backoff_ms: int,
+        attempt_log: dict[str, int],
+        **kwargs: Any,
+    ) -> str:
+        """在**同一个总时长预算**内调用 LLM；瞬时故障按 `max_retries` 有界重试。
+
+        `deadline` 是绝对时间点（`time.monotonic()`）。每次尝试只取剩余预算，
+        所以**重试永远不会延长孩子等待的上限**——这是本方案的核心安全性质
+        （否则"重试"会把 30s 预算变成 60s）。
+        """
+        attempt = 0
+        while True:
+            attempt_log["attempts"] = attempt + 1
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise asyncio.TimeoutError
+            try:
+                return await asyncio.wait_for(self._call_llm(**kwargs), timeout=remaining)
+            except (openai.APIError, asyncio.TimeoutError) as exc:
+                if attempt >= max_retries or not self._is_retryable_provider_error(exc):
+                    raise
+                delay_s = min(
+                    backoff_ms / 1000 * (attempt + 1),
+                    max(0.0, deadline - time.monotonic()),
+                )
+                logger.warning(
+                    "[ASR-POSTPROCESS] provider transient failure; retry attempt=%s/%s delay_ms=%s error_type=%s status_code=%s remaining_ms=%s",
+                    attempt + 1,
+                    max_retries,
+                    int(delay_s * 1000),
+                    exc.__class__.__name__,
+                    getattr(exc, "status_code", None),
+                    int(max(0.0, deadline - time.monotonic()) * 1000),
+                )
+                attempt += 1
+                if delay_s > 0:
+                    await asyncio.sleep(delay_s)
 
     def _system_prompt(self) -> str:
         return (

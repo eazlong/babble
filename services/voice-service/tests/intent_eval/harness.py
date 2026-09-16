@@ -347,6 +347,8 @@ class CaseResult:
     shortcut_hit: bool
     matched_rule: str | None
     latency_ms: int
+    # 该用例实际发出的额外 provider 请求数（§14.4 有界重试的效果度量）
+    retry_count: int = 0
     verdicts: list[str] = field(default_factory=list)
 
     @property
@@ -375,6 +377,7 @@ class CaseResult:
             "shortcut_hit": self.shortcut_hit,
             "matched_rule": self.matched_rule,
             "latency_ms": self.latency_ms,
+            "retry_count": self.retry_count,
             "flipped": self.flipped,
         }
 
@@ -437,6 +440,7 @@ async def run_case(
         shortcut_hit=bool(first.get("shortcut_hit")),
         matched_rule=first.get("matched_rule"),
         latency_ms=max(latencies) if latencies else 0,
+        retry_count=sum(int(o.get("retry_count") or 0) for o in outcomes),
         # 抖动指纹只取已落地的判决
         verdicts=[
             verdict_key(str(o.get("intent", "")), o.get("extracted", {}) or {})
@@ -552,6 +556,10 @@ def compute_metrics(
         "fallback_reasons": sorted({r.fallback_reason for r in results if r.fallback_reason}),
         "shortcut_hits": sum(1 for r in results if r.shortcut_hit),
         "verdict_sources": sorted({r.verdict_source for r in results if r.verdict_source}),
+        # §14.4 有界重试的效果：retries_total 是发出的额外请求数，
+        # retry_recovered 是"重试把这一轮救回来"的用例数（本会降级、实际落地）。
+        "retries_total": sum(r.retry_count for r in results),
+        "retry_recovered": sum(1 for r in results if r.retry_count > 0 and r.applied),
         "llm_calls_lower_bound": sum(r.applied_repeats for r in results),
         "max_latency_ms": max((r.latency_ms for r in results), default=0),
         "duration_ms": durations_ms,

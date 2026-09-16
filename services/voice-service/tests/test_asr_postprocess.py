@@ -76,6 +76,7 @@ async def test_multipart_asr_returns_postprocess_missing_context(path):
         "fallback_reason": "missing_context",
         "model": None,
         "latency_ms": 0,
+        "retry_count": 0,
     }
 
 
@@ -103,6 +104,7 @@ async def test_json_asr_uses_postprocessor_with_context():
         "fallback_reason": None,
         "model": "mock-model",
         "latency_ms": 12,
+        "retry_count": 0,
     }
 
     with (
@@ -139,6 +141,7 @@ async def test_multipart_asr_uses_postprocessor_with_context():
         "fallback_reason": None,
         "model": "mock-model",
         "latency_ms": 12,
+        "retry_count": 0,
     }
 
     with (
@@ -178,6 +181,7 @@ async def test_multipart_asr_logs_postprocess_context(caplog):
         "fallback_reason": "missing_context",
         "model": None,
         "latency_ms": 0,
+        "retry_count": 0,
     }
 
     with (
@@ -209,6 +213,7 @@ async def test_json_asr_logs_postprocess_success(caplog):
         "fallback_reason": None,
         "model": "mock-model",
         "latency_ms": 12,
+        "retry_count": 0,
     }
 
     with (
@@ -241,6 +246,7 @@ async def test_json_asr_returns_200_when_postprocess_falls_back():
         "fallback_reason": "timeout",
         "model": None,
         "latency_ms": 1500,
+        "retry_count": 0,
     }
 
     with (
@@ -272,6 +278,7 @@ async def test_all_asr_endpoints_share_success_contract(endpoint):
         "fallback_reason": None,
         "model": "mock-model",
         "latency_ms": 12,
+        "retry_count": 0,
     }
 
     with (
@@ -306,6 +313,7 @@ async def test_all_asr_endpoints_share_fallback_contract(endpoint):
         "fallback_reason": "timeout",
         "model": None,
         "latency_ms": 1500,
+        "retry_count": 0,
     }
 
     with (

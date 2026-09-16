@@ -214,6 +214,59 @@ def test_single_run_tolerates_one_noisy_case_but_not_two() -> None:
     assert not gate_two.passed, "两例退步应当判为回归"
 
 
+def test_retry_metrics_are_aggregated() -> None:
+    """§14.4 重试的效果必须能从报告里读出来，而不是靠翻日志。
+
+    `retry_recovered` = 本会降级、被重试救回来的用例数——这是"重试值不值"的直接证据。
+    """
+
+    class _FakePostprocessor:
+        """只回放预设结果，用于单测聚合逻辑本身。"""
+
+        def __init__(self) -> None:
+            self._queue = [
+                # 第一个：重试一次后落地（被救回来的那一轮）
+                {
+                    "applied": True,
+                    "corrected_text": "出发",
+                    "intent": "provide",
+                    "intent_matched": True,
+                    "extracted": {"answer": "出发"},
+                    "guidance": {"npc_line": None},
+                    "confidence": 0.9,
+                    "fallback_reason": None,
+                    "retry_count": 1,
+                },
+                # 第二个：重试后仍然降级（没救回来）
+                {
+                    "applied": False,
+                    "corrected_text": "出发",
+                    "intent": "provide",
+                    "intent_matched": True,
+                    "extracted": {},
+                    "guidance": {"npc_line": None},
+                    "confidence": 0.0,
+                    "fallback_reason": "provider_error",
+                    "retry_count": 1,
+                },
+            ]
+
+        async def process(self, **_kwargs):
+            return self._queue.pop(0)
+
+    cases = [dict(case) for case in load_cases() if case["bucket"] == "closed_set"][:2]
+    for case in cases:  # 让两个用例都期望回放里的那个答案
+        case["expect"] = {"intent": "provide", "extracted": {"answer": "出发"}}
+        case["context"] = {**case["context"], "candidate_answers": ["出发"]}
+
+    results = asyncio.run(run_eval(cases, _FakePostprocessor(), repeats=1, concurrency=1))  # type: ignore[arg-type]
+    metrics = compute_metrics(results, repeats=1, mode="stub:perfect", model="stub")
+
+    assert metrics["retries_total"] == 2, "两个用例各重试一次"
+    assert metrics["retry_recovered"] == 1, "只有第一个用例是『重试救回来』的"
+    assert metrics["fallback_rate"] == 0.5, "两个里有一个降级"
+
+
 def test_sample_per_bucket_is_stratified_and_deterministic() -> None:
     """抖动率抽样必须等距覆盖每个桶——用例文件按桶排块，取前 N 会只覆盖一个桶。"""
     cases = load_cases()
