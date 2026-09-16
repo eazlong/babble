@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "created_at": "2026-09-16T16:03:26+0800",
+  "created_at": "2026-09-16T16:14:34+0800",
   "mode": "live",
   "model": "qwen3.8-27b-fp8",
   "repeats": 5,
@@ -14,7 +14,7 @@
       "accuracy": 0.9882
     },
     "person_name": {
-      "n": 3,
+      "n": 10,
       "accuracy": 1.0
     }
   },
@@ -22,14 +22,14 @@
     "bucket": "closed_set",
     "accuracy": 0.8766
   },
-  "overall_accuracy": 0.9262,
-  "scored_cases": 84,
-  "fallback_rate": 0.0238,
-  "flip_rate": 0.0357,
+  "overall_accuracy": 0.9319,
+  "scored_cases": 91,
+  "fallback_rate": 0.022,
+  "flip_rate": 0.033,
   "thresholds": {
     "bucket_drop_pt": 2.0,
     "flip_rate_delta_pt": 2.0,
     "fallback_rate_delta_pt": 2.0
   },
-  "note": "2026-09-15 第三次重建（N=5）：覆盖 79→84 例，新增 rule_005 的五个锚点 cs_046-cs_050 并开 person_name 桶。共同 79 例 0.9411→0.9367（-0.4pt，持平）；closed_set 0.902→0.877 的降幅来自新增的 cs_047（模型把封闭题的『随便选一个』判成 delegate）与 cs_046 的翻转。fallback_rate 0.144→0.024：并发写入者的有界重试落地（51 次重试救回 38 例）后重测的结果。基线编码的已知未过用例（= 方向 C 验收目标）：cs_009/cs_040/cs_041/cs_044/cs_045/cs_046(部分)/cs_047 + neg_017。"
+  "note": "2026-09-15 增量合并（非全量重测）：在 84 例 N=5 结果之上并入新增 7 例（rule_006/rule_007 的cs_051-cs_057）各自的 N=5 结果，用两次运行的全部逐例数据重算，不做估计。新增 7 例全通过且零翻转，因此各桶准确率未变（person_name 3→10 例仍为 1.000）。基线编码的已知未过用例 = 方向 C 验收目标（8 项）：cs_009/cs_040/cs_041/cs_044/cs_045/cs_046部分/cs_047 + neg_017。"
 }
