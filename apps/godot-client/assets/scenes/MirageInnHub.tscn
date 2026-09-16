@@ -13,7 +13,7 @@ script = ExtResource("1_controller")
 
 [node name="InnHallBackground" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1366166303]
 z_index = -100
-motion_scale = Vector2(0.1, 0.1)
+motion_scale = Vector2(0.15, 0.15)
 motion_mirroring = Vector2(1920, 0)
 
 [node name="Hall" type="Sprite2D" parent="ParallaxBackground/InnHallBackground" unique_id=43513119]
@@ -104,8 +104,8 @@ grow_horizontal = 2
 grow_vertical = 0
 
 [node name="FeifeiLayer" parent="." unique_id=820909006 instance=ExtResource("2_feifei_body")]
-position = Vector2(1656, 598)
-scale = Vector2(0.1, 0.1)
+position = Vector2(1542, 587)
+scale = Vector2(0.15, 0.15)
 
 [node name="OverlayLayer" type="CanvasLayer" parent="." unique_id=835753050]
 layer = 30

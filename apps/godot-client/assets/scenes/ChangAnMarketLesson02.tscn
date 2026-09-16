@@ -62,8 +62,8 @@ grow_horizontal = 2
 grow_vertical = 0
 
 [node name="FeifeiLayer" parent="." unique_id=65427913 instance=ExtResource("2_feifei_body")]
-position = Vector2(1656, 598)
-scale = Vector2(0.1, 0.1)
+position = Vector2(1542, 587)
+scale = Vector2(0.15, 0.15)
 
 [node name="OverlayLayer" type="CanvasLayer" parent="." unique_id=71381869]
 layer = 30
