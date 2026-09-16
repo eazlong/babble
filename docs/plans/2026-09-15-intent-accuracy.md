@@ -393,6 +393,8 @@ voice-service 当前的"目标识别"是**单次 LLM 一次性出结论**：把�
 
 裁定是"这批用例为什么这么期望"的书面依据，逐条落在 `services/voice-service/tests/intent_eval/rulings.jsonl`；契约层面的固化在 ADR（各条的 `folds_into`）。流程与约束见同目录 README。
 
+> **契约已固化（2026-09-16）**：`docs/adr/0009-intent-value-contract-and-rule-layer-boundary.md` —— 11 条裁定的契约化落地（intent 扩五值、判据字段、规则层实现顺序与权限边界、完成判据 = 12 项验收目标转绿）。各裁定 `folds_into` 里的 `docs/adr/0009-*` 即指该文件。
+
 ### rule_001（原 `pr_009`，2026-09-15）：封闭题取候选规范值，自由槽不得改写
 
 **裁定**
