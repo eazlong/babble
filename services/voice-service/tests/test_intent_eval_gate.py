@@ -565,6 +565,32 @@ def test_fallback_repeat_is_not_counted_as_a_flip() -> None:
     assert metrics["fallback_rate"] < 0.5
 
 
+def test_report_shows_first_landed_verdict_not_a_fallback_repeat() -> None:
+    """首次 repeat 降级时，报告里的"实际"必须取第一次**落地**的判定。
+
+    否则一个 3 次里 2 次通过、恰好首次降级的例子会显示成 extracted={} 而 pass_rate=1.0，
+    读报告的人（包括 agent）会把它误判成失败——实测差点踩到。
+    """
+    from src.services.asr_postprocess import ASRPostprocessor
+
+    cases = [_mixed_case("mx_ok", "Nice to meet you"), _mixed_case("mx_bad", "BOOM")]
+    postprocessor = ASRPostprocessor(
+        client=_MixedClient({"BOOM"}, fallback_once=True)  # type: ignore[arg-type]
+    )
+    results = asyncio.run(run_eval(cases, postprocessor, repeats=3, concurrency=1))
+    metrics = compute_metrics(results, repeats=3, mode="live", model="mixed")
+    # cases_detail 平时由 CLI 附加，这里手动补上以检查逐例报告
+    detail = {item["id"]: item for item in (r.to_dict() for r in results)}
+    bad = detail["mx_bad"]
+
+    assert bad["fallback_reason"] == "provider_error", "降级仍应作为诊断信息保留"
+    assert bad["actual"]["extracted"] == {"answer": "Nice to meet you"}, (
+        "展示的判定必须来自已落地的那次，而不是降级的首次"
+    )
+    assert bad["applied_pass_rate"] == 1.0
+    assert metrics["overall_accuracy"] == 1.0
+
+
 def test_thin_bucket_is_not_ratcheted() -> None:
     """降级会把分母削薄：某桶只剩 1–2 例时不得用它的准确率判定退步或进步。"""
     big = [

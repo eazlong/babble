@@ -420,25 +420,31 @@ async def run_case(
             reasons_first = reasons
 
     first = outcomes[0]
+    # 展示用的"实际判定"取**第一次落地**的那次：若首次 repeat 恰好降级，
+    # 用首次结果会把一个通过的例子显示成 extracted={}（实测差点被误读成失败）。
+    display = next((o for o in outcomes if o.get("applied")), first)
+    fallback_reason = next(
+        (o.get("fallback_reason") for o in outcomes if o.get("fallback_reason")), None
+    )
     return CaseResult(
         case_id=case["id"],
         bucket=case["bucket"],
         raw_text=case["raw_text"],
         expected_intent=case["expect"]["intent"],
         expected_extracted=case["expect"].get("extracted", {}),
-        actual_intent=str(first.get("intent", "")),
-        actual_extracted=first.get("extracted", {}) or {},
+        actual_intent=str(display.get("intent", "")),
+        actual_extracted=display.get("extracted", {}) or {},
         pass_rate=sum(passes) / len(passes),
         applied_pass_rate=(sum(applied_passes) / len(applied_passes)) if applied_passes else None,
         passed_first=passes[0],
         reasons=reasons_first,
-        applied=bool(first.get("applied")),
+        applied=bool(applied_passes),
         applied_repeats=sum(1 for o in outcomes if o.get("applied")),
         fallback_repeats=sum(1 for o in outcomes if not o.get("applied")),
-        fallback_reason=first.get("fallback_reason"),
-        verdict_source=_verdict_source(first),
-        shortcut_hit=bool(first.get("shortcut_hit")),
-        matched_rule=first.get("matched_rule"),
+        fallback_reason=fallback_reason,
+        verdict_source=_verdict_source(display),
+        shortcut_hit=bool(display.get("shortcut_hit")),
+        matched_rule=display.get("matched_rule"),
         latency_ms=max(latencies) if latencies else 0,
         retry_count=sum(int(o.get("retry_count") or 0) for o in outcomes),
         # 抖动指纹只取已落地的判决
