@@ -1,0 +1,52 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/aling/aling_happy_01.png" id="1_m6kfa"]
+[ext_resource type="Texture2D" path="res://assets/sprites/aling/aling_happy_02.png" id="2_eqjnu"]
+[ext_resource type="Texture2D" path="res://assets/sprites/aling/aling_idle_01.png" id="3_j7bjo"]
+[ext_resource type="Texture2D" path="res://assets/sprites/aling/aling_idle_02.png" id="4_px823"]
+[ext_resource type="Texture2D" path="res://assets/sprites/aling/aling_idle_03.png" id="5_2s25s"]
+[ext_resource type="Texture2D" path="res://assets/sprites/aling/aling_talk_01.png" id="6_jxqj1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/aling/aling_talk_02.png" id="7_ww7hs"]
+[ext_resource type="Texture2D" path="res://assets/sprites/aling/aling_talk_03.png" id="8_1y4n2"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_m6kfa")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_eqjnu")
+}],
+"loop": true,
+"name": &"happy",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_j7bjo")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_px823")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_2s25s")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_jxqj1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_ww7hs")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_1y4n2")
+}],
+"loop": true,
+"name": &"talk",
+"speed": 6.0
+}]
