@@ -143,6 +143,77 @@ def test_free_slot_exception_is_documented_where_it_matters() -> None:
             )
 
 
+def test_stub_is_context_aware_for_identical_utterances() -> None:
+    """两条用例可以同原话、只差问句（cs_040 vs cs_041）——stub 也必须按上下文取期望值。"""
+    shared = [case for case in load_cases() if case["raw_text"] == "My name is Lily, nice to meet you"]
+    assert len(shared) == 2, "cs_040/cs_041 这对同句不同问句的用例应同时存在"
+    questions = {case["context"]["npc_question"] for case in shared}
+    assert len(questions) == 2, "两条用例的问句必须不同，否则这条不变量无意义"
+
+    metrics = _run_stub("perfect")
+    assert metrics["overall_accuracy"] == 1.0, "perfect stub 在同句不同问句时取错了期望值"
+
+
+def test_single_run_tolerates_one_noisy_case_but_not_two() -> None:
+    """N=1 时一例退步算噪声（一例在 27 例桶里就是 3.7pt），两例才算回归。
+
+    2pt 阈值本是给 nightly N=5 设计的（pass_rate 按次平均）；单次跑直接用会让任何
+    一个已知不稳定用例（cs_040 / neg_017）把门禁打红，团队随后就会开始"顺手更新基线"。
+    """
+    from src.services.asr_postprocess import ASRPostprocessor
+
+    def run_with_failures(failing: int) -> dict:
+        # 每例必须用不同的 raw_text：否则"让前 N 例失败"的选择器会把所有例子都命中
+        cases = [_mixed_case(f"mx_{index}", f"Nice to meet you {index}") for index in range(28)]
+        bad_texts = {case["raw_text"] for case in cases[:failing]}
+
+        class _Degrading(_MixedCompletions):
+            async def create(self, *, model: str, messages: list[dict], **kwargs) -> object:
+                raw = str(json.loads(messages[-1]["content"]).get("raw_text", ""))
+                if raw in bad_texts:
+                    self.calls += 1
+                    return SimpleNamespace(
+                        choices=[
+                            SimpleNamespace(
+                                message=SimpleNamespace(
+                                    content=json.dumps(
+                                        {
+                                            "corrected_text": raw,
+                                            "correction_applied": False,
+                                            "correction_reason": None,
+                                            "extracted": {},
+                                            "intent_matched": False,
+                                            "intent": "off_topic",
+                                            "guidance": {"npc_line": None},
+                                            "confidence": 0.9,
+                                        },
+                                        ensure_ascii=False,
+                                    )
+                                ),
+                                finish_reason="stop",
+                            )
+                        ],
+                        model_dump=lambda mode="json": {"model": "degrading"},
+                    )
+                return await super().create(model=model, messages=messages, **kwargs)
+
+        postprocessor = ASRPostprocessor(
+            client=SimpleNamespace(chat=SimpleNamespace(completions=_Degrading(set())))  # type: ignore[arg-type]
+        )
+        results = asyncio.run(run_eval(cases, postprocessor, repeats=1, concurrency=1))
+        return compute_metrics(results, repeats=1, mode="live", model="degrading")
+
+    baseline = baseline_from_metrics(run_with_failures(0))
+
+    one_noisy = run_with_failures(1)
+    gate_one = check_gate(one_noisy, baseline)
+    assert gate_one.passed, f"单例退步被当成回归：{gate_one.failures}"
+
+    two_regressed = run_with_failures(2)
+    gate_two = check_gate(two_regressed, baseline)
+    assert not gate_two.passed, "两例退步应当判为回归"
+
+
 def test_sample_per_bucket_is_stratified_and_deterministic() -> None:
     """抖动率抽样必须等距覆盖每个桶——用例文件按桶排块，取前 N 会只覆盖一个桶。"""
     cases = load_cases()

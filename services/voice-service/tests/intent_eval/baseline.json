@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
-  "created_at": "2026-09-15T20:46:24+0800",
+  "created_at": "2026-09-16T14:36:55+0800",
   "mode": "live",
   "model": "qwen3.8-27b-fp8",
-  "repeats": 1,
+  "repeats": 5,
   "buckets": {
     "closed_set": {
-      "n": 36,
-      "accuracy": 0.9722
+      "n": 41,
+      "accuracy": 0.9329
     },
     "negative": {
-      "n": 28,
+      "n": 34,
       "accuracy": 1.0
     }
   },
   "min_bucket": {
     "bucket": "closed_set",
-    "accuracy": 0.9722
+    "accuracy": 0.9329
   },
-  "overall_accuracy": 0.9844,
-  "scored_cases": 64,
-  "fallback_rate": 0.1351,
-  "flip_rate": null,
+  "overall_accuracy": 0.9633,
+  "scored_cases": 75,
+  "fallback_rate": 0.136,
+  "flip_rate": 0.0133,
   "thresholds": {
     "bucket_drop_pt": 2.0,
     "flip_rate_delta_pt": 2.0,
     "fallback_rate_delta_pt": 2.0
   },
-  "note": "2026-09-15 重建：度量口径改为『准确率只统计已落地判决』+ 覆盖扩到 74 例（rule_002 多候选仲裁用例）"
+  "note": "2026-09-15 重建（N=5 代表值）：覆盖 70→75 例（新增 rule_002 的 cs_037-cs_040 与 rule_003 的验收靶子 cs_041）；cs_040 的 N=1 幸运值 1.0 被 N=5 真实值取代。closed_set 0.972→0.933 全部由覆盖与测量口径解释，非代码/提示词改动所致。当前基线已把三个已知未过用例（cs_009 待 rule_001、cs_040 值形态不稳、cs_041 待 rule_003）编码为现有水平，方向 C 的验收目标即这三个。"
 }

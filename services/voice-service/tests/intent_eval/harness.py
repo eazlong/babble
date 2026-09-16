@@ -45,6 +45,8 @@ FLIP_RATE_DELTA_PT = 2.0
 FALLBACK_RATE_DELTA_PT = 2.0
 # 桶内"已落地"用例数低于基线该比例时，该桶样本太薄，不参与棘轮判定
 MIN_SCORED_RATIO = 0.5
+# N=1 运行时，单例退步视为噪声（见 run_intent_eval 的说明）；N>1 时 pass_rate 已按次平均，不需要此放宽
+SINGLE_RUN_NOISE_CASES = 1
 
 SCHEMA_VERSION = 1
 
@@ -255,6 +257,9 @@ class StubClient:
     - off_topic：一律判 off_topic（准确率崩，门禁应当失败）
     - delegate：一律判 delegate（同上，且验证委托预期）
     - flaky：每第 3 次调用翻一次结论（用于验证抖动率能被测出来）
+    期望值按 **(raw_text, npc_question, candidate_answers)** 三元组索引，而不是只按 raw_text：
+    完全可能出现两条用例原话相同、只有问句/候选表不同（如 cs_040 与 cs_041），
+    真实模型看得到上下文，假客户端也必须看得到，否则 perfect 模式会假失败。
     """
 
     def __init__(self, cases: Sequence[dict[str, Any]], mode: StubMode = "perfect"):
@@ -263,9 +268,18 @@ class StubClient:
         self.mode = mode
         self.calls = 0
         self.chat = SimpleNamespace(completions=_StubCompletions(self))
-        self._by_text: dict[str, dict[str, Any]] = {}
+        self._by_key: dict[tuple[str, str, tuple[str, ...]], dict[str, Any]] = {}
         for case in cases:
-            self._by_text.setdefault(normalize_text(case["raw_text"]), case)
+            key = self._context_key(str(case["raw_text"]), case.get("context") or {})
+            self._by_key.setdefault(key, case)
+
+    @staticmethod
+    def _context_key(raw_text: str, context: dict[str, Any]) -> tuple[str, str, tuple[str, ...]]:
+        return (
+            normalize_text(raw_text),
+            normalize_text(context.get("npc_question") or ""),
+            tuple(normalize_text(item) for item in context.get("candidate_answers") or []),
+        )
 
     def _payload(self, intent: str, extracted: dict[str, Any], confidence: float = 0.9) -> dict[str, Any]:
         return {
@@ -282,6 +296,10 @@ class StubClient:
     def payload_for(self, messages: list[dict[str, str]]) -> dict[str, Any]:
         user = json.loads(messages[-1]["content"])
         raw_text = str(user.get("raw_text", ""))
+        context = {
+            "npc_question": user.get("npc_question") or "",
+            "candidate_answers": user.get("candidate_answers") or [],
+        }
         if self.mode == "off_topic":
             payload = self._payload("off_topic", {})
         elif self.mode == "delegate":
@@ -289,7 +307,7 @@ class StubClient:
         elif self.mode == "flaky" and self.calls % 3 == 0:
             payload = self._payload("off_topic", {})
         else:
-            case = self._by_text.get(normalize_text(raw_text))
+            case = self._by_key.get(self._context_key(raw_text, context))
             expect = case["expect"] if case else {"intent": "off_topic", "extracted": {}}
             payload = self._payload(expect["intent"], expect.get("extracted", {}))
         payload["corrected_text"] = raw_text
@@ -597,9 +615,19 @@ def check_gate(
             )
             continue
         drop_pt = (base["accuracy"] - current["accuracy"]) * 100
-        if drop_pt > threshold:
+        # N=1 时单例退步视为噪声：一例在 27 例的桶里就是 3.7pt，直接用 2pt 阈值等于
+        # "零容忍"，任何一个已知不稳定用例（cs_040/neg_017 这类）都会把门禁打红。
+        # 2pt 阈值本来是给 nightly 的 N=5 设计的（pass_rate 按次平均，噪声被摊平）。
+        effective_threshold = threshold
+        if run.get("repeats", 1) <= 1 and current_n:
+            noise_pt = SINGLE_RUN_NOISE_CASES / current_n * 100
+            effective_threshold = max(threshold, noise_pt)
+        if drop_pt > effective_threshold:
+            suffix = (
+                f"，N=1 噪声余量 {effective_threshold:.1f}pt" if effective_threshold != threshold else ""
+            )
             failures.append(
-                f"桶 {name} 退步 {drop_pt:.1f}pt（基线 {base['accuracy']:.3f} → 本次 {current['accuracy']:.3f}，阈值 {threshold:.1f}pt）"
+                f"桶 {name} 退步 {drop_pt:.1f}pt（基线 {base['accuracy']:.3f} → 本次 {current['accuracy']:.3f}，阈值 {threshold:.1f}pt{suffix}）"
             )
 
     for name in sorted(set(run_buckets) - set(base_buckets)):
