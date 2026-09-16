@@ -1046,3 +1046,56 @@ ADR-0009 §1 增补了一条**硬边**，防止这个口子被慢慢扩成"意�
 **顺带修掉一个回放器自身的 bug**：默认值由 `False` 翻成 `True` 后，回放器的 `strict` 模式仍在用 `RuleOptions()`，导致"两个模式结果完全相同"。这种**重合本身就是异常信号**（对照失去意义），已改为显式关闭并加注释。这与本项目早先那条教训同源：**默认值翻转后必须找出所有依赖旧默认的调用点**。
 
 **剩余两件事**：① `src/` 归属确定后接入 `process()` 后处理段 + `_system_prompt` 两处窄改；② 客户端侧清单（`HybridAPI` 白名单 3→5、`_is_decline_utterance` 优先读 `reject`、resume 路径 intent 门控）。
+
+
+## 17. 客户端侧契约扩展落地（2026-09-16）：三项清单 + 一处设计偏离
+
+提交 `f4db2cb`（amend 后 `32c24f3`）。§16.7 末尾列的三项全部落地，但**第三项没有按原建议做**。
+
+### 17.1 三项交付
+
+| 项 | 落点 | 说明 |
+|---|---|---|
+| 白名单 3 → 5 | `HybridAPI.get_asr_intent` + 新常量 `ASR_INTENT_VALUES` | `accept`/`reject` 原样透出；未知标签仍回退 `intent_matched`（加测试固化，防止白名单扩容时把回退删掉） |
+| `reject` 优先 + 文本兜底 | `BeginningFPController._classify_proposal_reaction(intent, text)` | 收敛为**单一判定表**的纯函数（可单测）；`reject`→拒绝、`accept`→接受，否则退回 `_is_decline_utterance`。兜底同时覆盖「旧服务端不产出 reject」与「模型漏判 reject」 |
+| `rule_010.client_gap` | `_is_retraction_downgrade(result)` | **偏离原建议**，见 17.2 |
+
+另新增 `HybridAPI.get_asr_matched_rule()` 读 ADR-0009 §3 的 `matched_rule`（`null`/缺失统一归空串——JSON `null` 直接 `str()` 会得到 `"<null>"` 这种假判据）。
+
+### 17.2 设计偏离：门控认 `matched_rule`，不认 `intent`
+
+ADR §「后果」原建议"给 resume 路径加 intent 门控"。实现时否掉了：**该路径的失败后果是切不了场景，玩家会被卡在主人房**——若模型把合法口令句（「走吧」「我们出发」）判成 `off_topic`，按 `intent` 门控就会拦下本可续行的玩家，而这个错误**不可自愈**（重问仍然判 off_topic）。
+
+改为只认**明确判据**：`matched_rule == "retraction_after_target"`。
+
+- 精确性：只有规则层真的做了那一次降级才拦截；模型自身的 `off_topic` 不参与。
+- 零回归：规则层未接入时 `matched_rule` 为空 → 门控失效 → 行为与改动前完全一致（已固化为测试用例）。
+- 附带效果：`matched_rule` 从"可复核判据"变成**有真实消费者的契约字段**（此前 §3 五个字段都没有消费者，属于纸面字段）。
+
+### 17.3 两处事实勘误（均已在 ADR-0009 §2 修正）
+
+1. **ADR 原稿自相矛盾**：既写 `intent_matched ≡ (intent == "provide")`，又写"旧客户端遇到 `accept` 退化成 `provide`"。二者不能同时成立——`asr_postprocess.py:482` 就是那条等式，所以 **`accept` 与 `reject` 对旧客户端都退化成 `off_topic`**。后果可接受（走"没听懂"分支重问一次，不崩、不写错槽位值），但"扩标签能救旧客户端"的说法不成立。
+2. **`extracted` 在非 provide 时被清空**（`asr_postprocess.py:480`：`extracted = {} if intent != "provide" else ...`）。这直接判死了"提议态靠 `extracted[key] == proposed_value` 回填判断接受"的既有写法——`accept` 到达客户端时 `extracted` 必为空，只能认 `intent == "accept"`。
+
+### 17.4 验证（Godot 4.6.2 + GUT 9.6.0，headless，规则层尚未接入）
+
+| 测试文件 | 结果 |
+|---|---|
+| `test/autoload/test_hybrid_api_asr_context.gd`（+5 个断言组） | 25/25 |
+| `test/scenes/test_beginning_fp_intent_contract.gd`（新增，10 例） | 10/10 |
+| `test_beginning_fp_resume.gd` / `test_beginning_fp_special_name_delegate.gd` | 5/5 / 4/4 |
+
+**顺带发现一个覆盖盲区**：`.gutconfig.json` 的 `dirs` 只有 `scenes/core/ui`，**命令行 GUT 从来不跑 `test/autoload`**（`test_hybrid_api_asr_context.gd` 与 `test_magic_echo_manager.gd` 都不在范围内）——本次 5 个新断言若不加这一行，在 CI 里永远不会执行。已补上。
+
+同一轮全量跑出的 9 个失败用例（`test_dialogue_box::test_typing_animation`、`test_chang_an_market_lesson_01` 的 `post_summary_session` → `HTTPRequest ERR_BUSY`、`test_session_timer`、`test_reward_animation`、`test_save_*`）**均不在本次改动范围内**，且至少 1 个直接来自他人未完成的 summary 上报工作。
+
+### 17.5 协调代价（需要知道的事）
+
+`BeginningFPController.gd` 里他人未提交的「主人房续行」特性（+112 行）与本次改动**交织在同一 hunk**：`rule_010` 门控插在他们新写的 `_handle_resume_asr_result` 内部，物理上无法分别提交。经确认后按"一起提交 + commit message 标明归属"处理，并把该特性的未完成状态（`test_chang_an_market_lesson_01` 失败）写进 message。工作树中其余 90 项他人改动未纳入。
+
+**教训**：当改动落在**他人新建的函数体内**时，"只提交我的部分"在 git 层面不可实现（base 版本里没有那个函数）。此时正确做法是**先确认归属再决定提交边界**，而不是试图用部分暂存硬拆。
+
+### 17.6 剩余
+
+① **规则层接入生产**（`process()` 后处理段 + `_system_prompt` 两处窄改）——需要 `src/services/asr_postprocess.py` 的归属确认，目前该文件有并发写入者的在途工作（`check_provider`、重试逻辑）。
+② 客户端门控在规则层接入前**行为空转**（设计如此，已测），接入后自动生效，无需再改客户端。
