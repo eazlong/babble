@@ -1,11 +1,12 @@
-[gd_scene format=3 uid="uid://cnugbx20cpo8v"]
+[gd_scene format=3 uid="uid://djcoa58xli88h"]
 
 [ext_resource type="Script" uid="uid://80k03tfvg7ci" path="res://assets/scripts/scenes/ChangAnMarketController.gd" id="1_controller"]
 [ext_resource type="PackedScene" uid="uid://cdbswl26swcee" path="res://assets/scenes/components/FeifeiBody.tscn" id="2_feifei_body"]
 [ext_resource type="PackedScene" path="res://assets/scenes/ui/VoiceMicIndicator.tscn" id="4_mic_button"]
 
-[node name="ChangAnMarket" type="Node2D" unique_id=1559488916]
+[node name="ChangAnMarketLesson02" type="Node2D" unique_id=1559488916]
 script = ExtResource("1_controller")
+config_path = "res://assets/resources/scene_configs/chang_an_market_lesson_02.json"
 
 [node name="HUDLayer" type="CanvasLayer" parent="." unique_id=64263337]
 layer = 10

@@ -63,7 +63,7 @@ const LESSON_COMPLETION_IDS: Array[String] = [
 ## hub 模式：跳过序章剧情，直接进入复盘与出发的客栈大厅。
 @export var hub_mode: bool = false
 
-@onready var feifei: FeifeiShoulder = $FeifeiLayer/FeifeiShoulder
+@onready var feifei: FeifeiBody = $FeifeiLayer
 @onready var mic_button: Control = $MicLayer/MicButton
 @onready var quest_label: Label = $HUDLayer/QuestTracker/QuestLabel
 
@@ -156,7 +156,7 @@ func _start_hub() -> void:
 	_update_formation_energy_visuals()
 	if feifei:
 		feifei.visible = true
-		feifei.show_hint(_hub_words_hint(), FeifeiShoulder.STATE_HINT, 0.0)
+		feifei.show_hint(_hub_words_hint(), FeifeiBody.STATE_HINT, 0.0)
 
 	if manager and manager.has_active_formation_trip() and not GameManager.get_scene_path(str(manager.get_formation_active_episode())).is_empty():
 		state = InnIntroState.HUB_AWAIT_DEPART
@@ -309,7 +309,11 @@ func _complete_intro() -> void:
 func _build_visuals() -> void:
 	world_layer = CanvasLayer.new()
 	world_layer.name = "WorldLayer"
-	world_layer.layer = 0
+	# T6 修正：场景美术建在 CanvasLayer 里，layer=0 时 Godot 会把它绘制在**默认画布之上**，
+	# 从而盖住世界空间的 FeifeiBody（迁移后腓腓是世界空间节点，不再像旧的 FeifeiShoulder 那样
+	# 自己在 CanvasLayer(20) 里）。取 -50：仍在 ParallaxBackground(-100) 之上，但在默认画布(0)
+	# 与所有 UI(HUD 10 / dialogue 20 / overlay 30 / mic 90) 之下，层级恢复正常。
+	world_layer.layer = -50
 	add_child(world_layer)
 	move_child(world_layer, 0)
 
@@ -464,7 +468,7 @@ func _say_text(text: String, fallback_seconds: float = 2.0, voice: String = "spi
 	if text.is_empty():
 		return
 	if feifei:
-		feifei.show_hint(text, FeifeiShoulder.STATE_HINT, 0.0)
+		feifei.show_hint(text, FeifeiBody.STATE_HINT, 0.0)
 		# TTS 播报态：飞飞音（spirit）时身体 idle + 嘴部 talk_mouth 循环（其他 voice 不动嘴）
 		if voice == "spirit":
 			feifei.talk_speaking_start()
@@ -543,7 +547,7 @@ func _on_voice_ended(audio_data: PackedByteArray) -> void:
 		return
 	_stop_voice_listening()
 	if feifei:
-		feifei.show_hint(_loc("recognizing"), FeifeiShoulder.STATE_HINT, 0.0)
+		feifei.show_hint(_loc("recognizing"), FeifeiBody.STATE_HINT, 0.0)
 	var hybrid_api: Variant = _hybrid_api()
 	if hybrid_api:
 		var asr_context: Dictionary
@@ -608,7 +612,7 @@ func _handle_voice_attempt_failed(reason: String) -> void:
 	elif state == InnIntroState.HUB_AWAIT_CHARGE:
 		retry_text = _localized_flow_text("inn_introduction.hub_charge_retry")
 	if feifei:
-		feifei.show_hint(retry_text, FeifeiShoulder.STATE_HINT, 0.0)
+		feifei.show_hint(retry_text, FeifeiBody.STATE_HINT, 0.0)
 	await get_tree().create_timer(0.35).timeout
 	_start_voice_listening()
 

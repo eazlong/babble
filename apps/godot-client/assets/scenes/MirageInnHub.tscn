@@ -1,9 +1,8 @@
 [gd_scene format=3 uid="uid://c7lum84mdgc5q"]
 
 [ext_resource type="Script" uid="uid://8of2kfy3fits" path="res://assets/scripts/scenes/MirageInnIntroductionController.gd" id="1_controller"]
+[ext_resource type="PackedScene" uid="uid://cdbswl26swcee" path="res://assets/scenes/components/FeifeiBody.tscn" id="2_feifei_body"]
 [ext_resource type="Texture2D" uid="uid://mgra0fhak8f8" path="res://assets/textures/backgrounds/mirage_inn_hall_bg.png" id="2_6th42"]
-[ext_resource type="Script" uid="uid://cgmypvx1mcar" path="res://assets/scripts/components/FeifeiShoulder.gd" id="2_feifei"]
-[ext_resource type="SpriteFrames" path="res://assets/sprites/feifei/feifei_frames.tres" id="3_frames"]
 [ext_resource type="PackedScene" path="res://assets/scenes/ui/VoiceMicIndicator.tscn" id="4_mic_button"]
 
 [node name="MirageInnHub" type="Node2D" unique_id=906173929]
@@ -104,41 +103,9 @@ offset_bottom = -46.0
 grow_horizontal = 2
 grow_vertical = 0
 
-[node name="FeifeiLayer" type="CanvasLayer" parent="." unique_id=820909006]
-layer = 20
-
-[node name="FeifeiShoulder" type="Control" parent="FeifeiLayer" unique_id=523254043]
-layout_mode = 3
-anchors_preset = 0
-offset_left = -100.0
-offset_top = 300.0
-offset_right = 100.0
-offset_bottom = 400.0
-script = ExtResource("2_feifei")
-
-[node name="FeifeiSprite" type="AnimatedSprite2D" parent="FeifeiLayer/FeifeiShoulder" unique_id=1852170606]
-position = Vector2(1827.9999, 628.00006)
-scale = Vector2(1.2402276, 1.3289903)
-sprite_frames = ExtResource("3_frames")
-
-[node name="BubblePanel" type="Panel" parent="FeifeiLayer/FeifeiShoulder" unique_id=915153257]
-visible = false
-layout_mode = 0
-offset_left = 1628.0
-offset_top = 710.0
-offset_right = 1828.0
-offset_bottom = 810.0
-
-[node name="BubbleLabel" type="RichTextLabel" parent="FeifeiLayer/FeifeiShoulder/BubblePanel" unique_id=1861773957]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_right = -20.0
-offset_bottom = -20.0
-grow_horizontal = 2
-grow_vertical = 2
-bbcode_enabled = true
+[node name="FeifeiLayer" parent="." unique_id=820909006 instance=ExtResource("2_feifei_body")]
+position = Vector2(1656, 598)
+scale = Vector2(0.1, 0.1)
 
 [node name="OverlayLayer" type="CanvasLayer" parent="." unique_id=835753050]
 layer = 30

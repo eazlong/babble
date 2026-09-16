@@ -48,7 +48,7 @@ enum Phase {
 	EXITING,         ## 退出确认中
 }
 
-@onready var feifei: FeifeiShoulder = get_node_or_null("FeifeiLayer/FeifeiShoulder")
+@onready var feifei: FeifeiBody = get_node_or_null("FeifeiLayer")
 @onready var mic_button: Control = get_node_or_null("MicLayer/MicButton")
 @onready var quest_label: Label = get_node_or_null("HUDLayer/QuestTracker/QuestLabel")
 
@@ -944,7 +944,11 @@ func _build_visuals() -> void:
 	formation_pips.clear()
 	world_layer = CanvasLayer.new()
 	world_layer.name = "WorldLayer"
-	world_layer.layer = 0
+	# T6 修正：场景美术建在 CanvasLayer 里，layer=0 时 Godot 会把它绘制在**默认画布之上**，
+	# 从而盖住世界空间的 FeifeiBody（迁移后腓腓是世界空间节点，不再像旧的 FeifeiShoulder 那样
+	# 自己在 CanvasLayer(20) 里）。取 -50：仍在 ParallaxBackground(-100) 之上，但在默认画布(0)
+	# 与所有 UI(HUD 10 / dialogue 20 / overlay 30 / mic 90) 之下，层级恢复正常。
+	world_layer.layer = -50
 	add_child(world_layer)
 	move_child(world_layer, 0)
 
@@ -1143,7 +1147,7 @@ func _speak_flow(flow_id: String, lang: String, fallback_seconds: float = 1.8, p
 			await get_tree().create_timer(fallback_seconds).timeout
 		return
 	if feifei:
-		feifei.show_hint(str(lines[0].get("text", "")), FeifeiShoulder.STATE_HINT, 0.0)
+		feifei.show_hint(str(lines[0].get("text", "")), FeifeiBody.STATE_HINT, 0.0)
 	for line in lines:
 		var text: String = str(line.get("text", ""))
 		var voice: String = str(line.get("voice", "spirit"))
