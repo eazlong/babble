@@ -1,0 +1,310 @@
+{
+  "scene_id": "chang_an_market_lesson_02",
+  "checkpoint_id": "ChangAnMarketLesson02",
+  "scene_name": "灵兽归巢：坊墙与屋檐",
+  "chapter": 1,
+  "order": 2,
+  "unit": "Unit 2 — Where do animals live?",
+  "scene_path": "res://assets/scenes/ChangAnMarketLesson02.tscn",
+  "dialogue_flow_file": "res://assets/resources/dialogue_flows/chang_an_market_lesson_02.json",
+  "target_words": [
+    "eagle",
+    "owl",
+    "honeybee",
+    "nest",
+    "wall",
+    "flower",
+    "home"
+  ],
+  "lxp_reward": 30,
+  "completion_dialogue_id": "changan_eaves_02_complete",
+  "completion_text": {
+    "zh": "完成：灵兽归巢",
+    "en": "Complete: Animals Home"
+  },
+  "next_unlock": "ChangAnMarketLesson03",
+  "steps": [
+    {
+      "id": "where_is_eagle",
+      "type": "voice",
+      "quest_key": "quest_where_is_eagle",
+      "quest_text": {
+        "zh": "任务：问出灵鹰在哪里",
+        "en": "Quest: Ask where the eagle is"
+      },
+      "title": "灵鹰高飞",
+      "status": "灵鹰在雾里打旋，落不下来。",
+      "flow_id": "eaves_02.where_is_eagle",
+      "success_flow_id": "eaves_02.where_is_eagle_success",
+      "retry_flow_id": "eaves_02.where_is_eagle_retry",
+      "reward_words": [
+        "eagle"
+      ],
+      "asr": {
+        "clear_phrases": [
+          "where's the eagle",
+          "where is the eagle"
+        ],
+        "acceptable_phrases": [
+          "the eagle",
+          "eagle"
+        ],
+        "required_keywords": [
+          "eagle"
+        ],
+        "optional_keywords": [
+          "where"
+        ],
+        "confused_keywords": [
+          "owl",
+          "bees"
+        ]
+      }
+    },
+    {
+      "id": "tell_eagle_home",
+      "type": "voice",
+      "quest_key": "quest_tell_eagle_home",
+      "quest_text": {
+        "zh": "任务：告诉灵鹰家在哪里",
+        "en": "Quest: Tell the eagle where home is"
+      },
+      "title": "檐下的巢",
+      "status": "灵鹰的巢就在坊墙檐下。",
+      "flow_id": "eaves_02.tell_eagle_home",
+      "success_flow_id": "eaves_02.tell_eagle_home_success",
+      "retry_flow_id": "eaves_02.tell_eagle_home_retry",
+      "reward_words": [
+        "nest"
+      ],
+      "asr": {
+        "clear_phrases": [
+          "it's in the nest",
+          "it is in the nest"
+        ],
+        "acceptable_phrases": [
+          "in the nest",
+          "nest"
+        ],
+        "required_keywords": [
+          "nest"
+        ],
+        "optional_keywords": [
+          "it's",
+          "in"
+        ],
+        "confused_keywords": [
+          "wall"
+        ]
+      }
+    },
+    {
+      "id": "where_is_owl",
+      "type": "voice",
+      "quest_key": "quest_where_is_owl",
+      "quest_text": {
+        "zh": "任务：问出灵鸮在哪里",
+        "en": "Quest: Ask where the owl is"
+      },
+      "title": "墙洞里的鸮",
+      "status": "灵鸮躲在墙洞里，不敢出声。",
+      "flow_id": "eaves_02.where_is_owl",
+      "success_flow_id": "eaves_02.where_is_owl_success",
+      "retry_flow_id": "eaves_02.where_is_owl_retry",
+      "reward_words": [
+        "owl"
+      ],
+      "asr": {
+        "clear_phrases": [
+          "where's the owl",
+          "where is the owl"
+        ],
+        "acceptable_phrases": [
+          "the owl",
+          "owl"
+        ],
+        "required_keywords": [
+          "owl"
+        ],
+        "optional_keywords": [
+          "where"
+        ],
+        "confused_keywords": [
+          "eagle",
+          "bees"
+        ]
+      }
+    },
+    {
+      "id": "tell_owl_home",
+      "type": "voice",
+      "quest_key": "quest_tell_owl_home",
+      "quest_text": {
+        "zh": "任务：告诉灵鸮家在哪里",
+        "en": "Quest: Tell the owl where home is"
+      },
+      "title": "墙洞就是家",
+      "status": "灵鸮的家在坊墙的洞里。",
+      "flow_id": "eaves_02.tell_owl_home",
+      "success_flow_id": "eaves_02.tell_owl_home_success",
+      "retry_flow_id": "eaves_02.tell_owl_home_retry",
+      "reward_words": [
+        "wall"
+      ],
+      "asr": {
+        "clear_phrases": [
+          "it's in the wall",
+          "it is in the wall"
+        ],
+        "acceptable_phrases": [
+          "in the wall",
+          "wall"
+        ],
+        "required_keywords": [
+          "wall"
+        ],
+        "optional_keywords": [
+          "it's",
+          "in"
+        ],
+        "confused_keywords": [
+          "nest"
+        ]
+      }
+    },
+    {
+      "id": "where_are_bees",
+      "type": "voice",
+      "quest_key": "quest_where_are_bees",
+      "quest_text": {
+        "zh": "任务：把整群灵蜂问回来",
+        "en": "Quest: Ask for all the honeybees"
+      },
+      "title": "成群的小蜂",
+      "status": "灵蜂成群乱飞，一只一只叫不住。",
+      "flow_id": "eaves_02.where_are_bees",
+      "success_flow_id": "eaves_02.where_are_bees_success",
+      "retry_flow_id": "eaves_02.where_are_bees_retry",
+      "reward_words": [
+        "honeybee"
+      ],
+      "asr": {
+        "clear_phrases": [
+          "where are the honeybees",
+          "where are the honey bees"
+        ],
+        "acceptable_phrases": [
+          "honey bees",
+          "bees"
+        ],
+        "required_keywords": [
+          "bees"
+        ],
+        "optional_keywords": [
+          "where",
+          "are"
+        ],
+        "confused_keywords": [
+          "eagle",
+          "owl"
+        ]
+      }
+    },
+    {
+      "id": "tell_bees_home",
+      "type": "voice",
+      "quest_key": "quest_tell_bees_home",
+      "quest_text": {
+        "zh": "任务：告诉蜂群花丛在哪里",
+        "en": "Quest: Tell the bees where the flowers are"
+      },
+      "title": "墙外的花丛",
+      "status": "灵蜂的家在墙外的花丛。",
+      "flow_id": "eaves_02.tell_bees_home",
+      "success_flow_id": "eaves_02.tell_bees_home_success",
+      "retry_flow_id": "eaves_02.tell_bees_home_retry",
+      "reward_words": [
+        "flower"
+      ],
+      "asr": {
+        "clear_phrases": [
+          "they're in the flowers",
+          "they are in the flowers"
+        ],
+        "acceptable_phrases": [
+          "in the flowers",
+          "flowers"
+        ],
+        "required_keywords": [
+          "flower"
+        ],
+        "optional_keywords": [
+          "they're",
+          "in"
+        ],
+        "confused_keywords": []
+      }
+    },
+    {
+      "id": "all_home",
+      "type": "voice",
+      "quest_key": "quest_all_home",
+      "quest_text": {
+        "zh": "任务：告诉它们都回家了",
+        "en": "Quest: Tell them they are all home"
+      },
+      "title": "三只都回家了",
+      "status": "灵鹰、灵鸮、灵蜂都回到檐下。",
+      "flow_id": "eaves_02.all_home",
+      "success_flow_id": "eaves_02.all_home_success",
+      "retry_flow_id": "eaves_02.all_home_retry",
+      "reward_words": [
+        "home"
+      ],
+      "asr": {
+        "clear_phrases": [
+          "they're all home",
+          "they are all home"
+        ],
+        "acceptable_phrases": [
+          "all home",
+          "home"
+        ],
+        "required_keywords": [
+          "home"
+        ],
+        "optional_keywords": [
+          "they're",
+          "all"
+        ],
+        "confused_keywords": []
+      }
+    },
+    {
+      "id": "nests_settled",
+      "type": "auto",
+      "quest_key": "quest_nests_settled",
+      "quest_text": {
+        "zh": "任务：听坊墙后的第二声钟响",
+        "en": "Quest: Listen for the second bell"
+      },
+      "title": "第二声钟响",
+      "status": "坊墙静下来，钟声又近了一分。",
+      "flow_id": "eaves_02.nests_settled",
+      "reward_words": []
+    },
+    {
+      "id": "next_hint",
+      "type": "auto",
+      "quest_key": "quest_next_hint",
+      "quest_text": {
+        "zh": "任务：接下去查货栈的账目",
+        "en": "Quest: Head for the storehouse"
+      },
+      "title": "下一处线索",
+      "status": "执事说，西市货栈的账目也乱了。",
+      "flow_id": "eaves_02.next_hint",
+      "reward_words": []
+    }
+  ]
+}

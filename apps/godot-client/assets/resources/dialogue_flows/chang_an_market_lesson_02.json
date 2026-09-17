@@ -1,0 +1,414 @@
+{
+  "schema_version": 1,
+  "scene_id": "chang_an_market_lesson_02",
+  "flows": [
+    {
+      "flow_id": "eaves_02.where_is_eagle",
+      "speaker": "nest_keeper",
+      "voice": "elder",
+      "lines": [
+        {
+          "key": "eaves02_eagle_1",
+          "text": {
+            "en": "Easy now, little friend. The mist shook every nest on this wall.",
+            "zh": "别急，小友。这场雾把整面坊墙上的巢都摇散了。"
+          }
+        },
+        {
+          "key": "eaves02_eagle_2",
+          "text": {
+            "en": "The eagle is up there, but it cannot hear us. Call it.",
+            "zh": "灵鹰就在上头，可它听不见我们。叫它一声。"
+          }
+        },
+        {
+          "key": "eaves02_eagle_hint",
+          "speaker": "feifei",
+          "voice": "spirit",
+          "text": {
+            "en": "Ask him: Where's the eagle?",
+            "zh": "问他一句：Where's the eagle?"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.where_is_eagle_success",
+      "speaker": "nest_keeper",
+      "voice": "elder",
+      "lines": [
+        {
+          "key": "eaves02_eagle_ok",
+          "text": {
+            "en": "It heard you. One wing is steady again.",
+            "zh": "它听见你了。一只翅膀稳下来了。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.where_is_eagle_retry",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "eaves02_eagle_retry",
+          "text": {
+            "en": "Two words first: Where's ... eagle?",
+            "zh": "先说两个词：Where's …… eagle?"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.tell_eagle_home",
+      "speaker": "nest_keeper",
+      "voice": "elder",
+      "lines": [
+        {
+          "key": "eaves02_eagle_home_1",
+          "text": {
+            "en": "Good. Now tell it where home is.",
+            "zh": "很好。现在告诉它，家在哪儿。"
+          }
+        },
+        {
+          "key": "eaves02_eagle_home_hint",
+          "speaker": "feifei",
+          "voice": "spirit",
+          "text": {
+            "en": "Say: It's in the nest.",
+            "zh": "说：It's in the nest."
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.tell_eagle_home_success",
+      "speaker": "nest_keeper",
+      "voice": "elder",
+      "lines": [
+        {
+          "key": "eaves02_eagle_home_ok",
+          "text": {
+            "en": "It is back in the nest. One home again.",
+            "zh": "它回到巢里了。一个家，回来了。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.tell_eagle_home_retry",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "eaves02_eagle_home_retry",
+          "text": {
+            "en": "Say: It's in the ... nest.",
+            "zh": "说：It's in the …… nest."
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.where_is_owl",
+      "speaker": "nest_keeper",
+      "voice": "elder",
+      "lines": [
+        {
+          "key": "eaves02_owl_1",
+          "text": {
+            "en": "The owl hides in the wall hole. Ask for it.",
+            "zh": "灵鸮躲在墙洞里。问它一声。"
+          }
+        },
+        {
+          "key": "eaves02_owl_hint",
+          "speaker": "feifei",
+          "voice": "spirit",
+          "text": {
+            "en": "Ask him: Where's the owl?",
+            "zh": "问他一句：Where's the owl?"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.where_is_owl_success",
+      "speaker": "nest_keeper",
+      "voice": "elder",
+      "lines": [
+        {
+          "key": "eaves02_owl_ok",
+          "text": {
+            "en": "It heard you, but it is still afraid.",
+            "zh": "它听见你了，可它还是怕。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.where_is_owl_retry",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "eaves02_owl_retry",
+          "text": {
+            "en": "Ask him: Where's ... owl?",
+            "zh": "问他一句：Where's …… owl?"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.tell_owl_home",
+      "speaker": "nest_keeper",
+      "voice": "elder",
+      "lines": [
+        {
+          "key": "eaves02_owl_home_1",
+          "text": {
+            "en": "Tell it that its home is here.",
+            "zh": "告诉它，它的家就在这儿。"
+          }
+        },
+        {
+          "key": "eaves02_owl_home_hint",
+          "speaker": "feifei",
+          "voice": "spirit",
+          "text": {
+            "en": "Say: It's in the wall.",
+            "zh": "说：It's in the wall."
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.tell_owl_home_success",
+      "speaker": "nest_keeper",
+      "voice": "elder",
+      "lines": [
+        {
+          "key": "eaves02_owl_home_ok",
+          "text": {
+            "en": "The owl is in the wall. Two homes.",
+            "zh": "灵鸮进墙洞了。两个家，回来了。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.tell_owl_home_retry",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "eaves02_owl_home_retry",
+          "text": {
+            "en": "Say: It's in the ... wall.",
+            "zh": "说：It's in the …… wall."
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.where_are_bees",
+      "speaker": "nest_keeper",
+      "voice": "elder",
+      "lines": [
+        {
+          "key": "eaves02_bees_1",
+          "text": {
+            "en": "Now the honeybees. They fly like a cloud. Ask for all of them.",
+            "zh": "现在轮到灵蜂。它们飞起来像一片云。要一整群一起问。"
+          }
+        },
+        {
+          "key": "eaves02_bees_hint",
+          "speaker": "feifei",
+          "voice": "spirit",
+          "text": {
+            "en": "Ask for all of them: Where are the honeybees?",
+            "zh": "一整群一起问：Where are the honeybees?"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.where_are_bees_success",
+      "speaker": "nest_keeper",
+      "voice": "elder",
+      "lines": [
+        {
+          "key": "eaves02_bees_ok",
+          "text": {
+            "en": "They turned. They are listening.",
+            "zh": "它们转过身来了。它们在听。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.where_are_bees_retry",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "eaves02_bees_retry",
+          "text": {
+            "en": "Ask for all of them: Where are the ... honeybees?",
+            "zh": "一整群一起问：Where are the …… honeybees?"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.tell_bees_home",
+      "speaker": "nest_keeper",
+      "voice": "elder",
+      "lines": [
+        {
+          "key": "eaves02_bees_home_1",
+          "text": {
+            "en": "Tell them where the flowers are.",
+            "zh": "告诉它们，花丛在哪儿。"
+          }
+        },
+        {
+          "key": "eaves02_bees_home_hint",
+          "speaker": "feifei",
+          "voice": "spirit",
+          "text": {
+            "en": "Say: They're in the flowers.",
+            "zh": "说：They're in the flowers."
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.tell_bees_home_success",
+      "speaker": "nest_keeper",
+      "voice": "elder",
+      "lines": [
+        {
+          "key": "eaves02_bees_home_ok",
+          "text": {
+            "en": "They're in the flowers. Three homes.",
+            "zh": "它们落在花丛里了。三个家，回来了。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.tell_bees_home_retry",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "eaves02_bees_home_retry",
+          "text": {
+            "en": "Say: They're in the ... flowers.",
+            "zh": "说：They're in the …… flowers."
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.all_home",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "eaves02_all_home_1",
+          "text": {
+            "en": "Look. The eagle, the owl, the honeybees. All home.",
+            "zh": "你看。灵鹰、灵鸮、灵蜂。都回家了。"
+          }
+        },
+        {
+          "key": "eaves02_all_home_hint",
+          "text": {
+            "en": "Tell them: They're all home!",
+            "zh": "对它们说：They're all home!"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.all_home_success",
+      "speaker": "nest_keeper",
+      "voice": "elder",
+      "lines": [
+        {
+          "key": "eaves02_all_home_ok",
+          "text": {
+            "en": "The whole wall is quiet. Listen — the bell again.",
+            "zh": "整面坊墙都静了。听——钟声又响了。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.all_home_retry",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "eaves02_all_home_retry",
+          "text": {
+            "en": "Say: They're all home.",
+            "zh": "说：They're all home."
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.nests_settled",
+      "speaker": "feifei",
+      "voice": "spirit",
+      "lines": [
+        {
+          "key": "eaves02_bell_2",
+          "text": {
+            "en": "That was the second bell. The mist pulled back a little.",
+            "zh": "这是第二声钟响。雾又退了一点。"
+          }
+        },
+        {
+          "key": "eaves02_keeper_bless",
+          "speaker": "nest_keeper",
+          "voice": "elder",
+          "text": {
+            "en": "The wall will remember your voice, little friend.",
+            "zh": "这面坊墙会记住你的声音，小友。"
+          }
+        }
+      ]
+    },
+    {
+      "flow_id": "eaves_02.next_hint",
+      "speaker": "nest_keeper",
+      "voice": "elder",
+      "lines": [
+        {
+          "key": "eaves02_next_1",
+          "text": {
+            "en": "Go to the storehouse by the west stalls. The counters are in a mess, and the bell is calling from there.",
+            "zh": "去西市摊位后面的货栈看看。那里的账目乱了，钟声也是从那边传来的。"
+          }
+        },
+        {
+          "key": "eaves02_next_2",
+          "speaker": "feifei",
+          "voice": "spirit",
+          "text": {
+            "en": "That is our next stop. Let's go.",
+            "zh": "那就是下一处。走吧。"
+          }
+        }
+      ]
+    }
+  ]
+}
