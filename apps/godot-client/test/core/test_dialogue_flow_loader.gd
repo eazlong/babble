@@ -181,6 +181,30 @@ func test_unknown_flow_returns_empty_lines():
 
 	assert_eq(lines.size(), 0)
 
+func test_emotion_field_is_forwarded():
+	var loader: Variant = DialogueFlowLoaderScript.new()
+	loader.load_dialogue_flows()
+
+	# flow 级 emotion（长安 gate_01.meet_classmates）
+	var lines: Array[Dictionary] = loader.get_lines("gate_01.meet_classmates", "zh")
+	assert_true(lines.size() > 0, "meet_classmates 应有台词")
+	assert_eq(str(lines[0]["emotion"]), "talking", "tianji_steward 默认应为 talking")
+	var seen_ling := false
+	var seen_haoran := false
+	for line in lines:
+		if str(line["speaker"]) == "a_ling":
+			seen_ling = true
+			assert_eq(str(line["emotion"]), "talking", "阿菱的 line 级 emotion 应覆盖")
+		if str(line["speaker"]) == "haoran":
+			seen_haoran = true
+			assert_eq(str(line["emotion"]), "talking", "昊然的 line 级 emotion 应覆盖")
+	assert_true(seen_ling and seen_haoran, "meet_classmates 应包含阿菱与昊然的台词")
+
+	# gate_01.gate_open 是 happy 高光
+	var open_lines: Array[Dictionary] = loader.get_lines("gate_01.gate_open", "zh")
+	assert_true(open_lines.size() > 0, "gate_open 应有台词")
+	assert_eq(str(open_lines[0]["emotion"]), "happy", "gate_open 高光应为 happy")
+
 func test_duplicate_flow_id_is_rejected():
 	var dir_path: String = "user://dialogue_flow_loader_duplicate_test/"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir_path))

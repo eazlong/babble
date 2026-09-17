@@ -3,75 +3,26 @@
   "scene_id": "chang_an_market_lesson_01",
   "flows": [
 	{
-	  "flow_id": "west_market_01.good_morning",
-	  "speaker": "feifei",
-	  "voice": "spirit",
-	  "lines": [
-		{
-		  "key": "wm01_morning_open",
-		  "text": {
-			"en": "Good morning, {player_name}. The road to Chang'an West Market is open.",
-			"zh": "早上好，{player_name}。通往长安西市的路打开了。"
-		  }
-		},
-		{
-		  "key": "wm01_morning_prompt",
-		  "text": {
-			"en": "The mist is thin in the morning. Try saying: Good morning.",
-			"zh": "清晨的雾比较薄。试着说：Good morning。"
-		  }
-		}
-	  ]
-	},
-	{
-	  "flow_id": "west_market_01.good_morning_success",
-	  "speaker": "feifei",
-	  "voice": "spirit",
-	  "lines": [
-		{
-		  "key": "wm01_morning_success",
-		  "text": {
-			"en": "Good! Your voice made the morning mist move.",
-			"zh": "很好！你的声音让晨雾动起来了。"
-		  }
-		}
-	  ]
-	},
-	{
-	  "flow_id": "west_market_01.good_morning_retry",
-	  "speaker": "feifei",
-	  "voice": "spirit",
-	  "lines": [
-		{
-		  "key": "wm01_morning_retry",
-		  "text": {
-			"en": "You can start with two words: Good morning.",
-			"zh": "可以先说两个词：Good morning。"
-		  }
-		}
-	  ]
-	},
-	{
-	  "flow_id": "west_market_01.name_register",
+	  "flow_id": "gate_01.name_register",
 	  "speaker": "tianji_steward",
 	  "voice": "elder",
 	  "lines": [
 		{
-		  "key": "wm01_register_stop",
+		  "key": "gate01_register_stop",
 		  "text": {
-			"en": "Stop, young traveler. The West Market is covered by the Chaos Mist.",
-			"zh": "且慢，年轻的旅人。长安西市正被混沌迷雾笼罩。"
+			"en": "Stop. The Chaos Mist has eaten every name on this gate.",
+			"zh": "且慢。混沌迷雾吃掉了这座城门上所有的名字。"
 		  }
 		},
 		{
-		  "key": "wm01_register_name",
+		  "key": "gate01_register_ask",
 		  "text": {
 			"en": "A new voice must give a name before entering.",
-			"zh": "新来的声音，入市前必须留下名字。"
+			"zh": "新来的声音，入城前必须留下名字。"
 		  }
 		},
 		{
-		  "key": "wm01_register_prompt",
+		  "key": "gate01_register_hint",
 		  "speaker": "feifei",
 		  "voice": "spirit",
 		  "text": {
@@ -79,440 +30,437 @@
 			"zh": "告诉他：My name is {player_name}。"
 		  }
 		}
-	  ]
+	  ],
+	  "emotion": "talking"
 	},
 	{
-	  "flow_id": "west_market_01.name_register_success",
+	  "flow_id": "gate_01.name_register_success",
 	  "speaker": "tianji_steward",
 	  "voice": "elder",
+	  "emotion": "talking",
 	  "lines": [
 		{
-		  "key": "wm01_register_success",
+		  "key": "gate01_register_ok",
 		  "text": {
-			"en": "Your name is clear. You are new here, but the gate knows you now.",
-			"zh": "你的名字清楚了。你是新来的，但雾门现在认得你了。"
-		  }
-		},
-		{
-		  "key": "wm01_register_feifei",
-		  "speaker": "feifei",
-		  "voice": "spirit",
-		  "text": {
-			"en": "New does not mean weak. It means your story just began.",
-			"zh": "新来的不代表弱小，只代表你的故事刚刚开始。"
+			"en": "Your name is clear now. The gate knows you.",
+			"zh": "你的名字清楚了。雾门认得你了。"
 		  }
 		}
 	  ]
 	},
 	{
-	  "flow_id": "west_market_01.name_register_retry",
+	  "flow_id": "gate_01.name_register_retry",
 	  "speaker": "feifei",
 	  "voice": "spirit",
 	  "lines": [
 		{
-		  "key": "wm01_register_retry",
+		  "key": "gate01_register_retry",
 		  "text": {
-			"en": "Say your name in a full sentence: My name is {player_name}.",
-			"zh": "用完整句子说出名字：My name is {player_name}。"
+			"en": "Say it in a whole sentence: My name is ...",
+			"zh": "用一整句说：My name is ……"
 		  }
 		}
 	  ]
 	},
 	{
-	  "flow_id": "west_market_01.sit_here",
+	  "flow_id": "gate_01.ask_where_live",
 	  "speaker": "tianji_steward",
 	  "voice": "elder",
+	  "emotion": "talking",
 	  "lines": [
 		{
-		  "key": "wm01_sit_wait",
+		  "key": "gate01_where_live_ask",
 		  "text": {
-			"en": "Two other learners are lost in the mist. Wait here.",
-			"zh": "还有两位修习者迷在雾里。你先在这里等候。"
+			"en": "A name is not enough. Where do you live?",
+			"zh": "只有名字还不够。你住在哪里？"
 		  }
 		},
 		{
-		  "key": "wm01_sit_prompt",
+		  "key": "gate01_where_live_hint",
+		  "speaker": "feifei",
+		  "voice": "spirit",
 		  "text": {
-			"en": "Please sit here.",
-			"zh": "请坐在这里。"
+			"en": "Answer him: I live in ... Say your own place.",
+			"zh": "回答他：I live in …… 说你自己住的地方就行。"
 		  }
 		}
 	  ]
 	},
 	{
-	  "flow_id": "west_market_01.sit_here_success",
+	  "flow_id": "gate_01.ask_where_live_success",
 	  "speaker": "tianji_steward",
 	  "voice": "elder",
+	  "emotion": "talking",
 	  "lines": [
 		{
-		  "key": "wm01_sit_success",
+		  "key": "gate01_where_live_ok",
 		  "text": {
-			"en": "Good. You can listen before you speak. That is important.",
-			"zh": "很好。先听清，再开口，这很重要。"
+			"en": "Good. Now the gate remembers where you come from.",
+			"zh": "很好。现在雾门记得你从哪里来。"
 		  }
 		}
 	  ]
 	},
 	{
-	  "flow_id": "west_market_01.sit_here_retry",
+	  "flow_id": "gate_01.ask_where_live_retry",
 	  "speaker": "feifei",
 	  "voice": "spirit",
 	  "lines": [
 		{
-		  "key": "wm01_sit_retry",
+		  "key": "gate01_where_live_retry",
 		  "text": {
-			"en": "Almost. Look at the bright stone. Sit here.",
-			"zh": "差一点。看发光的石凳。Sit here。"
+			"en": "Two words are enough: I live ...",
+			"zh": "两个词就够了：I live ……"
 		  }
 		}
 	  ]
 	},
 	{
-	  "flow_id": "west_market_01.meet_a_ling",
-	  "speaker": "a_ling",
-	  "voice": "young_female",
+	  "flow_id": "gate_01.restore_city",
+	  "speaker": "tianji_steward",
+	  "voice": "elder",
+	  "emotion": "talking",
 	  "lines": [
 		{
-		  "key": "wm01_aling_hello",
+		  "key": "gate01_city_ask",
 		  "text": {
-			"en": "Hello? Can anyone hear me?",
-			"zh": "Hello？有人能听见我吗？"
+			"en": "The mist wiped the words off your travel paper. Three pictures are left.",
+			"zh": "雾把你路引上的字抹掉了，只剩三幅图。"
 		  }
 		},
 		{
-		  "key": "wm01_aling_intro",
+		  "key": "gate01_city_describe",
 		  "text": {
-			"en": "My name is A-Ling. I came for the morning lesson.",
-			"zh": "My name is A-Ling。我是来参加晨课的。"
+			"en": "Picture one: many buildings, many streets, many people. What is it?",
+			"zh": "第一幅：许多楼房、许多街道、许多人。这是什么？"
 		  }
 		},
 		{
-		  "key": "wm01_aling_prompt",
+		  "key": "gate01_city_hint",
 		  "speaker": "feifei",
 		  "voice": "spirit",
 		  "text": {
-			"en": "Tell the steward: Her name is A-Ling.",
-			"zh": "告诉执事：Her name is A-Ling。"
+			"en": "Say the word: city.",
+			"zh": "说出这个词：city。"
 		  }
 		}
 	  ]
 	},
 	{
-	  "flow_id": "west_market_01.meet_a_ling_success",
-	  "speaker": "a_ling",
-	  "voice": "young_female",
+	  "flow_id": "gate_01.restore_city_success",
+	  "speaker": "tianji_steward",
+	  "voice": "elder",
+	  "emotion": "talking",
 	  "lines": [
 		{
-		  "key": "wm01_aling_success",
+		  "key": "gate01_city_ok",
 		  "text": {
-			"en": "Thank you. My name feels steady again.",
-			"zh": "谢谢你。我的名字又稳定了。"
+			"en": "City. The word is back on the paper. Its opposite is the country: fields, farms, few people.",
+			"zh": "City。字回到路引上了。它的反面是 country：田野、农庄、人很少。"
+		  }
+		}
+	  ]
+	},
+	{
+	  "flow_id": "gate_01.restore_city_retry",
+	  "speaker": "feifei",
+	  "voice": "spirit",
+	  "lines": [
+		{
+		  "key": "gate01_city_retry",
+		  "text": {
+			"en": "Try this word: city.",
+			"zh": "试试这个词：city。"
+		  }
+		}
+	  ]
+	},
+	{
+	  "flow_id": "gate_01.restore_street",
+	  "speaker": "tianji_steward",
+	  "voice": "elder",
+	  "emotion": "talking",
+	  "lines": [
+		{
+		  "key": "gate01_street_describe",
+		  "text": {
+			"en": "Picture two: a road between the houses, with shops on both sides. What is it?",
+			"zh": "第二幅：房屋之间的一条路，两边都是店铺。这是什么？"
 		  }
 		},
 		{
-		  "key": "wm01_aling_classmate",
+		  "key": "gate01_street_hint",
+		  "speaker": "feifei",
+		  "voice": "spirit",
+		  "text": {
+			"en": "Say the word: street.",
+			"zh": "说出这个词：street。"
+		  }
+		}
+	  ]
+	},
+	{
+	  "flow_id": "gate_01.restore_street_success",
+	  "speaker": "tianji_steward",
+	  "voice": "elder",
+	  "emotion": "talking",
+	  "lines": [
+		{
+		  "key": "gate01_street_ok",
+		  "text": {
+			"en": "Street. Two more pictures to go.",
+			"zh": "Street。还剩两幅图。"
+		  }
+		}
+	  ]
+	},
+	{
+	  "flow_id": "gate_01.restore_street_retry",
+	  "speaker": "feifei",
+	  "voice": "spirit",
+	  "lines": [
+		{
+		  "key": "gate01_street_retry",
+		  "text": {
+			"en": "Try this word: street.",
+			"zh": "试试这个词：street。"
+		  }
+		}
+	  ]
+	},
+	{
+	  "flow_id": "gate_01.restore_building",
+	  "speaker": "tianji_steward",
+	  "voice": "elder",
+	  "emotion": "talking",
+	  "lines": [
+		{
+		  "key": "gate01_building_describe",
+		  "text": {
+			"en": "Picture three: a tall thing with walls and windows, standing by the street. What is it?",
+			"zh": "第三幅：街边一个高高的东西，有墙有窗。这是什么？"
+		  }
+		},
+		{
+		  "key": "gate01_building_hint",
+		  "speaker": "feifei",
+		  "voice": "spirit",
+		  "text": {
+			"en": "Say the word: building.",
+			"zh": "说出这个词：building。"
+		  }
+		}
+	  ]
+	},
+	{
+	  "flow_id": "gate_01.restore_building_success",
+	  "speaker": "tianji_steward",
+	  "voice": "elder",
+	  "emotion": "talking",
+	  "lines": [
+		{
+		  "key": "gate01_building_ok",
+		  "text": {
+			"en": "Building. Many people live in one building, in a flat.",
+			"zh": "Building。很多人住在同一栋楼里，住的是 flat。"
+		  }
+		}
+	  ]
+	},
+	{
+	  "flow_id": "gate_01.restore_building_retry",
+	  "speaker": "feifei",
+	  "voice": "spirit",
+	  "lines": [
+		{
+		  "key": "gate01_building_retry",
+		  "text": {
+			"en": "Try this word: building.",
+			"zh": "试试这个词：building。"
+		  }
+		}
+	  ]
+	},
+	{
+	  "flow_id": "gate_01.restore_house",
+	  "speaker": "tianji_steward",
+	  "voice": "elder",
+	  "emotion": "talking",
+	  "lines": [
+		{
+		  "key": "gate01_house_describe",
+		  "text": {
+			"en": "Last picture: a small place with a door, where one family lives. Outside the city, a farm has one too. What is it?",
+			"zh": "最后一幅：一个小地方，有一扇门，住着一家人。城外农场上也有一个。这是什么？"
+		  }
+		},
+		{
+		  "key": "gate01_house_hint",
+		  "speaker": "feifei",
+		  "voice": "spirit",
+		  "text": {
+			"en": "Say the word: house.",
+			"zh": "说出这个词：house。"
+		  }
+		}
+	  ]
+	},
+	{
+	  "flow_id": "gate_01.restore_house_success",
+	  "speaker": "tianji_steward",
+	  "voice": "elder",
+	  "emotion": "talking",
+	  "lines": [
+		{
+		  "key": "gate01_house_ok",
+		  "text": {
+			"en": "House. Your paper is clear. Flat, farm, house — the gate will know them all.",
+			"zh": "House。你的路引清楚了。flat、farm、house，雾门都会认得了。"
+		  }
+		}
+	  ]
+	},
+	{
+	  "flow_id": "gate_01.restore_house_retry",
+	  "speaker": "feifei",
+	  "voice": "spirit",
+	  "lines": [
+		{
+		  "key": "gate01_house_retry",
+		  "text": {
+			"en": "Try this word: house.",
+			"zh": "试试这个词：house。"
+		  }
+		}
+	  ]
+	},
+	{
+	  "flow_id": "gate_01.where_is_your_home",
+	  "speaker": "tianji_steward",
+	  "voice": "elder",
+	  "emotion": "talking",
+	  "lines": [
+		{
+		  "key": "gate01_home_ask",
+		  "text": {
+			"en": "One last question. Where is your home?",
+			"zh": "最后一个问题。你的家在哪里？"
+		  }
+		},
+		{
+		  "key": "gate01_home_hint",
+		  "speaker": "feifei",
+		  "voice": "spirit",
+		  "text": {
+			"en": "Answer him: My home is in ...",
+			"zh": "回答他：My home is in ……"
+		  }
+		}
+	  ]
+	},
+	{
+	  "flow_id": "gate_01.where_is_your_home_success",
+	  "speaker": "tianji_steward",
+	  "voice": "elder",
+	  "emotion": "talking",
+	  "lines": [
+		{
+		  "key": "gate01_home_ok",
+		  "text": {
+			"en": "Now the gate knows your name, your city, and your home. Wait here.",
+			"zh": "现在雾门知道你的名字、你的城、你的家。在这里等一等。"
+		  }
+		}
+	  ]
+	},
+	{
+	  "flow_id": "gate_01.where_is_your_home_retry",
+	  "speaker": "feifei",
+	  "voice": "spirit",
+	  "lines": [
+		{
+		  "key": "gate01_home_retry",
+		  "text": {
+			"en": "Say it like this: My home is in ...",
+			"zh": "这样说：My home is in ……"
+		  }
+		}
+	  ]
+	},
+	{
+	  "flow_id": "gate_01.meet_classmates",
+	  "speaker": "tianji_steward",
+	  "voice": "elder",
+	  "emotion": "talking",
+	  "lines": [
+		{
+		  "key": "gate01_classmates_ste",
+		  "text": {
+			"en": "Two more learners are waiting here with you.",
+			"zh": "还有两位修习者也在这里等你。"
+		  }
+		},
+		{
+		  "key": "gate01_classmates_ling",
+		  "speaker": "a_ling",
+		  "voice": "young_female",
+		  "emotion": "talking",
+		  "text": {
+			"en": "Hi! I'm A-Ling. I live in Chang'an.",
+			"zh": "嗨！我是阿菱，我住在长安。"
+		  }
+		},
+		{
+		  "key": "gate01_classmates_haoran",
+		  "speaker": "haoran",
+		  "voice": "young_male",
+		  "emotion": "talking",
+		  "text": {
+			"en": "And I'm Haoran. My home is near the West Market.",
+			"zh": "我是昊然。我家就在西市附近。"
+		  }
+		},
+		{
+		  "key": "gate01_classmates_feifei",
+		  "speaker": "feifei",
+		  "voice": "spirit",
+		  "text": {
+			"en": "You three will walk the West Market together.",
+			"zh": "你们三个会一起走西市。"
+		  }
+		}
+	  ]
+	},
+	{
+	  "flow_id": "gate_01.gate_open",
+	  "speaker": "feifei",
+	  "voice": "spirit",
+	  "emotion": "happy",
+	  "lines": [
+		{
+		  "key": "gate01_open_bell",
+		  "text": {
+			"en": "Listen. The mist moved. Did you hear a bell?",
+			"zh": "听。雾动了。你听见钟声了吗？"
+		  }
+		},
+		{
+		  "key": "gate01_open_steward",
 		  "speaker": "tianji_steward",
 		  "voice": "elder",
+		  "emotion": "talking",
 		  "text": {
-			"en": "Correct. Her name is A-Ling. She is your classmate today.",
-			"zh": "正确。她的名字是阿菱。今天她是你的同修伙伴。"
-		  }
-		}
-	  ]
-	},
-	{
-	  "flow_id": "west_market_01.meet_a_ling_retry",
-	  "speaker": "feifei",
-	  "voice": "spirit",
-	  "lines": [
-		{
-		  "key": "wm01_aling_retry",
-		  "text": {
-			"en": "A-Ling is a girl. Try: Her name is A-Ling.",
-			"zh": "阿菱是女孩。试试：Her name is A-Ling。"
-		  }
-		}
-	  ]
-	},
-	{
-	  "flow_id": "west_market_01.meet_haoran",
-	  "speaker": "haoran",
-	  "voice": "young_male",
-	  "lines": [
-		{
-		  "key": "wm01_haoran_arrive",
-		  "text": {
-			"en": "Hey! Is this the morning lesson? I almost walked into the spice stall.",
-			"zh": "喂！这里是晨课吗？我刚才差点走进香料摊了。"
+			"en": "That was the East Bell. It is asleep, and its voice is scattered in eight places. Only a voice like yours can wake it.",
+			"zh": "那是东皇钟。它睡着了，钟声散落在八个地方。只有像你这样的声音才能唤醒它。"
 		  }
 		},
 		{
-		  "key": "wm01_haoran_intro",
-		  "text": {
-			"en": "My name is Haoran. I know many roads in the West Market.",
-			"zh": "My name is Haoran。我熟悉长安西市的许多路。"
-		  }
-		},
-		{
-		  "key": "wm01_haoran_prompt",
+		  "key": "gate01_open_elder_hint",
 		  "speaker": "feifei",
 		  "voice": "spirit",
 		  "text": {
-			"en": "Now tell the steward his name.",
-			"zh": "现在告诉执事他的名字。"
-		  }
-		}
-	  ]
-	},
-	{
-	  "flow_id": "west_market_01.meet_haoran_success",
-	  "speaker": "haoran",
-	  "voice": "young_male",
-	  "lines": [
-		{
-		  "key": "wm01_haoran_success",
-		  "text": {
-			"en": "Yes! His name is Haoran. That is me.",
-			"zh": "对！His name is Haoran。说的就是我。"
-		  }
-		},
-		{
-		  "key": "wm01_haoran_classmate",
-		  "speaker": "tianji_steward",
-		  "voice": "elder",
-		  "text": {
-			"en": "Good. He is your classmate today.",
-			"zh": "很好。今天他也是你的同修伙伴。"
-		  }
-		}
-	  ]
-	},
-	{
-	  "flow_id": "west_market_01.meet_haoran_retry",
-	  "speaker": "feifei",
-	  "voice": "spirit",
-	  "lines": [
-		{
-		  "key": "wm01_haoran_retry",
-		  "text": {
-			"en": "Haoran is a boy. Try: His name is Haoran.",
-			"zh": "昊然是男孩。试试：His name is Haoran。"
-		  }
-		}
-	  ]
-	},
-	{
-	  "flow_id": "west_market_01.classmate_bond",
-	  "speaker": "tianji_steward",
-	  "voice": "elder",
-	  "lines": [
-		{
-		  "key": "wm01_bond_one",
-		  "text": {
-			"en": "Three new voices, one morning lesson.",
-			"zh": "三个新声音，同上一堂晨课。"
-		  }
-		},
-		{
-		  "key": "wm01_bond_two",
-		  "text": {
-			"en": "From now on, you are classmates for this trial.",
-			"zh": "从现在起，你们就是这场试炼中的同修伙伴。"
-		  }
-		},
-		{
-		  "key": "wm01_bond_prompt",
-		  "speaker": "feifei",
-		  "voice": "spirit",
-		  "text": {
-			"en": "Say: I meet new classmates.",
-			"zh": "试着说：I meet new classmates。"
-		  }
-		}
-	  ]
-	},
-	{
-	  "flow_id": "west_market_01.classmate_bond_success",
-	  "speaker": "feifei",
-	  "voice": "spirit",
-	  "lines": [
-		{
-		  "key": "wm01_bond_success",
-		  "text": {
-			"en": "Good. You met new classmates, and you did not hide your voice.",
-			"zh": "很好。你认识了新的同修，也没有藏起自己的声音。"
-		  }
-		}
-	  ]
-	},
-	{
-	  "flow_id": "west_market_01.classmate_bond_retry",
-	  "speaker": "feifei",
-	  "voice": "spirit",
-	  "lines": [
-		{
-		  "key": "wm01_bond_retry",
-		  "text": {
-			"en": "Try the key words first: new classmates.",
-			"zh": "先试试关键词：new classmates。"
-		  }
-		}
-	  ]
-	},
-	{
-	  "flow_id": "west_market_01.baize_recognition",
-	  "speaker": "baize_shadow",
-	  "voice": "elder",
-	  "lines": [
-		{
-		  "key": "wm01_baize_voice",
-		  "text": {
-			"en": "A voice that dares to greet can also learn to listen.",
-			"zh": "敢于问候的声音，也能学会倾听。"
-		  }
-		},
-		{
-		  "key": "wm01_baize_pass",
-		  "text": {
-			"en": "Let the child pass deeper into the West Market.",
-			"zh": "让这孩子再往西市深处走一段吧。"
-		  }
-		},
-		{
-		  "key": "wm01_baize_feifei",
-		  "speaker": "feifei",
-		  "voice": "spirit",
-		  "text": {
-			"en": "The first step is done. The East Bell may be waiting ahead.",
-			"zh": "第一步完成了。东皇钟也许就在前方等待。"
-		  }
-		}
-	  ]
-	},
-	{
-	  "flow_id": "west_market_01.afternoon_review",
-	  "speaker": "feifei",
-	  "voice": "spirit",
-	  "lines": [
-		{
-		  "key": "wm01_afternoon_return",
-		  "text": {
-			"en": "Good afternoon, {player_name}. We are back at Mirage Inn.",
-			"zh": "下午好，{player_name}。我们回到蜃影客栈了。"
-		  }
-		},
-		{
-		  "key": "wm01_afternoon_prompt",
-		  "text": {
-			"en": "Morning was for meeting. Afternoon is for remembering.",
-			"zh": "早上用来认识，下午用来记住。"
-		  }
-		},
-		{
-		  "key": "wm01_afternoon_say",
-		  "text": {
-			"en": "Try saying: Good afternoon.",
-			"zh": "试着说：Good afternoon。"
-		  }
-		}
-	  ]
-	},
-	{
-	  "flow_id": "west_market_01.afternoon_review_success",
-	  "speaker": "feifei",
-	  "voice": "spirit",
-	  "lines": [
-		{
-		  "key": "wm01_afternoon_success",
-		  "text": {
-			"en": "Good afternoon. Now let us remember who you met.",
-			"zh": "下午好。现在我们来记住你今天认识了谁。"
-		  }
-		}
-	  ]
-	},
-	{
-	  "flow_id": "west_market_01.review_a_ling",
-	  "speaker": "feifei",
-	  "voice": "spirit",
-	  "lines": [
-		{
-		  "key": "wm01_review_aling_prompt",
-		  "text": {
-			"en": "This is A-Ling. Tell me her name.",
-			"zh": "这是阿菱。告诉我她的名字。"
-		  }
-		}
-	  ]
-	},
-	{
-	  "flow_id": "west_market_01.review_a_ling_success",
-	  "speaker": "word_spirit",
-	  "voice": "word_spirit",
-	  "lines": [
-		{
-		  "key": "wm01_review_aling_success",
-		  "text": {
-			"en": "Her name is A-Ling.",
-			"zh": "Her name is A-Ling。"
-		  }
-		}
-	  ]
-	},
-	{
-	  "flow_id": "west_market_01.review_haoran",
-	  "speaker": "feifei",
-	  "voice": "spirit",
-	  "lines": [
-		{
-		  "key": "wm01_review_haoran_prompt",
-		  "text": {
-			"en": "This is Haoran. Tell me his name.",
-			"zh": "这是昊然。告诉我他的名字。"
-		  }
-		}
-	  ]
-	},
-	{
-	  "flow_id": "west_market_01.review_haoran_success",
-	  "speaker": "feifei",
-	  "voice": "spirit",
-	  "lines": [
-		{
-		  "key": "wm01_review_haoran_echo",
-		  "speaker": "word_spirit",
-		  "voice": "word_spirit",
-		  "text": {
-			"en": "His name is Haoran.",
-			"zh": "His name is Haoran。"
-		  }
-		},
-		{
-		  "key": "wm01_review_final",
-		  "text": {
-			"en": "Today you learned to meet, listen, and remember names.",
-			"zh": "今天你学会了见面、倾听，也记住了名字。"
-		  }
-		},
-		{
-		  "key": "wm01_afternoon_courage",
-		  "text": {
-			"en": "That is the first kind of courage.",
-			"zh": "这就是第一种勇气。"
-		  }
-		}
-	  ]
-	},
-	{
-	  "flow_id": "west_market_01.afternoon_review_retry",
-	  "speaker": "feifei",
-	  "voice": "spirit",
-	  "lines": [
-		{
-		  "key": "wm01_afternoon_retry",
-		  "text": {
-			"en": "Afternoon means the later part of the day. Say: Good afternoon.",
-			"zh": "Afternoon 是一天后半段。说：Good afternoon。"
+			"en": "Someone deeper in the city knows about the bell. A white-haired elder. Only he can tell us more.",
+			"zh": "城里有位白发老者知道这口钟。只有他能告诉我们更多。"
 		  }
 		}
 	  ]

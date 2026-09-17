@@ -56,6 +56,8 @@ func get_lines(flow_id: String, lang: String, params: Dictionary = {}) -> Array[
 	var flow: Dictionary = _flows[flow_id]
 	var flow_speaker: String = str(flow.get("speaker", ""))
 	var flow_voice: String = str(flow.get("voice", ""))
+	# 情绪字段（批次 2 T37）：flow 级默认，line 级可覆盖，驱动对应 NPC 的动画帧。
+	var flow_emotion: String = str(flow.get("emotion", ""))
 	var result: Array[Dictionary] = []
 	var lines: Array = flow.get("lines", [])
 	for line_value in lines:
@@ -69,6 +71,7 @@ func get_lines(flow_id: String, lang: String, params: Dictionary = {}) -> Array[
 			"key": line_key,
 			"speaker": str(line.get("speaker", flow_speaker)),
 			"voice": str(line.get("voice", flow_voice)),
+			"emotion": str(line.get("emotion", flow_emotion)),
 			"text": _apply_placeholders(localized_text, params),
 		})
 	return result

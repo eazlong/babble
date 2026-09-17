@@ -1,170 +1,278 @@
 {
   "scene_id": "chang_an_market_lesson_01",
-  "scene_name": "西市晨钟：初入长安",
+  "scene_name": "雾门问居：初入长安",
   "chapter": 1,
   "order": 1,
+  "unit": "Unit 1 — Where do people live?",
   "scene_path": "res://assets/scenes/ChangAnMarket.tscn",
+  "checkpoint_id": "ChangAnMarket",
   "dialogue_flow_file": "res://assets/resources/dialogue_flows/chang_an_market_lesson_01.json",
   "target_words": [
-    "meet",
-    "new",
-    "morning",
-    "classmate",
-    "her",
-    "name",
-    "sit",
-    "afternoon",
-    "his"
+    "city",
+    "country",
+    "street",
+    "building",
+    "house",
+    "flat",
+    "farm",
+    "live",
+    "home"
   ],
   "lxp_reward": 30,
-  "completion_dialogue_id": "chang_an_market_lesson_01_complete",
-  "next_unlock": "ChangAnMarket_BaizeThread",
+  "completion_dialogue_id": "changan_gate_01_complete",
+  "completion_text": {
+    "zh": "完成：雾门问居",
+    "en": "Complete: The Mist Gate"
+  },
+  "next_unlock": "ChangAnMarketLesson02",
   "steps": [
-    {
-      "id": "good_morning",
-      "type": "voice",
-      "quest_key": "quest_good_morning",
-      "flow_id": "west_market_01.good_morning",
-      "success_flow_id": "west_market_01.good_morning_success",
-      "retry_flow_id": "west_market_01.good_morning_retry",
-      "reward_words": ["morning"],
-      "asr": {
-        "clear_phrases": ["good morning"],
-        "acceptable_phrases": ["morning"],
-        "required_keywords": ["morning"],
-        "optional_keywords": ["good"]
-      }
-    },
     {
       "id": "name_register",
       "type": "voice",
       "quest_key": "quest_name_register",
-      "flow_id": "west_market_01.name_register",
-      "success_flow_id": "west_market_01.name_register_success",
-      "retry_flow_id": "west_market_01.name_register_retry",
-      "reward_words": ["new", "name"],
+      "title": "雾门登记",
+      "status": "天机阁执事正在等待新来的声音。",
+      "quest_text": {
+        "zh": "任务：向天机阁执事报上名字",
+        "en": "Quest: Give your name at the gate"
+      },
+      "flow_id": "gate_01.name_register",
+      "success_flow_id": "gate_01.name_register_success",
+      "retry_flow_id": "gate_01.name_register_retry",
+      "reward_words": [],
       "asr": {
-        "clear_phrases": ["my name is", "i am"],
-        "acceptable_phrases": ["name"],
-        "required_keywords": ["name"],
-        "optional_keywords": ["new"]
+        "clear_phrases": [
+          "my name is",
+          "i am"
+        ],
+        "acceptable_phrases": [
+          "name"
+        ],
+        "required_keywords": [
+          "name"
+        ],
+        "optional_keywords": []
       }
     },
     {
-      "id": "sit_here",
+      "id": "ask_where_live",
       "type": "voice",
-      "quest_key": "quest_sit_here",
-      "flow_id": "west_market_01.sit_here",
-      "success_flow_id": "west_market_01.sit_here_success",
-      "retry_flow_id": "west_market_01.sit_here_retry",
-      "reward_words": ["sit"],
+      "quest_key": "quest_where_live",
+      "title": "你住在哪里",
+      "status": "执事要知道你从哪里来。",
+      "quest_text": {
+        "zh": "任务：回答执事你住在哪里",
+        "en": "Quest: Tell the steward where you live"
+      },
+      "flow_id": "gate_01.ask_where_live",
+      "success_flow_id": "gate_01.ask_where_live_success",
+      "retry_flow_id": "gate_01.ask_where_live_retry",
+      "reward_words": [
+        "live"
+      ],
       "asr": {
-        "clear_phrases": ["sit here", "i sit here"],
-        "acceptable_phrases": ["sit"],
-        "required_keywords": ["sit"],
-        "optional_keywords": ["here"]
+        "clear_phrases": [
+          "i live in"
+        ],
+        "acceptable_phrases": [
+          "live in",
+          "i live"
+        ],
+        "required_keywords": [
+          "live"
+        ],
+        "optional_keywords": [
+          "i",
+          "in"
+        ]
       }
     },
     {
-      "id": "meet_a_ling",
+      "id": "restore_city",
       "type": "voice",
-      "quest_key": "quest_meet_a_ling",
-      "flow_id": "west_market_01.meet_a_ling",
-      "success_flow_id": "west_market_01.meet_a_ling_success",
-      "retry_flow_id": "west_market_01.meet_a_ling_retry",
-      "reward_words": ["meet", "her", "classmate"],
+      "quest_key": "quest_restore_city",
+      "title": "补全路引 · 城",
+      "status": "路引上的第一幅图被雾抹去了字。",
+      "quest_text": {
+        "zh": "任务：补全路引上的「城」",
+        "en": "Quest: Name the city on your paper"
+      },
+      "flow_id": "gate_01.restore_city",
+      "success_flow_id": "gate_01.restore_city_success",
+      "retry_flow_id": "gate_01.restore_city_retry",
+      "reward_words": [
+        "city",
+        "country"
+      ],
       "asr": {
-        "clear_phrases": ["her name is a ling", "her name is aling", "nice to meet you"],
-        "acceptable_phrases": ["her name", "meet you"],
-        "required_keywords": ["her", "name"],
-        "optional_keywords": ["meet", "classmate"],
-        "confused_keywords": ["his"]
+        "clear_phrases": [
+          "city",
+          "it is a city"
+        ],
+        "acceptable_phrases": [
+          "a city"
+        ],
+        "required_keywords": [
+          "city"
+        ],
+        "optional_keywords": [
+          "country"
+        ]
       }
     },
     {
-      "id": "meet_haoran",
+      "id": "restore_street",
       "type": "voice",
-      "quest_key": "quest_meet_haoran",
-      "flow_id": "west_market_01.meet_haoran",
-      "success_flow_id": "west_market_01.meet_haoran_success",
-      "retry_flow_id": "west_market_01.meet_haoran_retry",
-      "reward_words": ["his"],
+      "quest_key": "quest_restore_street",
+      "title": "补全路引 · 街",
+      "status": "路引上的街道还没有名字。",
+      "quest_text": {
+        "zh": "任务：补全路引上的「街道」",
+        "en": "Quest: Name the street"
+      },
+      "flow_id": "gate_01.restore_street",
+      "success_flow_id": "gate_01.restore_street_success",
+      "retry_flow_id": "gate_01.restore_street_retry",
+      "reward_words": [
+        "street"
+      ],
       "asr": {
-        "clear_phrases": ["his name is haoran", "his name is hao ran"],
-        "acceptable_phrases": ["his name"],
-        "required_keywords": ["his", "name"],
-        "optional_keywords": ["meet", "classmate"],
-        "confused_keywords": ["her"]
+        "clear_phrases": [
+          "street"
+        ],
+        "acceptable_phrases": [
+          "a street",
+          "the street"
+        ],
+        "required_keywords": [
+          "street"
+        ],
+        "optional_keywords": []
       }
     },
     {
-      "id": "classmate_bond",
+      "id": "restore_building",
       "type": "voice",
-      "quest_key": "quest_classmate_bond",
-      "flow_id": "west_market_01.classmate_bond",
-      "success_flow_id": "west_market_01.classmate_bond_success",
-      "retry_flow_id": "west_market_01.classmate_bond_retry",
-      "reward_words": ["classmate"],
+      "quest_key": "quest_restore_building",
+      "title": "补全路引 · 楼",
+      "status": "路引上的楼房还没有名字。",
+      "quest_text": {
+        "zh": "任务：补全路引上的「楼房」",
+        "en": "Quest: Name the building"
+      },
+      "flow_id": "gate_01.restore_building",
+      "success_flow_id": "gate_01.restore_building_success",
+      "retry_flow_id": "gate_01.restore_building_retry",
+      "reward_words": [
+        "building"
+      ],
       "asr": {
-        "clear_phrases": ["i meet new classmates", "new classmates"],
-        "acceptable_phrases": ["classmate", "classmates"],
-        "required_keywords": ["classmate"],
-        "optional_keywords": ["meet", "new"]
+        "clear_phrases": [
+          "building"
+        ],
+        "acceptable_phrases": [
+          "a building",
+          "the building"
+        ],
+        "required_keywords": [
+          "building"
+        ],
+        "optional_keywords": []
       }
     },
     {
-      "id": "baize_recognition",
+      "id": "restore_house",
+      "type": "voice",
+      "quest_key": "quest_restore_house",
+      "title": "补全路引 · 家",
+      "status": "路引上最后一幅图还空着。",
+      "quest_text": {
+        "zh": "任务：补全路引上的「家宅」",
+        "en": "Quest: Name the house"
+      },
+      "flow_id": "gate_01.restore_house",
+      "success_flow_id": "gate_01.restore_house_success",
+      "retry_flow_id": "gate_01.restore_house_retry",
+      "reward_words": [
+        "house",
+        "flat",
+        "farm"
+      ],
+      "asr": {
+        "clear_phrases": [
+          "house"
+        ],
+        "acceptable_phrases": [
+          "a house",
+          "my house"
+        ],
+        "required_keywords": [
+          "house"
+        ],
+        "optional_keywords": [
+          "flat",
+          "farm"
+        ]
+      }
+    },
+    {
+      "id": "where_is_your_home",
+      "type": "voice",
+      "quest_key": "quest_home",
+      "title": "家在何方",
+      "status": "执事问起了你的家。",
+      "quest_text": {
+        "zh": "任务：告诉执事你的家在哪里",
+        "en": "Quest: Tell the steward where your home is"
+      },
+      "flow_id": "gate_01.where_is_your_home",
+      "success_flow_id": "gate_01.where_is_your_home_success",
+      "retry_flow_id": "gate_01.where_is_your_home_retry",
+      "reward_words": [
+        "home"
+      ],
+      "asr": {
+        "clear_phrases": [
+          "my home is in",
+          "it is in"
+        ],
+        "acceptable_phrases": [
+          "home"
+        ],
+        "required_keywords": [
+          "home"
+        ],
+        "optional_keywords": [
+          "in",
+          "my"
+        ]
+      }
+    },
+    {
+      "id": "meet_classmates",
       "type": "auto",
-      "quest_key": "quest_baize",
-      "flow_id": "west_market_01.baize_recognition",
+      "quest_key": "quest_meet_classmates",
+      "title": "同修相遇",
+      "status": "两位同修在雾门旁等你。",
+      "quest_text": {
+        "zh": "任务：认识两位同修",
+        "en": "Quest: Meet your two classmates"
+      },
+      "flow_id": "gate_01.meet_classmates",
       "reward_words": []
     },
     {
-      "id": "afternoon_review",
-      "type": "voice",
-      "quest_key": "quest_afternoon_review",
-      "flow_id": "west_market_01.afternoon_review",
-      "success_flow_id": "west_market_01.afternoon_review_success",
-      "retry_flow_id": "west_market_01.afternoon_review_retry",
-      "reward_words": ["afternoon"],
-      "asr": {
-        "clear_phrases": ["good afternoon", "her name is a ling", "his name is haoran"],
-        "acceptable_phrases": ["afternoon", "her name", "his name"],
-        "required_keywords": ["afternoon"],
-        "optional_keywords": ["her", "his", "name"]
-      }
-    },
-    {
-      "id": "review_a_ling",
-      "type": "voice",
-      "quest_key": "quest_review_a_ling",
-      "flow_id": "west_market_01.review_a_ling",
-      "success_flow_id": "west_market_01.review_a_ling_success",
-      "retry_flow_id": "west_market_01.meet_a_ling_retry",
-      "reward_words": [],
-      "asr": {
-        "clear_phrases": ["her name is a ling", "her name is aling"],
-        "acceptable_phrases": ["her name"],
-        "required_keywords": ["her", "name"],
-        "optional_keywords": ["a ling", "aling"],
-        "confused_keywords": ["his"]
-      }
-    },
-    {
-      "id": "review_haoran",
-      "type": "voice",
-      "quest_key": "quest_review_haoran",
-      "flow_id": "west_market_01.review_haoran",
-      "success_flow_id": "west_market_01.review_haoran_success",
-      "retry_flow_id": "west_market_01.meet_haoran_retry",
-      "reward_words": [],
-      "asr": {
-        "clear_phrases": ["his name is haoran", "his name is hao ran"],
-        "acceptable_phrases": ["his name"],
-        "required_keywords": ["his", "name"],
-        "optional_keywords": ["haoran", "hao ran"],
-        "confused_keywords": ["her"]
-      }
+      "id": "gate_open",
+      "type": "auto",
+      "quest_key": "quest_gate_open",
+      "title": "第一声钟响",
+      "status": "雾门深处传来极轻的一声钟响。",
+      "quest_text": {
+        "zh": "任务：听雾门后的第一声钟响",
+        "en": "Quest: Listen for the first bell"
+      },
+      "flow_id": "gate_01.gate_open",
+      "reward_words": []
     }
   ]
 }

@@ -38,6 +38,8 @@ var state: LessonState = LessonState.LOADING
 var config: Dictionary = {}
 var steps: Array = []
 var current_step_index: int = -1
+# 东华钟八响：每响之间的停顿（秒）。
+var bell_strike_interval: float = 0.65
 var current_step: Dictionary = {}
 var dialogue_flow_loader: Variant = DialogueFlowLoaderScript.new()
 var voice_failure_intervention: VoiceFailureIntervention
@@ -59,7 +61,7 @@ var world_layer: CanvasLayer
 var visual_root: Control
 var market_view: Control
 var inn_review_view: Control
-var mist_overlay: ColorRect
+var mist_overlay: TextureRect
 var step_title_label: Label
 var npc_status_label: Label
 var word_spirit_bar: HBoxContainer
@@ -149,6 +151,9 @@ func _go_to_step(index: int) -> void:
 	var step_text: String = _step_text(str(current_step.get("id", "")), "quest_text")
 	_set_quest_text(step_text if not step_text.is_empty() else _loc(quest_key))
 	await _speak_flow(str(current_step.get("flow_id", "")), 1.8)
+	# 东华钟八响（T35）：雾门开启（gate_open）时敲响长安钟。
+	if str(current_step.get("id", "")) == "gate_01.gate_open":
+		await play_donghuang_bell(8)
 
 	var step_type: String = str(current_step.get("type", "auto"))
 	match step_type:
@@ -355,6 +360,7 @@ func _speak_flow(flow_id: String, fallback_seconds: float = 1.8, params: Diction
 	if source_lang == target_lang:
 		for line in source_lines:
 			_set_speaker_focus(str(line.get("speaker", "")))
+			_set_npc_emotion(str(line.get("speaker", "")), str(line.get("emotion", "")))
 			await _say_dialogue_line(line, source_lang, fallback_seconds)
 		return
 	# 非腓腓 NPC 只说目标语言；腓腓可用源语言。两条列表同序，按说话人逐行选语言。
@@ -365,6 +371,7 @@ func _speak_flow(flow_id: String, fallback_seconds: float = 1.8, params: Diction
 		var lang: String = source_lang if speaker == FEIFEI_SPEAKER else target_lang
 		var spoken_line: Dictionary = source_line if lang == source_lang else target_lines[i]
 		_set_speaker_focus(speaker)
+		_set_npc_emotion(speaker, str(source_line.get("emotion", "")))
 		await _say_dialogue_line(spoken_line, lang, fallback_seconds)
 
 func _say_dialogue_line(line: Dictionary, lang: String, fallback_seconds: float = 1.8) -> void:
@@ -436,9 +443,17 @@ func _build_visuals() -> void:
 	visual_root.add_child(inn_review_view)
 	inn_review_view.visible = false
 
-	mist_overlay = ColorRect.new()
+	# 混沌雾（批次 2 T36）：真实雾纹理 + 0.30 alpha，_animate_mist 仍做脉动。
+	mist_overlay = TextureRect.new()
 	mist_overlay.name = "ChaosMistOverlay"
-	mist_overlay.color = Color(0.74, 0.78, 0.70, 0.30)
+	var mist_tex: Texture2D = load("res://assets/textures/backgrounds/changan_mist_overlay.png") as Texture2D
+	if mist_tex != null:
+		mist_overlay.texture = mist_tex
+		mist_overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		mist_overlay.stretch_mode = TextureRect.STRETCH_SCALE
+	else:
+		push_warning("[ChangAnMarket] 雾纹理缺失，雾层退化为透明")
+	mist_overlay.modulate = Color(0.74, 0.78, 0.70, 0.30)
 	mist_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	mist_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	world_layer.add_child(mist_overlay)
@@ -461,25 +476,28 @@ func _build_visuals() -> void:
 
 func _build_market_view() -> Control:
 	var root := _new_full_view("MarketMorningView", Color(0.50, 0.39, 0.28, 1.0))
-	_add_band(root, "Sky", Color(0.86, 0.74, 0.55, 1.0), 0.0, 300.0)
-	_add_band(root, "MarketGround", Color(0.33, 0.25, 0.20, 1.0), 760.0, 320.0)
+	_background_texture(root, "res://assets/textures/backgrounds/changan_stall_street_bg.png")
+	_add_band(root, "Sky", Color(0.86, 0.74, 0.55, 0.0), 0.0, 300.0)
+	_add_band(root, "MarketGround", Color(0.33, 0.25, 0.20, 0.0), 760.0, 320.0)
 	_add_label(root, "SceneTitle", "长安西市 · 西市晨钟", Vector2(88, 64), Vector2(760, 64), 34)
 	_add_label(root, "Gate", "西市雾门", Vector2(790, 300), Vector2(340, 60), 28)
-	_add_rect(root, "GateBody", Color(0.27, 0.14, 0.08, 1.0), Vector2(720, 360), Vector2(480, 360))
+	_add_rect(root, "GateBody", Color(0.27, 0.14, 0.08, 0.30), Vector2(720, 360), Vector2(480, 360))
 	_add_rect(root, "GateMist", Color(0.78, 0.76, 0.66, 0.42), Vector2(660, 330), Vector2(600, 430))
 	step_title_label = _add_label(root, "StepTitle", "", Vector2(90, 160), Vector2(760, 52), 26)
 	npc_status_label = _add_label(root, "NPCStatus", "", Vector2(90, 228), Vector2(760, 52), 24)
-	_add_character_card(root, "天机阁执事", Vector2(250, 560), Color(0.18, 0.25, 0.26, 1.0))
-	_add_character_card(root, "阿菱", Vector2(1260, 560), Color(0.32, 0.50, 0.35, 1.0))
-	_add_character_card(root, "昊然", Vector2(1510, 590), Color(0.50, 0.36, 0.20, 1.0))
+	_add_npc_sprite(root, "天机阁执事Sprite", "天机阁执事", Vector2(250, 560))
+	_add_npc_sprite(root, "阿菱Sprite", "阿菱", Vector2(1260, 560))
+	_add_npc_sprite(root, "昊然Sprite", "昊然", Vector2(1510, 590))
 	return root
 
 func _build_inn_review_view() -> Control:
 	var root := _new_full_view("InnAfternoonReviewView", Color(0.31, 0.25, 0.21, 1.0))
-	_add_band(root, "AfternoonSky", Color(0.77, 0.57, 0.42, 1.0), 0.0, 320.0)
+	_background_texture(root, "res://assets/textures/backgrounds/changan_inn_review_bg.png")
+	_add_band(root, "AfternoonSky", Color(0.77, 0.57, 0.42, 0.0), 0.0, 320.0)
 	_add_label(root, "InnTitle", "蜃影客栈 · 下午复盘", Vector2(88, 64), Vector2(760, 64), 34)
-	_add_rect(root, "LibraryPanel", Color(0.12, 0.11, 0.13, 0.82), Vector2(410, 260), Vector2(1100, 520))
+	_add_rect(root, "LibraryPanel", Color(0.12, 0.11, 0.13, 0.55), Vector2(410, 260), Vector2(1100, 520))
 	_add_label(root, "LibraryText", "词灵书阁", Vector2(760, 304), Vector2(420, 60), 32)
+	_add_npc_sprite(root, "白泽Sprite", "白泽", Vector2(560, 230))
 	return root
 
 func _new_full_view(view_name: String, color: Color) -> Control:
@@ -487,8 +505,35 @@ func _new_full_view(view_name: String, color: Color) -> Control:
 	root.name = view_name
 	root.size = VIEW_SIZE
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_background_texture(root, "")  # 先占位；调用方随后用真实路径覆盖。
 	_add_rect(root, "Background", color, Vector2.ZERO, VIEW_SIZE)
 	return root
+
+# 背景真实纹理（批次 2 T36）：加载 1920×1080 背景图；失败则保留 ColorRect 回退并告警。
+# background_path 为空时不加载（用于回退占位）。
+func _background_texture(root: Control, background_path: String) -> void:
+	if background_path.is_empty():
+		return
+	var bg_path: String = background_path
+	var tex: Texture2D = load(bg_path) as Texture2D
+	if tex == null:
+		push_warning("[ChangAnMarket] 背景纹理缺失，回退 ColorRect: %s" % bg_path)
+		return
+	# 移除占位的纯色 Background，换成真实纹理。
+	var old: Node = root.get_node_or_null("Background")
+	if old:
+		root.remove_child(old)
+		old.queue_free()
+	var bg := TextureRect.new()
+	bg.name = "Background"
+	bg.texture = tex
+	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.add_child(bg)
+	# 背景必须是视图最底层：移到第一个子节点。
+	root.move_child(bg, 0)
 
 func _add_rect(parent: Control, node_name: String, color: Color, position: Vector2, size: Vector2) -> ColorRect:
 	var rect := ColorRect.new()
@@ -519,6 +564,35 @@ func _add_character_card(parent: Control, display_name: String, position: Vector
 	_add_rect(parent, "%sCard" % display_name, color, position, Vector2(180, 260))
 	_add_label(parent, "%sName" % display_name, display_name, position + Vector2(0, 198), Vector2(180, 48), 24)
 
+# NPC 精灵（批次 2 T36）：AnimatedSprite2D 加载 8 帧 SpriteFrames，底对齐到 position，播 idle。
+# display_name 用于名称 Label；node_name 是带 Sprite 后缀的唯一节点名。
+func _add_npc_sprite(parent: Control, node_name: String, display_name: String, position: Vector2) -> void:
+	var frames_path := "res://assets/sprites/%s/%s_sprite_frames.tres" % [_npc_dir(display_name), _npc_dir(display_name)]
+	var frames: SpriteFrames = load(frames_path) as SpriteFrames
+	if frames == null:
+		push_warning("[ChangAnMarket] NPC SpriteFrames 缺失，回退彩色卡片: %s" % frames_path)
+		_add_character_card(parent, display_name, position, Color(0.35, 0.3, 0.25, 1.0))
+		return
+	var spr := AnimatedSprite2D.new()
+	spr.name = node_name
+	spr.sprite_frames = frames
+	spr.position = position
+	spr.scale = Vector2(0.9, 0.9)
+	parent.add_child(spr)
+	if frames.has_animation("idle"):
+		spr.play("idle")
+	_add_label(parent, "%sName" % display_name, display_name, position + Vector2(0, 268), Vector2(180, 40), 22)
+
+# 显示名 → 资源目录（天机阁执事 映射到 tianji_clerk）。
+func _npc_dir(display_name: String) -> String:
+	match display_name:
+		"天机阁执事": return "tianji_clerk"
+		"阿菱": return "aling"
+		"昊然": return "haoran"
+		"白泽": return "baize"
+		"胡商": return "hu_merchant"
+	return display_name
+
 func _update_step_visuals() -> void:
 	var step_id: String = str(current_step.get("id", ""))
 	if market_view and inn_review_view:
@@ -533,6 +607,43 @@ func _update_step_visuals() -> void:
 func _set_speaker_focus(speaker: String) -> void:
 	if npc_status_label:
 		npc_status_label.text = _speaker_label(speaker)
+
+# 情绪驱动 NPC 帧（批次 2 T37）：emotion → 动画名，映射到 market_view 里对应的 AnimatedSprite2D。
+# 未映射的 speaker（feifei / baize_shadow 不在市场视图）直接忽略，回到 idle 由调用方处理。
+const NPC_SPEAKER_NODE := {
+	"tianji_steward": "天机阁执事Sprite",
+	"a_ling": "阿菱Sprite",
+	"haoran": "昊然Sprite"
+}
+
+func _set_npc_emotion(speaker: String, emotion: String) -> void:
+	var node_name: String = NPC_SPEAKER_NODE.get(speaker, "")
+	if node_name.is_empty() or market_view == null:
+		return
+	var spr: Node = market_view.get_node_or_null(node_name)
+	if not (spr is AnimatedSprite2D):
+		return
+	var anim: String = "idle"
+	match emotion:
+		"talking": anim = "talk"
+		"happy": anim = "happy"
+		_: anim = "idle"
+	var frames: SpriteFrames = (spr as AnimatedSprite2D).sprite_frames
+	if frames != null and frames.has_animation(anim):
+		if (spr as AnimatedSprite2D).animation != anim:
+			(spr as AnimatedSprite2D).play(anim)
+
+# 东华钟八响（批次 2 T35）：依次敲响 n 声长安钟，间隔 bell_strike_interval。
+# 复用批次 1 的 changan_bell_ring 音效；n<=0 时不响。
+func play_donghuang_bell(n: int = 8) -> void:
+	if n <= 0:
+		return
+	for i in range(n):
+		var audio: Variant = _audio_manager()
+		if audio:
+			audio.play_sfx("changan_bell_ring")
+		if i < n - 1:
+			await get_tree().create_timer(bell_strike_interval).timeout
 
 func _show_word_spirit(word: String) -> void:
 	if not word_spirit_bar:
@@ -555,7 +666,7 @@ func _animate_mist(delta: float) -> void:
 	var pulse := sin(Time.get_ticks_msec() / 1000.0 * 0.75) * 0.05
 	var target_alpha: float = 0.28 + pulse
 	target_alpha -= minf(float(earned_words.size()) * 0.018, 0.15)
-	mist_overlay.color.a = lerpf(mist_overlay.color.a, target_alpha, delta * 1.6)
+	mist_overlay.modulate.a = lerpf(mist_overlay.modulate.a, target_alpha, delta * 1.6)
 
 func _setup_voice_failure_intervention() -> void:
 	voice_failure_intervention = VoiceFailureInterventionScript.new()
