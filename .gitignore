@@ -80,6 +80,9 @@ playwright-report/
 # ==================== Generated / Cache ====================
 .agents/
 .codegraph/
-design/
+# Root-only: the generated design/ registry. Must stay anchored, otherwise it
+# also swallows apps/godot-client/design/** (tracked GDDs + art specs), which
+# made real design docs invisible to git.
+/design/
 screenshots/
 spark_fly_split/
