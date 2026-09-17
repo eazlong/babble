@@ -4,6 +4,10 @@
 
 extends GutTest
 
+# UITweenManager 是 autoload 单例（Node 实例），不能对它调用 .new()；
+# 要造测试替身必须从脚本资源实例化。
+const UITweenManagerScript = preload("res://assets/scripts/autoload/UITweenManager.gd")
+
 var star_flight_anim: StarFlightAnimation
 var mock_star: Control
 var mock_tween_manager: UITweenManager
@@ -20,7 +24,7 @@ func before_each():
 	add_child(mock_star)
 
 	# 创建UITweenManager（可选）
-	mock_tween_manager = UITweenManager.new()
+	mock_tween_manager = UITweenManagerScript.new()
 	add_child(mock_tween_manager)
 
 func after_each():

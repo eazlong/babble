@@ -93,13 +93,17 @@ func test_play_particle_burst_calls_vfx_manager():
 
 	reward_anim.particle_spawn_point = particle_spawn_point
 
-	# Stub VFXManager方法
-	stub(mock_vfx_manager, "play_particle_effect_at_position").to_return(null)
+	# 注入 mock：RewardAnimation._ready() 取的是 /root/VFXManager（真实 autoload），
+	# 不注入的话下面的 stub 对被测对象无效、断言也无从谈起——这正是原先
+	# assert_called 被注释掉（"无法直接验证"）的原因。注入后本用例才真正验证"调用了 VFXManager"。
+	reward_anim._vfx_manager = mock_vfx_manager
+
+	# Stub VFXManager 公开接口（定点粒子爆发 = play_magic_activation）
+	stub(mock_vfx_manager, "play_magic_activation").to_return("")
 
 	reward_anim._play_particle_burst()
 
-	# 验证调用（无法直接验证，需通过观察）
-	# assert_called(mock_vfx_manager, "play_particle_effect_at_position")
+	assert_called(mock_vfx_manager, "play_magic_activation")
 
 	if particle_spawn_point and is_instance_valid(particle_spawn_point):
 		particle_spawn_point.queue_free()

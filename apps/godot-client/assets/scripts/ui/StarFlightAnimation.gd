@@ -91,12 +91,13 @@ func _animate_bezier_flight(
     ## 使用tween_method实现贝塞尔插值
     var duration = UIAnimationPresets.StarCollect.FLY_DURATION
 
-    tween.tween_method(
-        func(t: float):
-            var pos = _quadratic_bezier(start, control, end, t)
-            star_node.global_position = pos
-        , 0.0, 1.0, duration
-    )
+    # 注意：不要写成 tween_method(func(t): ... , 0.0, 1.0, duration) 的多行内联形式——
+    # lambda 作为首个实参时，Godot 4.6 解析器会在 "Unindent doesn't match the previous
+    # indentation level" 处报错，整个脚本无法加载（GameHUD 因此拿不到 StarFlightAnimation）。
+    # 先把 lambda 绑到变量再传入即可。
+    var fly_step := func(t: float) -> void:
+        star_node.global_position = _quadratic_bezier(start, control, end, t)
+    tween.tween_method(fly_step, 0.0, 1.0, duration)
 
 ## ============================================================
 ## 二次贝塞尔曲线计算

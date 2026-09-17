@@ -122,23 +122,11 @@ func _play_particle_burst() -> void:
 	# 调用VFXManager播放粒子效果
 	var spawn_pos = particle_spawn_point.global_position
 
-	# 粒子参数
-	var particle_config = {
-		"type": "explosion",
-		"count": PARTICLE_BURST_COUNT,
-		"duration": 1.5,
-		"color": Color(1.0, 0.9, 0.3, 1.0),  # 金色
-		"speed_min": 100.0,
-		"speed_max": 300.0,
-		"layer": VFXManager.VFXLayer.UI  # Layer 2
-	}
-
-	# 通过VFXManager播放
-	_vfx_manager.play_particle_effect_at_position(
-		"reward_burst",
-		spawn_pos,
-		particle_config
-	)
+	# VFXManager 的公开"定点粒子爆发"接口是 play_magic_activation(position, effect_type)。
+	# 原先调用的 play_particle_effect_at_position() 与 VFXManager.VFXLayer 都不存在：
+	# 每次执行都会抛 "Invalid access to property or key 'VFXLayer'"，粒子爆发实际从未生效。
+	# 粒子数量/颜色/速度现由 VFXManager 按 effect_type 决定。
+	_vfx_manager.play_magic_activation(spawn_pos, "explosion")
 
 ## ============================================================
 ## 音效同步

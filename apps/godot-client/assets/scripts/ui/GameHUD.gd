@@ -3,7 +3,18 @@
 ## 显示：玩家名字、LXP、徽章数、当前任务进度、复习按钮。
 ## 锚定在屏幕顶部。
 ##
+class_name GameHUD
 extends Control
+
+## ============================================================
+## 常量
+## ============================================================
+
+## 六神器徽章总数（六学期地图各一件）
+const ARTIFACT_BADGE_TOTAL: int = 6
+
+## 序章与大本营不计入神器进度
+const NON_ARTIFACT_AREAS: Array[String] = ["BeginningFP", "MirageInnIntroduction"]
 
 ## ============================================================
 ## Node引用
@@ -80,19 +91,20 @@ func _update_display() -> void:
 		                                            star_progress_bar.value,
 		                                            star_value)
 
-	# 徽章数
+	# 徽章数：六神器（每张学期地图一件）
 	if badge_label:
-		var badge_count = 0
-		if "SpellLibrary" in GameManager.unlocked_areas:
-			badge_count += 1
-		if "RainbowGarden" in GameManager.unlocked_areas:
-			badge_count += 1
-		# SpiritForest 始终解锁，完成才算 badge
+		var badge_count: int = 0
 		if GameManager.has_method("get_badge_count"):
 			badge_count = GameManager.get_badge_count()
-		elif badge_count == 0 and GameManager.unlocked_areas.size() > 1:
-			badge_count = GameManager.unlocked_areas.size() - 1
-		badge_label.text = "🏅 " + str(badge_count) + "/3"
+		else:
+			# 神器归属状态尚未落库，先用「已解锁区域 − 序章/大本营」近似；
+			# 等 GameManager 提供 get_badge_count() 后自动切换为权威值。
+			var artifact_areas: int = 0
+			for area in GameManager.unlocked_areas:
+				if not NON_ARTIFACT_AREAS.has(str(area)):
+					artifact_areas += 1
+			badge_count = mini(artifact_areas, ARTIFACT_BADGE_TOTAL)
+		badge_label.text = "🏅 " + str(badge_count) + "/" + str(ARTIFACT_BADGE_TOTAL)
 
 ## ============================================================
 ## LXP分数变化动画
