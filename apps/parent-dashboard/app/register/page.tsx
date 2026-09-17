@@ -10,6 +10,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v
 export default function RegisterPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
+  const [displayName, setDisplayName] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [childName, setChildName] = useState('')
@@ -33,7 +34,11 @@ export default function RegisterPage() {
     setLoading(true)
 
     try {
-      const body: Record<string, string> = { email, password }
+      const body: Record<string, string> = {
+        email,
+        password,
+        display_name: displayName.trim() // 后端 register schema 必填
+      }
       if (childName.trim()) {
         body.child_name = childName.trim()
       }
@@ -47,7 +52,11 @@ export default function RegisterPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.message || data.error || 'Registration failed')
+        // Backend returns { error: { code, message, retryable } }
+        const errMsg =
+          data?.error?.message || data?.message || 'Registration failed'
+        const retryable = data?.error?.retryable
+        setError(retryable ? `${errMsg} Please try again later.` : errMsg)
         return
       }
 
@@ -92,6 +101,22 @@ export default function RegisterPage() {
                 onChange={e => setEmail(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 placeholder="parent@example.com"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">
+                Parent Name
+              </label>
+              <input
+                id="displayName"
+                type="text"
+                required
+                maxLength={50}
+                value={displayName}
+                onChange={e => setDisplayName(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="e.g., Mr. Wang"
               />
             </div>
 

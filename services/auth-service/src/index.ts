@@ -1,13 +1,15 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import type pg from 'pg'
 import { registerRoutes } from './routes/register.js'
 import { registerLoginRoutes } from './routes/login.js'
 import { registerParentDashboardRoutes } from './routes/parent-dashboard.js'
+import { applySchema, makePool, type Db } from './db.js'
 
 declare module 'fastify' {
   interface FastifyInstance {
-    supabase: SupabaseClient
+    pool: pg.Pool
+    db: Db
   }
 }
 
@@ -15,10 +17,15 @@ const app = Fastify({ logger: true })
 
 app.register(cors, { origin: true })
 
-// Initialize Supabase client
-const supabaseUrl = process.env.SUPABASE_URL || 'https://localhost:54321'
-const supabaseKey = process.env.SUPABASE_KEY || 'dev-key'
-app.decorate('supabase', createClient(supabaseUrl, supabaseKey))
+// Plain-Postgres connection pool (replaces the former Supabase client).
+app.decorate('pool', makePool())
+app.decorate('db', {
+  pool: app.pool,
+  query: async (text: string, params?: unknown[]) => {
+    const res = await app.pool.query(text, params as any[])
+    return res.rows
+  }
+})
 
 // Register routes
 app.register(registerRoutes)
@@ -32,13 +39,11 @@ app.get('/health', async () => ({
 }))
 
 const start = async () => {
-  try {
-    await app.listen({ port: 8303, host: '0.0.0.0' })
-    app.log.info('Auth service running on port 8303')
-  } catch (err) {
-    app.log.error(err)
-    process.exit(1)
-  }
+  // Bootstrap idempotent schema (safe on empty local Postgres).
+  await applySchema(app)
+  app.log.info('Schema bootstrap complete')
+  await app.listen({ port: 8303, host: '0.0.0.0' })
+  app.log.info('Auth service running on port 8303')
 }
 
 if (process.env.NODE_ENV !== 'test') {

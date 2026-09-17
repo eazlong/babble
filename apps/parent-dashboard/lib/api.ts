@@ -36,11 +36,19 @@ export async function login(email: string, password: string) {
   return res.json()
 }
 
-export async function register(email: string, password: string, childName: string) {
+export async function register(email: string, password: string, displayName: string, childName?: string) {
+  const body: Record<string, string> = {
+    email,
+    password,
+    display_name: displayName // 后端 register schema 必填
+  }
+  if (childName) {
+    body.child_name = childName
+  }
   const res = await fetch(`${API_BASE}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, child_name: childName })
+    body: JSON.stringify(body)
   })
   return res.json()
 }

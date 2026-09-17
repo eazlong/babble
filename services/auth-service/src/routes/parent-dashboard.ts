@@ -20,7 +20,6 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
     preHandler: async (request, reply) => {
       const userId = await authenticateWithReply(request, reply, app)
       if (!userId) return
-      // Verify the requesting user is the parent
       const { parentId } = request.params as { parentId: string }
       if (userId !== parentId) {
         reply.status(403).send({ error: { code: 'FORBIDDEN', message: 'Not authorized to access this parent account' } })
@@ -29,69 +28,69 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     const { parentId } = request.params as { parentId: string }
 
-    // Get all children for this parent
-    const { data: children, error: childrenError } = await app.supabase
-      .from('child_data.child_accounts')
-      .select(`
-        child_id,
-        daily_time_limit_minutes,
-        content_filter_level,
-        users!inner(user_id, display_name, cefr_level, age_group)
-      `)
-      .eq('parent_id', parentId)
+    // Get all children for this parent (join child_accounts + user profile)
+    const children: Array<{
+      child_id: string
+      daily_time_limit_minutes: number
+      content_filter_level: string
+      display_name: string
+      cefr_level: string
+      age_group: string
+    }> = await app.db.query(
+      `SELECT ca.child_id, ca.daily_time_limit_minutes, ca.content_filter_level,
+              u.display_name, u.cefr_level, u.age_group
+         FROM child_data.child_accounts ca
+         JOIN users u ON u.user_id = ca.child_id
+        WHERE ca.parent_id = $1`,
+      [parentId]
+    )
 
-    if (childrenError) {
-      return reply.status(500).send({ error: { code: 'QUERY_FAILED', message: childrenError.message } })
-    }
-
-    if (!children || children.length === 0) {
+    if (children.length === 0) {
       return reply.send({ children: [] })
     }
+
+    const todayStart = new Date().toISOString().split('T')[0] // YYYY-MM-DD
 
     // Build dashboard data with aggregated stats for each child
     const dashboardChildren = await Promise.all(
       children.map(async (ca) => {
         const childId = ca.child_id
-        const user = (ca.users as any)
 
         // Today's game time
-        const { data: timeToday } = await app.supabase
-          .from('game_sessions')
-          .select('start_time, end_time')
-          .eq('user_id', childId)
-          .gte('start_time', new Date().toISOString().split('T')[0])
+        const sessions = await app.db.query<{ start_time: string; end_time: string }>(
+          `SELECT start_time, end_time FROM game_sessions
+            WHERE user_id = $1 AND start_time >= $2`,
+          [childId, todayStart]
+        )
 
         let total_time_today = 0
-        if (timeToday && timeToday.length > 0) {
-          total_time_today = timeToday.reduce((sum: number, session: any) => {
-            if (session.start_time && session.end_time) {
-              return sum + (new Date(session.end_time).getTime() - new Date(session.start_time).getTime()) / 60000
-            }
-            return sum
-          }, 0)
+        for (const s of sessions) {
+          if (s.start_time && s.end_time) {
+            total_time_today +=
+              (new Date(s.end_time).getTime() - new Date(s.start_time).getTime()) / 60000
+          }
         }
 
-        // Vocabulary count from assessment_results (per-user vocabulary assessments)
-        const { count: vocabulary_count } = await app.supabase
-          .from('assessment_results')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', childId)
+        // Vocabulary count (number of assessment results for this child)
+        const vocab = await app.db.query<{ count: number }>(
+          `SELECT count(*)::int AS count FROM assessment_results WHERE user_id = $1`,
+          [childId]
+        )
 
         // Quests completed
-        const { data: quests } = await app.supabase
-          .from('quest_progress')
-          .select('status')
-          .eq('user_id', childId)
-          .eq('status', 'completed')
+        const quests = await app.db.query<{ status: string }>(
+          `SELECT status FROM quest_progress WHERE user_id = $1 AND status = 'completed'`,
+          [childId]
+        )
 
         return {
           child_id: childId,
-          display_name: user?.display_name || 'Unknown',
+          display_name: ca.display_name || 'Unknown',
           total_time_today: Math.round(total_time_today),
           daily_time_limit_minutes: ca.daily_time_limit_minutes,
-          vocabulary_count: vocabulary_count || 0,
-          cefr_level: user?.cefr_level || 'pre-A1',
-          quests_completed: quests?.length || 0
+          vocabulary_count: vocab[0]?.count || 0,
+          cefr_level: ca.cefr_level || 'pre-A1',
+          quests_completed: quests.length
         }
       })
     )
@@ -116,16 +115,13 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
     const { parentId } = request.params as { parentId: string }
 
     // Get all child IDs for this parent
-    const { data: childAccounts, error: caError } = await app.supabase
-      .from('child_data.child_accounts')
-      .select('child_id')
-      .eq('parent_id', parentId)
+    const childRows = await app.db.query<{ child_id: string }>(
+      `SELECT child_id FROM child_data.child_accounts WHERE parent_id = $1`,
+      [parentId]
+    )
+    const childIds = childRows.map((r) => r.child_id)
 
-    if (caError) {
-      return reply.status(500).send({ error: { code: 'QUERY_FAILED', message: caError.message } })
-    }
-
-    if (!childAccounts || childAccounts.length === 0) {
+    if (childIds.length === 0) {
       return reply.send({
         total_time_today: 0,
         total_time_week: 0,
@@ -137,100 +133,70 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
       })
     }
 
-    const childIds = childAccounts.map((ca: any) => ca.child_id)
-
-    // Today's total time
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
-
     const weekStart = new Date()
     weekStart.setDate(weekStart.getDate() - 7)
-
     const monthStart = new Date()
     monthStart.setDate(monthStart.getDate() - 30)
 
-    // Game sessions for today
-    const { data: sessionsToday } = await app.supabase
-      .from('game_sessions')
-      .select('start_time, end_time')
-      .in('user_id', childIds)
-      .gte('start_time', todayStart.toISOString())
-
-    let total_time_today = 0
-    if (sessionsToday) {
-      total_time_today = sessionsToday.reduce((sum: number, s: any) => {
+    const sumMinutes = (sessions: Array<{ start_time: string; end_time: string }>): number => {
+      let sum = 0
+      for (const s of sessions) {
         if (s.start_time && s.end_time) {
-          return sum + (new Date(s.end_time).getTime() - new Date(s.start_time).getTime()) / 60000
+          sum += (new Date(s.end_time).getTime() - new Date(s.start_time).getTime()) / 60000
         }
-        return sum
-      }, 0)
+      }
+      return sum
     }
 
-    // Game sessions for week
-    const { data: sessionsWeek } = await app.supabase
-      .from('game_sessions')
-      .select('start_time, end_time')
-      .in('user_id', childIds)
-      .gte('start_time', weekStart.toISOString())
+    const sessionsToday = await app.db.query<{ start_time: string; end_time: string }>(
+      `SELECT start_time, end_time FROM game_sessions WHERE user_id = ANY($1) AND start_time >= $2`,
+      [childIds, todayStart.toISOString()]
+    )
+    const total_time_today = sumMinutes(sessionsToday)
 
-    let total_time_week = 0
-    if (sessionsWeek) {
-      total_time_week = sessionsWeek.reduce((sum: number, s: any) => {
-        if (s.start_time && s.end_time) {
-          return sum + (new Date(s.end_time).getTime() - new Date(s.start_time).getTime()) / 60000
-        }
-        return sum
-      }, 0)
-    }
+    const sessionsWeek = await app.db.query<{ start_time: string; end_time: string }>(
+      `SELECT start_time, end_time FROM game_sessions WHERE user_id = ANY($1) AND start_time >= $2`,
+      [childIds, weekStart.toISOString()]
+    )
+    const total_time_week = sumMinutes(sessionsWeek)
 
-    // Game sessions for month
-    const { data: sessionsMonth } = await app.supabase
-      .from('game_sessions')
-      .select('start_time, end_time')
-      .in('user_id', childIds)
-      .gte('start_time', monthStart.toISOString())
-
-    let total_time_month = 0
-    if (sessionsMonth) {
-      total_time_month = sessionsMonth.reduce((sum: number, s: any) => {
-        if (s.start_time && s.end_time) {
-          return sum + (new Date(s.end_time).getTime() - new Date(s.start_time).getTime()) / 60000
-        }
-        return sum
-      }, 0)
-    }
+    const sessionsMonth = await app.db.query<{ start_time: string; end_time: string }>(
+      `SELECT start_time, end_time FROM game_sessions WHERE user_id = ANY($1) AND start_time >= $2`,
+      [childIds, monthStart.toISOString()]
+    )
+    const total_time_month = sumMinutes(sessionsMonth)
 
     // Vocabulary growth (assessment_results in last 30 days)
-    const { count: vocabulary_growth } = await app.supabase
-      .from('assessment_results')
-      .select('*', { count: 'exact', head: true })
-      .in('user_id', childIds)
-      .gte('assessed_at', monthStart.toISOString())
+    const vocab = await app.db.query<{ count: number }>(
+      `SELECT count(*)::int AS count FROM assessment_results
+        WHERE user_id = ANY($1) AND assessed_at >= $2`,
+      [childIds, monthStart.toISOString()]
+    )
+    const vocabulary_growth = vocab[0]?.count || 0
 
-    // Get average CEFR level from first child
-    const { data: usersData } = await app.supabase
-      .from('users')
-      .select('cefr_level')
-      .in('user_id', childIds)
-      .limit(1)
-
-    const cefr_level = usersData?.[0]?.cefr_level || 'pre-A1'
+    // CEFR level from first child
+    const users = await app.db.query<{ cefr_level: string }>(
+      `SELECT cefr_level FROM users WHERE user_id = ANY($1) LIMIT 1`,
+      [childIds]
+    )
+    const cefr_level = users[0]?.cefr_level || 'pre-A1'
 
     // Total quests completed
-    const { data: quests } = await app.supabase
-      .from('quest_progress')
-      .select('status')
-      .in('user_id', childIds)
-      .eq('status', 'completed')
+    const quests = await app.db.query<{ status: string }>(
+      `SELECT status FROM quest_progress WHERE user_id = ANY($1) AND status = 'completed'`,
+      [childIds]
+    )
 
     return reply.send({
       total_time_today: Math.round(total_time_today),
       total_time_week: Math.round(total_time_week),
       total_time_month: Math.round(total_time_month),
-      vocabulary_growth: vocabulary_growth || 0,
+      vocabulary_growth,
       cefr_level,
       cefr_progress: cefrProgressPercent(cefr_level),
-      quests_completed: quests?.length || 0
+      quests_completed: quests.length
     })
   })
 
@@ -247,30 +213,24 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
     const body = timeLimitSchema.parse(request.body)
     const { daily_time_limit_minutes } = body
 
-    // Verify the requesting user is the parent of this child
     const userId = (request as any).userId
-    const { data: link, error: linkError } = await app.supabase
-      .from('child_data.child_accounts')
-      .select('parent_id')
-      .eq('child_id', childId)
-      .single()
+    const link = await app.db.query<{ parent_id: string }>(
+      `SELECT parent_id FROM child_data.child_accounts WHERE child_id = $1`,
+      [childId]
+    )
 
-    if (linkError || !link) {
+    if (link.length === 0) {
       return reply.status(404).send({ error: { code: 'CHILD_NOT_FOUND', message: 'Child account not found' } })
     }
 
-    if (link.parent_id !== userId) {
-      return reply.status(403).send({ error: { code: 'FORBIDDEN', message: 'Not authorized to modify this child\'s settings' } })
+    if (link[0].parent_id !== userId) {
+      return reply.status(403).send({ error: { code: 'FORBIDDEN', message: "Not authorized to modify this child's settings" } })
     }
 
-    const { error: updateError } = await app.supabase
-      .from('child_data.child_accounts')
-      .update({ daily_time_limit_minutes })
-      .eq('child_id', childId)
-
-    if (updateError) {
-      return reply.status(500).send({ error: { code: 'UPDATE_FAILED', message: updateError.message } })
-    }
+    await app.db.query(
+      `UPDATE child_data.child_accounts SET daily_time_limit_minutes = $2 WHERE child_id = $1`,
+      [childId, daily_time_limit_minutes]
+    )
 
     return reply.send({ success: true, daily_time_limit_minutes })
   })
@@ -293,18 +253,16 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
     const { parentId } = request.params as { parentId: string }
 
     // 单孩锁定（G1）：从 parent 解出唯一 child
-    const { data: childAccount, error: caError } = await app.supabase
-      .from('child_data.child_accounts')
-      .select('child_id')
-      .eq('parent_id', parentId)
-      .limit(1)
-      .single()
+    const childAccount = await app.db.query<{ child_id: string }>(
+      `SELECT child_id FROM child_data.child_accounts WHERE parent_id = $1 LIMIT 1`,
+      [parentId]
+    )
 
-    if (caError || !childAccount) {
+    if (childAccount.length === 0) {
       return reply.send({ diagnosis: null, status: 'no_child' })
     }
 
-    const childId = childAccount.child_id
+    const childId = childAccount[0].child_id
 
     // 调 summary-service 诊断端点（无认证，靠网络边界 + 本代理监护校验保护）
     let summaryResp: any
@@ -347,46 +305,48 @@ export async function registerParentDashboardRoutes(app: FastifyInstance) {
 
     // Verify authorization
     const userId = (request as any).userId
-    const { data: link, error: linkError } = await app.supabase
-      .from('child_data.child_accounts')
-      .select('parent_id')
-      .eq('child_id', childId)
-      .single()
+    const link = await app.db.query<{ parent_id: string }>(
+      `SELECT parent_id FROM child_data.child_accounts WHERE child_id = $1`,
+      [childId]
+    )
 
-    if (linkError || !link) {
+    if (link.length === 0) {
       return reply.status(404).send({ error: { code: 'CHILD_NOT_FOUND', message: 'Child account not found' } })
     }
 
-    if (link.parent_id !== userId) {
-      return reply.status(403).send({ error: { code: 'FORBIDDEN', message: 'Not authorized to delete this child\'s data' } })
+    if (link[0].parent_id !== userId) {
+      return reply.status(403).send({ error: { code: 'FORBIDDEN', message: "Not authorized to delete this child's data" } })
     }
 
     // Delete all child-related data (vocabulary_entries is global, skip it)
-    const deletions = [
-      app.supabase.from('dialogue_turns').delete().eq('user_id', childId),
-      app.supabase.from('game_sessions').delete().eq('user_id', childId),
-      app.supabase.from('quest_progress').delete().eq('user_id', childId),
-      app.supabase.from('player_rewards').delete().eq('user_id', childId),
-      app.supabase.from('assessment_results').delete().eq('user_id', childId)
+    const deletes = [
+      `DELETE FROM dialogue_turns WHERE user_id = $1`,
+      `DELETE FROM game_sessions WHERE user_id = $1`,
+      `DELETE FROM quest_progress WHERE user_id = $1`,
+      `DELETE FROM player_rewards WHERE user_id = $1`,
+      `DELETE FROM assessment_results WHERE user_id = $1`
     ]
 
-    const results = await Promise.all(deletions)
-    const errors = results.filter(r => r.error)
+    const errors: unknown[] = []
+    for (const sql of deletes) {
+      try {
+        await app.db.query(sql, [childId])
+      } catch (e) {
+        errors.push(e)
+      }
+    }
 
     if (errors.length > 0) {
       return reply.status(500).send({
         error: {
           code: 'PARTIAL_DELETE_FAILED',
-          message: errors.map(e => e!.error!.message).join('; ')
+          message: errors.map((e) => (e as { message?: string }).message || 'delete failed').join('; ')
         }
       })
     }
 
     // Mark child user as inactive
-    await app.supabase
-      .from('users')
-      .update({ is_active: false })
-      .eq('user_id', childId)
+    await app.db.query(`UPDATE users SET is_active = FALSE WHERE user_id = $1`, [childId])
 
     return reply.send({ success: true, message: 'All child data deleted and account deactivated' })
   })
