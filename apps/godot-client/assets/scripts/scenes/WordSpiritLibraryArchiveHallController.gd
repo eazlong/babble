@@ -92,7 +92,7 @@ var star_label: Label
 var ink_shadow_label: Label
 var phase_label: Label
 var formation_energy_label: Label
-var formation_pips: Array[ColorRect] = []
+var formation_pips: Array[TextureRect] = []
 
 func _ready() -> void:
 	var manager: Variant = _game_manager()
@@ -957,22 +957,27 @@ func _build_visuals() -> void:
 	visual_root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	world_layer.add_child(visual_root)
 
-	var bg := ColorRect.new()
+	# T39: 真实背景（Agnes 生成 → 1920x1080），cover 式铺满
+	var bg := TextureRect.new()
 	bg.name = "Background"
-	bg.color = Color(0.14, 0.12, 0.18, 1.0)
+	bg.texture = load("res://assets/textures/backgrounds/archive_hall_bg.png")
+	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visual_root.add_child(bg)
 
-	# 字母岩壁三层（§5.1）
-	_build_letter_wall_layer("UpperWall", Color(0.20, 0.18, 0.26, 1.0), Vector2(360, 80), Vector2(1200, 90), config.get("letter_layers", {}).get("upper", []))
-	_build_letter_wall_layer("MiddleWall", Color(0.18, 0.16, 0.22, 1.0), Vector2(240, 200), Vector2(1440, 90), config.get("letter_layers", {}).get("middle", []))
-	_build_letter_wall_layer("LowerWall", Color(0.16, 0.14, 0.20, 1.0), Vector2(120, 320), Vector2(1680, 90), config.get("letter_layers", {}).get("lower", []))
+	# 字母岩壁三层（§5.1）— T40: 真实字岩壁纹理（1 生成→3 裁），字母 Label 仍叠于其上
+	_build_letter_wall_layer("UpperWall", Color(0.20, 0.18, 0.26, 1.0), Vector2(360, 80), Vector2(1200, 90), config.get("letter_layers", {}).get("upper", []), "res://assets/textures/backgrounds/archive_letter_wall_upper.png")
+	_build_letter_wall_layer("MiddleWall", Color(0.18, 0.16, 0.22, 1.0), Vector2(240, 200), Vector2(1440, 90), config.get("letter_layers", {}).get("middle", []), "res://assets/textures/backgrounds/archive_letter_wall_middle.png")
+	_build_letter_wall_layer("LowerWall", Color(0.16, 0.14, 0.20, 1.0), Vector2(120, 320), Vector2(1680, 90), config.get("letter_layers", {}).get("lower", []), "res://assets/textures/backgrounds/archive_letter_wall_lower.png")
 
-	# 中央石碑
-	var stele_bg := ColorRect.new()
+	# 中央石碑 — T41: 真实石碑纹理（600x360，5:3 中心裁）
+	var stele_bg := TextureRect.new()
 	stele_bg.name = "SteleBackground"
-	stele_bg.color = Color(0.10, 0.09, 0.13, 1.0)
+	stele_bg.texture = load("res://assets/textures/backgrounds/archive_stele_bg.png")
+	stele_bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	stele_bg.stretch_mode = TextureRect.STRETCH_SCALE
 	stele_bg.position = Vector2(660, 460)
 	stele_bg.size = Vector2(600, 360)
 	stele_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -989,6 +994,16 @@ func _build_visuals() -> void:
 	visual_root.add_child(stele_label)
 
 	# 拼写槽位条（§4.5）
+	# T42: 玉金槽框（Pillow 合成 600x80），槽字母叠于其上
+	var slot_frame := TextureRect.new()
+	slot_frame.name = "SlotFrame"
+	slot_frame.texture = load("res://assets/textures/ui/archive_slot_frame.png")
+	slot_frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	slot_frame.stretch_mode = TextureRect.STRETCH_SCALE
+	slot_frame.position = Vector2(660, 620)
+	slot_frame.size = Vector2(600, 80)
+	slot_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	visual_root.add_child(slot_frame)
 	slot_bar = HBoxContainer.new()
 	slot_bar.name = "SlotBar"
 	slot_bar.position = Vector2(660, 620)
@@ -1034,8 +1049,12 @@ func _build_visuals() -> void:
 	pip_box.add_theme_constant_override("separation", 10)
 	pip_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visual_root.add_child(pip_box)
+	# T42: 阵图 pips（Pillow 合成 28x28 圆点，modulate 染色区分亮/灭）
+	var pip_tex: Texture2D = load("res://assets/textures/ui/archive_formation_pip.png")
 	for i in range(8):
-		var pip := ColorRect.new()
+		var pip := TextureRect.new()
+		pip.texture = pip_tex
+		pip.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		pip.custom_minimum_size = Vector2(28, 28)
 		pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		pip_box.add_child(pip)
@@ -1063,10 +1082,20 @@ func _build_visuals() -> void:
 	phase_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visual_root.add_child(phase_label)
 
-func _build_letter_wall_layer(layer_name: String, color: Color, position: Vector2, size: Vector2, letters: Array) -> void:
-	var panel := ColorRect.new()
+func _build_letter_wall_layer(layer_name: String, color: Color, position: Vector2, size: Vector2, letters: Array, tex_path: String = "") -> void:
+	# T40: 有纹理时画 TextureRect，否则回退纯色 ColorRect
+	var panel: Control
+	if tex_path != "":
+		var tr := TextureRect.new()
+		tr.texture = load(tex_path)
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_SCALE
+		panel = tr
+	else:
+		var cr := ColorRect.new()
+		cr.color = color
+		panel = cr
 	panel.name = layer_name
-	panel.color = color
 	panel.position = position
 	panel.size = size
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1304,6 +1333,6 @@ func _update_formation_energy_visuals() -> void:
 	for i in range(formation_pips.size()):
 		var pip := formation_pips[i]
 		if i < energy:
-			pip.color = Color(1.0, 0.86, 0.35, 1.0)
+			pip.modulate = Color(1.0, 0.86, 0.35, 1.0)
 		else:
-			pip.color = Color(0.25, 0.22, 0.30, 0.50)
+			pip.modulate = Color(0.25, 0.22, 0.30, 0.50)
