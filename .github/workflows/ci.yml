@@ -10,14 +10,23 @@ jobs:
   lint-and-test:
     runs-on: ubuntu-latest
     strategy:
+      # 一个服务红了不要取消其余服务，否则矩阵又会"看起来只有一处问题"。
+      fail-fast: false
       matrix:
+        # 这里只能列**确实有 package.json** 的 workspace 包。
+        # voice-service / assessment-service / summary-service 没有 package.json，
+        # 列进来只会得到三个恒为假绿的步骤（见下面的 Guard 步骤与 voice-service job）。
+        #
+        # 只列出被覆盖的包同样危险：auth-service 曾经不在矩阵里，于是它「提交遗漏
+        # src/db.ts、src/jwt.ts」的构建失败长期以来完全无人发现。
         service:
           - services/dialogue-service
-          - services/voice-service
           - services/spirit-coach-service
           - services/quest-service
-          - services/assessment-service
           - services/reward-service
+          - services/auth-service
+          - services/content-service
+          - services/content-filter-service
 
     steps:
       - uses: actions/checkout@v4
@@ -35,23 +44,48 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm --filter ${{ matrix.service }} lint
+      # 矩阵的"防空转闸门"。
+      #
+      # pnpm 的 --filter 把裸路径当**包名**看待：`pnpm --filter services/x` 匹配不到
+      # 任何项目时，只会往 stdout 打一行 "No projects matched the filters"，
+      # 然后 **exit 0**。结果就是 lint / type-check / test 三步全部静默空转、
+      # 整个矩阵长期假绿——CI 绿着，却什么都没检查。所以路径选择器必须带 `./`
+      # 前缀，并且每个条目都要在这里证明自己真的解析到了一个包。
+      - name: Guard - matrix entry must resolve to a workspace project
+        run: |
+          resolved=$(pnpm --filter "./${{ matrix.service }}" exec pwd 2>/dev/null || true)
+          case "$resolved" in
+            *"${{ matrix.service }}")
+              echo "resolved to: $resolved"
+              ;;
+            *)
+              echo "::error::${{ matrix.service }} 没有解析到任何 workspace 项目。"
+              echo "::error::pnpm --filter 的路径选择器需要 ./ 前缀；请确认该目录有 package.json。"
+              exit 1
+              ;;
+          esac
 
+      # 这里原本有一个 `Lint` 步骤（`pnpm --filter <svc> lint` → `eslint src/`），
+      # 但本仓库既没有任何 eslint 依赖（不在任何 package.json、也不在 pnpm-lock.yaml），
+      # 也没有 eslint 配置，所以它一旦真的跑起来必然 "eslint: command not found" 失败；
+      # 在 --filter 修好之前，它一直是假绿的一部分（`pnpm lint` 同样是坏的）。
+      # 要恢复 lint，请先真正接入 eslint 并清掉现有告警，再加回这一步——
+      # 而不是重新放一个永远跑不起来的步骤。
       - name: Type check
-        run: pnpm --filter ${{ matrix.service }} exec tsc --noEmit
+        run: pnpm --filter "./${{ matrix.service }}" exec tsc --noEmit
 
       - name: Test
-        run: pnpm --filter ${{ matrix.service }} test
+        run: pnpm --filter "./${{ matrix.service }}" test
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         if: matrix.service == 'services/dialogue-service'
 
   voice-service-intent-eval:
-    # 上面的 lint-and-test 矩阵虽然列了 services/voice-service，但该目录**没有 package.json**，
-    # 且全仓库的 package.json 里没有任何一处调用 pytest —— 所以那一步跑不到 voice-service 的
-    # Python 测试。这里用最小依赖集（requirements-eval.txt，不含 ASR/TTS 引擎）把
+    # voice-service / assessment-service / summary-service 都没有 package.json，
+    # 因此不出现在上面的矩阵里——矩阵的每个条目都必须能解析到真实 workspace 包
+    # （由 "Guard" 步骤强制）。voice-service 的 Python 测试也不被任何 package.json
+    # 调用，所以这里用最小依赖集（requirements-eval.txt，不含 ASR/TTS 引擎）把
     # 意图判定评测的**离线门禁**真正跑起来：零成本、不联网、秒级。
     #
     # 仍未接线：voice-service 的完整 Python 套件（需要 faster-whisper 等重依赖）。
