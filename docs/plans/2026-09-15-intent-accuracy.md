@@ -1232,6 +1232,18 @@ closed_set 0.921（+11.0pt）、negative 0.971（**−2.3pt，退步**）、总�
 
 `scored_cases=109`、总体 **0.9982**（全部失分就来自 `cs_073` 的那一次）。
 
+四轮尝试的汇总（同一份代码、同一份用例，只有 provider 状况在变）：
+
+| 轮次 | closed_set | negative | 总体 | 抖动 | 降级 | 耗时 | 门禁 |
+|---|---|---|---|---|---|---|---|
+| v2 | 0.997 | 1.000 | 0.9982 | 1 例（cs_073） | 8.1% | 1189s | ✗ 仅降级率 |
+| v3 | **1.000** | 1.000 | **1.000** | 0 | 8.3% | 911s | ✗ 仅降级率 |
+| v4 | 0.997 | 1.000 | 0.998 | 1 例（cs_073） | 5.1% | 1422s | ✗ 仅降级率 |
+
+四轮的**准确度维度都达标**（最好一轮全桶 1.000、零翻转），唯一的门禁失败项始终是"provider 降级率上升"。
+
+`cs_073` 的抖动口径要说清：闸门本身在 N=5 里**稳定**（每次落地的 `extracted` 都是 `{}`），抖的是**模型的 intent 判定**（「树」偶尔被判 `off_topic`，而 off_topic 下规则层不介入、提取同样为空）。即该用例对闸门的判定是确定的。
+
 **但这一轮不能用作棘轮基线**：provider 明显不健康——两次尝试分别降级 6.1% / **8.1%**（基线 1.0%）、出现 `timeout`（30s 打满预算）、单轮耗时 731s / **1189s**（健康时约 300s）。门禁的失败项**只有"降级率上升"**一条，各桶都在容差内（closed_set 0.997 = −0.3pt）。`provider_error`/`timeout` 走容错放行、直接给 `intent=provide`，因此会同时污染"实际结果"的展示。
 
 两份报告都保留作为**环境异常的证据**（`intent_eval_phonetic_n5.json` 是第一版用例的失败现场，`_v2.json` 是重写后的逐例结果），**都不作为基线**。
@@ -1247,3 +1259,22 @@ closed_set 0.921（+11.0pt）、negative 0.971（**−2.3pt，退步**）、总�
 | `cs_075` | `锅子` | provide + {} | **off_topic**（5/5） |
 
 三例全灭且方向一致：模型认为"这不是在回答家具题"。这个判断是对的，规则层无权翻案。
+
+### 19.7 棘轮基线：本轮**不更新**（这是刻意的）
+
+`baseline.json` 仍是规则层接入后那次健康窗口的 104 例结果（全桶 1.000、降级率 0.0096）。
+本轮四轮尝试的降级率是 5.1–8.3%，若用 `--force` 把它写进基线，**棘轮就被自己弄钝了**——
+以后真实的降级率回归会因为基线本来就高而不再报警。降级率这条闸门的价值恰恰在于盯住这个数。
+
+等 provider 恢复健康后，重跑一次即可棘轮（命令与判据）：
+
+```bash
+cd services/voice-service
+.venv/bin/python scripts/run_intent_eval.py --repeats 5 --concurrency 6 --max-calls 1200 \
+    --update-baseline --json tests/intent_eval/reports/intent_eval_phonetic_ratchet.json
+```
+
+判据：门禁通过（降级率 ≤ 基线 +2pt）时才会写入；`closed_set` 的 n 会从 56 变 61（新增的 5 例同音用例），准确率为 1.000 时与基线 +0.0pt，不会产生假警报。
+
+**顺带接线**：`tests/test_intent_rules.py`（规则层 15 条裁定的单测，含同音维）此前**不在 CI**——离线任务只跑 gate / provider_shape / client_lifecycle 三个文件。本次一并纳入：它只依赖 `intent_rules` + pytest（同音维需要 pypinyin，已在 `requirements-eval.txt`），本地按 CI 口径实测 4 文件合计 97 passed / 1 skipped。
+
