@@ -1,0 +1,52 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/haoran/haoran_idle_01.png" id="1_hao01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/haoran/haoran_idle_02.png" id="2_hao02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/haoran/haoran_idle_03.png" id="3_hao03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/haoran/haoran_talk_01.png" id="4_hao04"]
+[ext_resource type="Texture2D" path="res://assets/sprites/haoran/haoran_talk_02.png" id="5_hao05"]
+[ext_resource type="Texture2D" path="res://assets/sprites/haoran/haoran_talk_03.png" id="6_hao06"]
+[ext_resource type="Texture2D" path="res://assets/sprites/haoran/haoran_happy_01.png" id="7_hao07"]
+[ext_resource type="Texture2D" path="res://assets/sprites/haoran/haoran_happy_02.png" id="8_hao08"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_hao01")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_hao02")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_hao03")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_hao04")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_hao05")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_hao06")
+}],
+"loop": true,
+"name": &"talk",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("7_hao07")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_hao08")
+}],
+"loop": true,
+"name": &"happy",
+"speed": 6.0
+}]

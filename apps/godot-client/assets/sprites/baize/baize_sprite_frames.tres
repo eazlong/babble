@@ -1,0 +1,52 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/baize/baize_idle_01.png" id="1_bai01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/baize/baize_idle_02.png" id="2_bai02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/baize/baize_idle_03.png" id="3_bai03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/baize/baize_talk_01.png" id="4_bai04"]
+[ext_resource type="Texture2D" path="res://assets/sprites/baize/baize_talk_02.png" id="5_bai05"]
+[ext_resource type="Texture2D" path="res://assets/sprites/baize/baize_talk_03.png" id="6_bai06"]
+[ext_resource type="Texture2D" path="res://assets/sprites/baize/baize_happy_01.png" id="7_bai07"]
+[ext_resource type="Texture2D" path="res://assets/sprites/baize/baize_happy_02.png" id="8_bai08"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_bai01")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_bai02")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_bai03")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_bai04")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_bai05")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_bai06")
+}],
+"loop": true,
+"name": &"talk",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("7_bai07")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_bai08")
+}],
+"loop": true,
+"name": &"happy",
+"speed": 6.0
+}]

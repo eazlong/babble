@@ -1,0 +1,52 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/hu_merchant/hu_merchant_idle_01.png" id="1_hu_01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/hu_merchant/hu_merchant_idle_02.png" id="2_hu_02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/hu_merchant/hu_merchant_idle_03.png" id="3_hu_03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/hu_merchant/hu_merchant_talk_01.png" id="4_hu_04"]
+[ext_resource type="Texture2D" path="res://assets/sprites/hu_merchant/hu_merchant_talk_02.png" id="5_hu_05"]
+[ext_resource type="Texture2D" path="res://assets/sprites/hu_merchant/hu_merchant_talk_03.png" id="6_hu_06"]
+[ext_resource type="Texture2D" path="res://assets/sprites/hu_merchant/hu_merchant_happy_01.png" id="7_hu_07"]
+[ext_resource type="Texture2D" path="res://assets/sprites/hu_merchant/hu_merchant_happy_02.png" id="8_hu_08"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_hu_01")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_hu_02")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_hu_03")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_hu_04")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_hu_05")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_hu_06")
+}],
+"loop": true,
+"name": &"talk",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("7_hu_07")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_hu_08")
+}],
+"loop": true,
+"name": &"happy",
+"speed": 6.0
+}]
