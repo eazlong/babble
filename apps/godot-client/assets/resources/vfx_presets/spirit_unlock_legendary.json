@@ -1,0 +1,28 @@
+{
+  "preset_id": "spirit_unlock_legendary",
+  "preset_name": "Spirit Unlock Legendary",
+  "description": "词灵解锁（传说）粒子效果 - 金色大尺度上升光晕，外环更亮、规模与时长最大",
+  "particle_config": {
+    "amount": 33,
+    "lifetime": 4.0,
+    "explosiveness": 1.0,
+    "randomness": 0.3,
+    "process_material": {
+      "emission_shape": "point",
+      "direction": [0, -1, 0],
+      "spread": 90.0,
+      "initial_velocity_min": 100.0,
+      "initial_velocity_max": 200.0,
+      "gravity": [0, 60, 0],
+      "damping_min": 3.0,
+      "damping_max": 8.0,
+      "scale_min": 1.0,
+      "scale_max": 3.0,
+      "color": [1.0, 0.85, 0.2, 1.0]
+    }
+  },
+  "texture_path": "res://assets/sprites/particles/spirit_particle.png",
+  "duration": 5.0,
+  "auto_recycle": true,
+  "vfx_layer": 3
+}

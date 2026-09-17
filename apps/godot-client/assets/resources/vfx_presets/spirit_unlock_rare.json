@@ -1,0 +1,28 @@
+{
+  "preset_id": "spirit_unlock_rare",
+  "preset_name": "Spirit Unlock Rare",
+  "description": "词灵解锁（稀有）粒子效果 - 蓝色高速上升光晕，扩散与粒子规模大于普通",
+  "particle_config": {
+    "amount": 22,
+    "lifetime": 3.0,
+    "explosiveness": 1.0,
+    "randomness": 0.3,
+    "process_material": {
+      "emission_shape": "point",
+      "direction": [0, -1, 0],
+      "spread": 60.0,
+      "initial_velocity_min": 80.0,
+      "initial_velocity_max": 150.0,
+      "gravity": [0, 80, 0],
+      "damping_min": 3.0,
+      "damping_max": 8.0,
+      "scale_min": 0.8,
+      "scale_max": 2.0,
+      "color": [0.3, 0.6, 1.0, 0.9]
+    }
+  },
+  "texture_path": "res://assets/sprites/particles/spirit_particle.png",
+  "duration": 3.5,
+  "auto_recycle": true,
+  "vfx_layer": 3
+}
