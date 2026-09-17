@@ -6,7 +6,8 @@
 	"rarity": "common",
 	"vocab_words": ["sun", "sunshine", "sunny"],
 	"description": "温暖的阳光，照亮了每一个角落。它告诉我们，即使在最黑暗的日子里，也总有光明在等待。",
-	"associated_npc_id": "npc_grandma"
+	"associated_npc_id": "npc_grandma",
+	"art": "res://assets/textures/objects/inn/word_spirit_sunshine.png"
   },
   {
 	"id": "spirit_rain_001",
@@ -15,7 +16,8 @@
 	"rarity": "common",
 	"vocab_words": ["rain", "rainy", "rainbow"],
 	"description": "雨滴从天空落下，滋润着大地。每一次雨后，世界都变得更加清新。",
-	"associated_npc_id": "npc_teacher"
+	"associated_npc_id": "npc_teacher",
+	"art": "res://assets/textures/objects/inn/word_spirit_rain.png"
   },
   {
 	"id": "spirit_fire_001",
@@ -24,7 +26,8 @@
 	"rarity": "rare",
 	"vocab_words": ["fire", "flame", "burn", "hot"],
 	"description": "火焰跳动着，带来温暖也带来危险。学会控制它，就学会了力量。",
-	"associated_npc_id": "npc_guardian"
+	"associated_npc_id": "npc_guardian",
+	"art": "res://assets/textures/objects/inn/word_spirit_flame.png"
   },
   {
 	"id": "spirit_bread_001",
@@ -33,7 +36,8 @@
 	"rarity": "common",
 	"vocab_words": ["bread", "toast", "bake"],
 	"description": "刚出炉的面包散发着香气，是家的味道。简单却充满温暖。",
-	"associated_npc_id": "npc_grandma"
+	"associated_npc_id": "npc_grandma",
+	"art": "res://assets/textures/objects/inn/word_spirit_bread.png"
   },
   {
 	"id": "spirit_rice_001",
@@ -42,7 +46,8 @@
 	"rarity": "common",
 	"vocab_words": ["rice", "bowl", "grain"],
 	"description": "一碗白米饭，是最朴素的味道，也是最踏实的幸福。",
-	"associated_npc_id": "npc_grandma"
+	"associated_npc_id": "npc_grandma",
+	"art": "res://assets/textures/objects/inn/word_spirit_rice.png"
   },
   {
 	"id": "spirit_cat_001",
@@ -51,7 +56,8 @@
 	"rarity": "common",
 	"vocab_words": ["cat", "kitten", "meow", "purr"],
 	"description": "小猫咪咪叫着蹭你的腿，毛茸茸的身体让人感到温暖。它是最好的伙伴。",
-	"associated_npc_id": "npc_friend"
+	"associated_npc_id": "npc_friend",
+	"art": "res://assets/textures/objects/inn/word_spirit_cat.png"
   },
   {
 	"id": "spirit_bird_001",
@@ -60,7 +66,8 @@
 	"rarity": "rare",
 	"vocab_words": ["bird", "sing", "fly", "wing", "feather"],
 	"description": "小鸟在枝头歌唱，自由的歌声传遍整个森林。它象征着无拘无束的梦想。",
-	"associated_npc_id": "npc_friend"
+	"associated_npc_id": "npc_friend",
+	"art": "res://assets/textures/objects/inn/word_spirit_bird.png"
   },
   {
 	"id": "spirit_dragon_001",
@@ -69,7 +76,8 @@
 	"rarity": "legendary",
 	"vocab_words": ["dragon", "mythical", "legend", "magic"],
 	"description": "传说中的巨龙翱翔在云端，鳞片闪烁着古老的光芒。它守护着被遗忘的记忆。",
-	"associated_npc_id": "npc_guardian"
+	"associated_npc_id": "npc_guardian",
+	"art": "res://assets/textures/objects/inn/word_spirit_dragon.png"
   },
   {
 	"id": "spirit_love_001",
@@ -78,7 +86,8 @@
 	"rarity": "legendary",
 	"vocab_words": ["love", "heart", "care", "cherish"],
 	"description": "爱是世界上最强大的力量。它看不见摸不着，却能改变一切。",
-	"associated_npc_id": "npc_grandma"
+	"associated_npc_id": "npc_grandma",
+	"art": "res://assets/textures/objects/inn/word_spirit_love.png"
   },
   {
 	"id": "spirit_courage_001",
@@ -87,7 +96,8 @@
 	"rarity": "rare",
 	"vocab_words": ["courage", "brave", "fearless", "bold"],
 	"description": "勇气不是没有恐惧，而是在恐惧面前依然选择前行。每一次勇敢都是一次成长。",
-	"associated_npc_id": "npc_guardian"
+	"associated_npc_id": "npc_guardian",
+	"art": "res://assets/textures/objects/inn/word_spirit_courage.png"
   },
   {
 	"id": "spirit_book_001",
@@ -96,7 +106,8 @@
 	"rarity": "common",
 	"vocab_words": ["book", "read", "page", "story"],
 	"description": "翻开一本书，就打开了一个新世界。每一页都藏着知识和冒险。",
-	"associated_npc_id": "npc_teacher"
+	"associated_npc_id": "npc_teacher",
+	"art": "res://assets/textures/objects/inn/word_spirit_book.png"
   },
   {
 	"id": "spirit_star_001",
@@ -105,7 +116,8 @@
 	"rarity": "rare",
 	"vocab_words": ["star", "night", "sky", "twinkle"],
 	"description": "夜空中的星星闪烁着，每一颗都是一个遥远的故事。仰望星空，感受宇宙的浩瀚。",
-	"associated_npc_id": "npc_guardian"
+	"associated_npc_id": "npc_guardian",
+	"art": "res://assets/textures/objects/inn/word_spirit_star.png"
   },
   {
 	"id": "spirit_dream_001",
@@ -114,7 +126,8 @@
 	"rarity": "legendary",
 	"vocab_words": ["dream", "hope", "wish", "imagine"],
 	"description": "梦想是心中最美好的画面。追逐它，即使路途遥远，终点的光芒也值得一切努力。",
-	"associated_npc_id": "npc_friend"
+	"associated_npc_id": "npc_friend",
+	"art": "res://assets/textures/objects/inn/word_spirit_dream.png"
   },
   {
 	"id": "spirit_hand_001",
@@ -123,7 +136,8 @@
 	"rarity": "common",
 	"vocab_words": ["hand", "finger", "touch", "hold"],
 	"description": "我们的双手能创造无限可能。写字、画画、拥抱——每一双手都有自己的故事。",
-	"associated_npc_id": "npc_teacher"
+	"associated_npc_id": "npc_teacher",
+	"art": "res://assets/textures/objects/inn/word_spirit_hands.png"
   },
   {
 	"id": "spirit_unicorn_001",
@@ -132,7 +146,8 @@
 	"rarity": "legendary",
 	"vocab_words": ["unicorn", "horn", "pure", "magical"],
 	"description": "纯洁的独角兽出没于梦幻森林，只有心地纯净的人才能看到它的身影。",
-	"associated_npc_id": "npc_guardian"
+	"associated_npc_id": "npc_guardian",
+	"art": "res://assets/textures/objects/inn/word_spirit_unicorn.png"
   },
   {
 	"id": "spirit_light",
@@ -141,6 +156,7 @@
 	"rarity": "common",
 	"vocab_words": ["light", "shine", "glow", "bright"],
 	"description": "温暖的光芒，驱散了黑暗。它是希望与勇气的象征。",
-	"associated_npc_id": "npc_forest_guide"
+	"associated_npc_id": "npc_forest_guide",
+	"art": "res://assets/textures/objects/inn/word_spirit_light.png"
   }
 ]

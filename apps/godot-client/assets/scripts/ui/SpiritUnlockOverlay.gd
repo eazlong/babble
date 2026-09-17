@@ -85,9 +85,9 @@ func _setup_spirit_card() -> void:
 	_spirit_card = Panel.new()
 	_spirit_card.set_anchors_preset(Control.PRESET_CENTER)
 
-	# Fixed card size for MVP
-	_spirit_card.custom_minimum_size = Vector2(400.0, 300.0)
-	_spirit_card.size = Vector2(400.0, 300.0)
+	# Fixed card size for MVP (tall enough to fit the spirit art + text block)
+	_spirit_card.custom_minimum_size = Vector2(400.0, 340.0)
+	_spirit_card.size = Vector2(400.0, 340.0)
 	_spirit_card.position.y = 120
 
 	var card_style := StyleBoxFlat.new()
@@ -173,6 +173,13 @@ func display_spirit_unlock(spirit_id: String) -> void:
 	var rarity = spirit_data.get("rarity", "common")
 	_rarity_label.text = _get_rarity_label(rarity)
 	_rarity_label.add_theme_color_override("font_color", _get_rarity_color(rarity))
+
+	# Spirit illustration (word spirit art; falls back to no art when absent)
+	var art_path: String = str(spirit_data.get("art", ""))
+	if not art_path.is_empty() and ResourceLoader.exists(art_path):
+		_spirit_image.texture = load(art_path)
+	else:
+		_spirit_image.texture = null
 
 	# Start animations
 	_start_glow_animation()
