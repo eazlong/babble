@@ -11,6 +11,7 @@ elevenlabs>=1.1.0
 python-dotenv>=1.0.0
 pydantic>=2.7.0
 openai>=1.40.0
+pypinyin>=0.51.0        # 意图判定规则层的同音匹配（rule_015）
 # Testing
 pytest>=8.2.0
 pytest-asyncio>=0.23.0

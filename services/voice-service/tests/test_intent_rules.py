@@ -10,6 +10,7 @@ import pytest
 
 from src.services.intent_rules import (
     CHAR_EDIT_RATIO,
+    PHONETIC_MIN_TOKENS,
     SHORT_CANDIDATE_LEN,
     Hit,
     RuleOptions,
@@ -384,3 +385,80 @@ def test_short_candidate_gate_closes_the_over_match_at_apply_level() -> None:
     )
     assert out.extracted == {}, "确认不了命中就必须弃权，而不是把 床/桌 之类硬塞进来"
     assert out.intent == "provide", "弃权不得改判意图（rule_003 情形 2）"
+
+
+# ── 同音维（rule_015 / ADR-0009 §9 的"拼音/近音"）──────────────────────────────
+# 三道闸门：词数相等 + 逐词无声调拼音相等 + 候选 ≥ PHONETIC_MIN_TOKENS。
+# 无声调是刻意的：ASR 的声调误听极常见，而暑假(shu4jia4)/书架(shu1jia4) 去调后相同。
+
+FURNITURE_CANDIDATES = ["书架", "椅子", "桌子", "床"]
+
+
+def test_homophone_hit_is_found() -> None:
+    hits = find_hits("暑假", ["书架"])
+    assert {h.candidate for h in hits} == {"书架"}, "同音误听应命中候选"
+    assert all(h.phonetic for h in hits), "必须标记为同音命中（判据要能区分）"
+    assert all(not h.exact for h in hits), "同音不是精确命中"
+
+
+def test_homophone_requires_equal_token_count() -> None:
+    # 词数守恒约束的是**对齐跨度**：跨度词数必须等于候选词数。
+    # 「暑假」(2 词) 与候选「书架子」(3 词) 之间不存在等长跨度 → 不匹配。
+    assert find_hits("暑假", ["书架子"]) == [], "跨度词数不等不得借同音之名匹配"
+    # 注意反向**不是**同一条：候选之外的额外内容本就该被丢弃（去壳），
+    # 所以「书架子」里存在 2 词的「书架」跨度 → 精确命中，这是设计而非漏网。
+    hits = find_hits("书架子", ["书架"])
+    assert {h.candidate for h in hits} == {"书架"} and all(h.exact for h in hits)
+
+
+def test_homophone_requires_same_toneless_pinyin() -> None:
+    assert find_hits("暑假", ["椅子"]) == [], "不同音不得匹配"
+    assert find_hits("椅子", FURNITURE_CANDIDATES) != [], "真正的候选仍应精确命中"
+
+
+def test_homophone_channel_closed_for_single_char_candidates() -> None:
+    # 「树」与「书」同音（shu）；放开就等于把 rule_012 修掉的过度命中还回来
+    assert PHONETIC_MIN_TOKENS == 2
+    assert find_hits("树", ["书"]) == [], "单字候选只能精确匹配"
+    assert find_hits("书", ["书"]) != [], "单字候选的精确命中不受影响"
+
+
+def test_exact_hit_wins_over_homophone_hit() -> None:
+    hits = find_hits("椅子", FURNITURE_CANDIDATES)
+    assert {h.candidate for h in hits} == {"椅子"}, "精确命中优先于同音命中（不得被同音带偏）"
+
+
+def test_english_candidates_are_unaffected_by_phonetic_channel() -> None:
+    # 拼音维只覆盖 CJK：英文候选仍只走字符距离通道
+    assert find_hits("nice to meat you", ["nice to meet you"]) != [], "英文模糊纠错保持不变"
+    assert all(not h.phonetic for h in find_hits("nice to meat you", ["nice to meet you"]))
+
+
+def test_phonetic_channel_degrades_gracefully_without_pypinyin(monkeypatch) -> None:
+    """依赖缺失时整维跳过，而不是抛异常——规则层是生产路径上的一环。"""
+    from src.services import intent_rules
+
+    monkeypatch.setattr(intent_rules, "_lazy_pinyin", None)
+    monkeypatch.setattr(intent_rules, "_PinyinStyle", None)
+
+    assert intent_rules.find_hits("暑假", ["书架"]) == [], "无拼音依赖时该维不生效"
+    # 其余判定不受影响
+    assert intent_rules.find_hits("书架", ["书架"]) != [], "精确通道与依赖无关"
+    assert intent_rules.find_hits("nice to meat you", ["nice to meet you"]) != []
+
+
+def test_apply_rules_marks_phonetic_verdict_in_matched_rule() -> None:
+    """判据必须可复核：同音命中在 matched_rule 里留痕。"""
+    context = {
+        "npc_question": "这个家具是什么？",
+        "expected_slots": [{"key": "answer", "type": "string"}],
+        "candidate_answers": FURNITURE_CANDIDATES,
+    }
+    out = apply_rules(
+        text="暑假", context=context, model_intent="provide",
+        model_extracted={"answer": "书架"}, corrected_text="书架",
+    )
+    assert out.extracted == {"answer": "书架"}
+    assert out.verdict_source == "rule"
+    assert out.matched_rule is not None and out.matched_rule.startswith("phonetic+"), out.matched_rule
+    assert any("同音命中" in note for note in out.notes), out.notes

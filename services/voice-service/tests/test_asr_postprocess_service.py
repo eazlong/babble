@@ -719,10 +719,9 @@ async def test_postprocessor_maps_valid_llm_output(monkeypatch):
     postprocessor = ASRPostprocessor(client=client)
 
     result = await postprocessor.process(
-        # 原始文本必须自身可确认命中：规则层的**决策**跑在原始 ASR 文本上（见 apply_rules 的
-        # "两个文本"说明），若这里写「暑假」，同音改写会因拼音维尚未实现而弃权（见边界用例
-        # test_postprocessor_abstains_on_homophone_it_cannot_verify）。本用例考的是字段映射。
-        text="书架吧",
+        # 真实场景：ASR 听到同音的「暑假」，模型据家具题纠正为候选「书架」。
+        # 规则层的**决策**跑在原始文本上（见 apply_rules 的"两个文本"），靠同音维（rule_015）确认命中。
+        text="暑假",
         asr_confidence=0.9,
         language="cn_en",
         context=CONTEXT,
@@ -847,7 +846,7 @@ async def test_postprocessor_drops_extracted_keys_not_declared_in_expected_slots
     postprocessor = ASRPostprocessor(client=client)
 
     result = await postprocessor.process(
-        text="书架吧",  # 同上：原始文本需自身可确认命中（本用例考的是键过滤）
+        text="暑假",  # 同上：同音场景（本用例考的是键过滤）
         asr_confidence=0.9,
         language="cn_en",
         context=CONTEXT,
@@ -1675,22 +1674,18 @@ async def test_postprocessor_keeps_clean_free_slot_value_from_model(monkeypatch)
     assert result["matched_rule"] == "free_slot_model_value_tighter"
 
 
+# ────────────────── 同音维（rule_015 / ADR-0009 §9 的"拼音/近音"）──────────────────
+# 这一维此前**声明过但从未实现**（只有 RuleOptions.phonetic 配置项、无依赖无代码）。
+# 它的缺失曾经被"决策跑在 corrected_text 上"掩盖：模型已把同音误听纠成候选之后，
+# 规则层在纠错后的文本上再"确认"一次，看起来一切正常。
+
+
 @pytest.mark.asyncio
-async def test_postprocessor_abstains_on_homophone_it_cannot_verify(monkeypatch):
-    """**已知边界**：ADR-0009 §9 声明的"拼音/近音"匹配维**尚未实现**。
+async def test_postprocessor_confirms_homophone_against_candidate(monkeypatch):
+    """同音误听（暑假→书架）必须被确认为候选命中。
 
-    规则层里只有 `RuleOptions.phonetic` 这个配置项，没有任何实现（需 pypinyin 依赖）。
-    因此当模型的 corrected_text 与玩家原话之间是**同音改写**（暑假→书架）时，规则层在
-    **原始文本**上确认不了命中 → 弃权清空 extracted。后果是安全的：
-
-    - `corrected_text` 原样透出，客户端 `_asr_answer_text` 在 extracted 为空时回退到它 →
-      玩家看到的仍然是「书架」；
-    - 只是这条取值**没有**规则层背书（verdict_source=llm、extracted={}），客户端按"待确认"处理，
-      不会直接落定槽位。
-
-    这个边界是被"决策跑原始 ASR 文本"这条正确改动**暴露**出来的：此前决策跑在 corrected_text 上，
-    模型的纠正被当成了玩家原话，同音维的缺失因此被掩盖——同时也掩盖了 rule_004 最怕的那种误判
-    （模型把学习错误纠成满分答案后，规则层在纠正后的文本上"确认"它）。
+    依据 rule_004：近音/拼读属于**识别误差**，纠正它才还原真相（与"把学习错误改写成
+    满分答案"相反）。判据在 matched_rule 里留痕（`phonetic+...`），可复核。
     """
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
 
@@ -1722,7 +1717,103 @@ async def test_postprocessor_abstains_on_homophone_it_cannot_verify(monkeypatch)
         context=CONTEXT,
     )
 
-    assert result["intent"] == "provide", "意图仍归模型，规则层弃权不改判"
-    assert result["extracted"] == {}, "确认不了命中 → 弃权清空（而不是照抄模型的值）"
-    assert result["corrected_text"] == "书架", "模型的纠错文本原样透出，客户端据此回退"
-    assert result["verdict_source"] == "llm"
+    assert result["intent"] == "provide"
+    assert result["extracted"] == {"answer": "书架"}, "同音误听应被确认为候选值"
+    assert result["verdict_source"] == "rule"
+    assert result["matched_rule"].startswith("phonetic+"), (
+        f"同音命中必须在判据里留痕，实际 {result['matched_rule']!r}"
+    )
+    assert result["matched_candidate"] == "书架"
+
+
+@pytest.mark.asyncio
+async def test_postprocessor_does_not_invent_homophone_of_non_candidate(monkeypatch):
+    """**负向守卫**：同音只能确认"候选表里的值"，绝不能凭空造出玩家没说过的候选。
+
+    「暑假」与候选「椅子」不同音 → 弃权（extracted 清空），意图仍归模型。
+    """
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+
+    async def create(**kwargs):
+        return openai_completion(
+            json.dumps(
+                {
+                    "corrected_text": "椅子",
+                    "correction_applied": True,
+                    "correction_reason": "猜测。",
+                    "extracted": {"answer": "椅子"},
+                    "intent_matched": True,
+                    "intent": "provide",
+                    "guidance": {"npc_line": None},
+                    "confidence": 0.8,
+                },
+                ensure_ascii=False,
+            ),
+            "mock-model",
+        )
+
+    client = openai.AsyncOpenAI(api_key="test-key", base_url="https://llm.test/v1")
+    client.chat = type("Chat", (), {"completions": type("Completions", (), {"create": AsyncMock(side_effect=create)})()})()
+
+    result = await ASRPostprocessor(client=client).process(
+        text="暑假",
+        asr_confidence=0.9,
+        language="cn_en",
+        # 候选里**没有**书架，只有椅子与桌子 → 「暑假」不与任何候选项同音
+        context={
+            "npc_question": "这个家具是什么？",
+            "expected_slots": [{"key": "answer", "type": "string"}],
+            "expected_answer_type": "object_name",
+            "candidate_answers": ["椅子", "桌子"],
+        },
+    )
+
+    assert result["intent"] == "provide", "弃权不改判意图（rule_003 情形 2）"
+    assert result["extracted"] == {}, "不得凭同音把候选硬塞进来"
+    assert result["matched_rule"] is None
+
+
+@pytest.mark.asyncio
+async def test_postprocessor_does_not_confirm_single_char_homophone(monkeypatch):
+    """**负向守卫**：单字候选不参与同音匹配（rule_012 的闸门在同音通道上同样成立）。
+
+    「树」与单字候选「书」同音（shu），若放开就等于把 rule_012 修掉的"任何字都命中"
+    换个形式还回来——字母/单字答案在生产上是真实形态。
+    """
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+
+    async def create(**kwargs):
+        return openai_completion(
+            json.dumps(
+                {
+                    "corrected_text": "书",
+                    "correction_applied": True,
+                    "correction_reason": "同音猜测。",
+                    "extracted": {"answer": "书"},
+                    "intent_matched": True,
+                    "intent": "provide",
+                    "guidance": {"npc_line": None},
+                    "confidence": 0.8,
+                },
+                ensure_ascii=False,
+            ),
+            "mock-model",
+        )
+
+    client = openai.AsyncOpenAI(api_key="test-key", base_url="https://llm.test/v1")
+    client.chat = type("Chat", (), {"completions": type("Completions", (), {"create": AsyncMock(side_effect=create)})()})()
+
+    result = await ASRPostprocessor(client=client).process(
+        text="树",
+        asr_confidence=0.9,
+        language="cn_en",
+        context={
+            "npc_question": "请说出『书』。",
+            "expected_slots": [{"key": "answer", "type": "string"}],
+            "expected_answer_type": "object_name",
+            "candidate_answers": ["书", "桌子"],
+        },
+    )
+
+    assert result["extracted"] == {}, "单字候选只能精确匹配"
+

@@ -36,6 +36,13 @@ import unicodedata
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Sequence
 
+try:  # ADR-0009 §9 的「拼音/近音」维（rule_015）。装不上时整维优雅跳过，不影响其余判定。
+    from pypinyin import Style as _PinyinStyle
+    from pypinyin import lazy_pinyin as _lazy_pinyin
+except ImportError:  # pragma: no cover - 取决于部署环境
+    _PinyinStyle = None  # type: ignore[assignment]
+    _lazy_pinyin = None  # type: ignore[assignment]
+
 # ─────────────────────────── 可调常量（校准点） ───────────────────────────
 # 改动任何一个都必须在 rule_004.calibration_data 里记录，并跑评测确认靶子清单变化。
 
@@ -48,6 +55,9 @@ CHAR_EDIT_MIN = 1
 SHORT_CANDIDATE_LEN = 3
 #: 候选对齐跨度与候选之间的词数差上限。0 = 候选内部不得增删词（rule_004/rule_009 的核心）
 TOKEN_DELTA = 0
+#: 同音匹配（rule_015）要求候选至少这么多 token。单字候选的同音集合=所有同音字
+#: （书/叔/舒/输…），放进来等于把 rule_012 刚修掉的「任何字都命中」换个形式还回来。
+PHONETIC_MIN_TOKENS = 2
 
 #: 自由槽的去壳前缀（rule_001 允许的"去壳归一"）。注意客户端 _extract_name 只认前五个，
 #: 因此『叫我』这类壳必须由本层剥掉，不能指望客户端。
@@ -87,7 +97,8 @@ class RuleOptions:
 
     #: 两处合法性归一（非意图推断；新增归一必须走 ADR 修订，不得就地扩表）
     intent_vetoes: bool = True
-    #: 是否启用拼音/近音匹配（需 pypinyin；未装则自动跳过）
+    #: 是否启用同音匹配（rule_015；需 pypinyin，未装则整维自动跳过）。
+    #: 关掉它只影响同音通道，精确/编辑距离通道不受影响——用于 A/B 度量与线上熔断。
     phonetic: bool = True
 
 
@@ -247,6 +258,57 @@ def _is_tighter_free_value(model_value: str, rule_value: str) -> bool:
 
 # ─────────────────────────────── 召回边界（候选之内） ───────────────────────────────
 
+def _toneless_pinyin(word: str) -> str | None:
+    """单个 token 的**无声调**拼音；非 CJK 或未装 pypinyin 时返回 None。
+
+    为什么无声调（实测决定）：ASR 的声调误听极其常见，而「暑假」(shu4jia4) 与「书架」(shu1jia4)
+    在**带声调**下不同、**无声调**下相同（都是 shujia）。rule_004 明确要求纠正"近音、拼读"这类
+    识别误差，所以这一维必须去声调；代价是同音字表变大，用下面的三道闸门收窄。
+    """
+    if _lazy_pinyin is None or _PinyinStyle is None:
+        return None
+    if not _is_cjk(word):
+        return None
+    try:
+        parts = _lazy_pinyin(word, style=_PinyinStyle.NORMAL, errors="ignore")
+    except Exception:  # pragma: no cover - pypinyin 内部异常不该影响判定
+        return None
+    joined = "".join(parts).strip()
+    return joined or None
+
+
+def _phonetic_key(words: Sequence[str]) -> tuple[str, ...] | None:
+    """跨度内**逐词**无声调拼音序列；任一词取不到拼音（非 CJK / 缺依赖）即整段放弃。"""
+    keys: list[str] = []
+    for word in words:
+        key = _toneless_pinyin(word)
+        if key is None:
+            return None
+        keys.append(key)
+    return tuple(keys)
+
+
+def _is_phonetic_match(candidate_words: Sequence[str], span_words: Sequence[str]) -> bool:
+    """rule_015 的同音判定：**词数相等 + 逐词无声调拼音相等 + 候选足够长**。
+
+    三道闸门缺一不可：
+
+    1. **词数相等** —— 与 rule_004 的召回边界同源：不得借同音之名增删词
+       （「暑假」↔「书架」是 2↔2；「书」↔「书架」不是）。
+    2. **逐词拼音相等** —— 只认同音，不认"近音"。近音要引入声母/韵母距离阈值，
+       那是另一个校准点，本裁定不做（宁缺勿滥）。
+    3. **候选 ≥ `PHONETIC_MIN_TOKENS`** —— 单字候选的同音集合等于全部同音字，
+       等于把 `rule_012` 修掉的过度命中换个形式还回来。
+    """
+    if len(candidate_words) < PHONETIC_MIN_TOKENS:
+        return False
+    if len(candidate_words) != len(span_words):
+        return False
+    candidate_key = _phonetic_key(candidate_words)
+    span_key = _phonetic_key(span_words)
+    return candidate_key is not None and candidate_key == span_key
+
+
 @dataclass(frozen=True)
 class Hit:
     candidate: str
@@ -254,9 +316,13 @@ class Hit:
     span_text: str
     distance: int
     exact: bool
+    #: 该命中来自**同音**判定（rule_015）而非字符距离预算内。仲裁与置信度都要能区分它。
+    phonetic: bool = False
 
 
-def find_hits(text: str, candidates: Sequence[str]) -> list[Hit]:
+def find_hits(
+    text: str, candidates: Sequence[str], *, phonetic: bool = True
+) -> list[Hit]:
     """在话语中找候选命中：**词数守恒的对齐跨度 + 跨度内字符级差异 ≤ 阈值**。
 
     这是 rule_004/rule_009 的可执行形式：
@@ -286,6 +352,21 @@ def find_hits(text: str, candidates: Sequence[str]) -> list[Hit]:
                         span_text=span_text,
                         distance=distance,
                         exact=distance == 0,
+                    )
+                )
+                continue
+            # 同音通道（rule_015）：**独立于字符预算**。
+            # 为什么不能并进预算：`rule_012` 之后短候选的预算可以是 0，而「暑假」↔「书架」的
+            # 字符距离是 2 —— 靠调预算是接不进这一维的（这也正是它此前一直缺席的原因之一）。
+            if phonetic and _is_phonetic_match(cand_words, span_words):
+                hits.append(
+                    Hit(
+                        candidate=candidate,
+                        start=start,
+                        span_text=span_text,
+                        distance=distance,
+                        exact=False,
+                        phonetic=True,
                     )
                 )
     # **精确命中优先于模糊命中**：模糊纠错的职责是"救回近音误听"，不是压过精确匹配。
@@ -492,7 +573,7 @@ def apply_rules(
     stripped, shells = strip_shell(text)
 
     if candidates:
-        hits = find_hits(text, candidates)
+        hits = find_hits(text, candidates, phonetic=options.phonetic)
         if options.intent_vetoes:
             intent, retract_rule = detect_retraction(intent, text, hits)
             if retract_rule:
@@ -515,6 +596,12 @@ def apply_rules(
             )
         value, rule_name = arbitrate(hits, candidates, context.get("npc_question"))
         best = min(hits, key=lambda h: h.distance)
+        # 同音命中要在判据里留痕（可复核：能指出玩家说的那一段与候选同音）
+        phonetic_hits = [
+            h for h in hits if h.phonetic and normalize(h.candidate) == normalize(value)
+        ]
+        if phonetic_hits:
+            rule_name = "phonetic+" + rule_name
         return RuleOutcome(
             intent=intent,
             extracted={key: value},
@@ -523,7 +610,9 @@ def apply_rules(
             matched_candidate=value,
             shortcut_hit=True,
             shortcut_confidence=round(1.0 - best.distance / max(1, len(normalize(value))), 4),
-            notes=notes + (["去壳:" + ",".join(shells)] if shells else []),
+            notes=notes
+            + (["去壳:" + ",".join(shells)] if shells else [])
+            + (["同音命中:" + phonetic_hits[0].span_text + "→" + value] if phonetic_hits else []),
             handled_key=key,
         )
 

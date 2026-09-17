@@ -14,6 +14,7 @@
 #   tests/test_voice.py、tests/test_xfyun_services.py 等同理
 openai>=1.40.0
 pydantic>=2.7.0
+pypinyin>=0.51.0        # 意图判定规则层的同音匹配（rule_015）
 python-dotenv>=1.0.0
 pytest>=8.2.0
 pytest-asyncio>=0.23.0
