@@ -16,6 +16,17 @@ const WAKE_EYE_SHADER: Shader = preload("res://assets/resources/shaders/effects/
 const MIC_IDLE_TEXTURE: Texture2D = preload("res://assets/textures/ui/fp/ui_mic_button_idle.png")
 const MIC_RECORDING_TEXTURE: Texture2D = preload("res://assets/textures/ui/fp/ui_mic_button_recording.png")
 
+# T55: 集气灵石 5 态（v1 语音按钮视觉反馈）。ui_mic_button_* 保留为兜底。
+const SPIRIT_STONE := {
+	"idle": "res://assets/textures/ui/spritestone/ui_spirit_stone_idle.png",
+	"listening": "res://assets/textures/ui/spritestone/ui_spirit_stone_listening.png",
+	"processing": "res://assets/textures/ui/spritestone/ui_spirit_stone_processing.png",
+	"success": "res://assets/textures/ui/spritestone/ui_spirit_stone_success.png",
+	"hint": "res://assets/textures/ui/spritestone/ui_spirit_stone_hint.png",
+}
+const SPIRIT_STONE_FLASH_SECONDS: float = 0.3
+var _spirit_stone_tex: Dictionary = {}
+
 enum PrologueState {
 	DREAM_WAKE,
 	AWAIT_SOURCE_NAME,
@@ -285,6 +296,7 @@ func _on_player_response(text: String) -> void:
 		return
 	voice_failure_intervention.reset_failures()
 	voice_failure_intervention.add_turn("player", last_player_input)
+	_flash_spirit_stone("success")
 
 	match state:
 		PrologueState.AWAIT_SOURCE_NAME:
@@ -400,6 +412,47 @@ func _reveal_distant_continents() -> void:
 		tween.tween_property(main_camera, "position", Vector2(960, 430), 1.2).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
 	await tween.finished
 
+func _spirit_stone_texture(state_name: String) -> Texture2D:
+	if _spirit_stone_tex.has(state_name):
+		return _spirit_stone_tex[state_name]
+	var path: String = SPIRIT_STONE.get(state_name, "")
+	var tex: Texture2D = null
+	if not path.is_empty() and ResourceLoader.exists(path):
+		tex = load(path) as Texture2D
+	_spirit_stone_tex[state_name] = tex
+	return tex
+
+
+func _set_mic_texture(state_name: String) -> void:
+	if not mic_button_icon:
+		return
+	var tex: Texture2D = _spirit_stone_texture(state_name)
+	if tex != null:
+		mic_button_icon.texture = tex
+	elif state_name == "listening":
+		mic_button_icon.texture = MIC_RECORDING_TEXTURE
+	else:
+		mic_button_icon.texture = MIC_IDLE_TEXTURE
+	mic_button_icon.modulate = Color(1.0, 1.0, 1.0, 1.0)
+
+
+func _restore_spirit_stone_idle() -> void:
+	_set_mic_texture("idle")
+
+
+func _flash_spirit_stone(state_name: String) -> void:
+	if not mic_button_icon:
+		return
+	var tex: Texture2D = _spirit_stone_texture(state_name)
+	if tex == null:
+		return
+	mic_button_icon.texture = tex
+	mic_button_icon.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	var tw: Tween = create_tween()
+	tw.tween_property(mic_button_icon, "modulate:a", 0.0, SPIRIT_STONE_FLASH_SECONDS)
+	tw.tween_callback(_restore_spirit_stone_idle)
+
+
 func _start_voice_listening(recording_context: Dictionary = {}) -> void:
 	if not recording_context.is_empty():
 		voice_recording_context = recording_context.duplicate(true)
@@ -410,8 +463,7 @@ func _start_voice_listening(recording_context: Dictionary = {}) -> void:
 	record_duration = 0.0
 	if mic_button:
 		mic_button.visible = true
-	if mic_button_icon:
-		mic_button_icon.texture = MIC_IDLE_TEXTURE
+	_set_mic_texture("idle")
 	VoicePipeline.start_listening(voice_recording_context)
 
 func _build_resume_recording_context() -> Dictionary:
@@ -432,8 +484,7 @@ func _stop_voice_listening() -> void:
 	record_duration = 0.0
 	if mic_button:
 		mic_button.visible = false
-	if mic_button_icon:
-		mic_button_icon.texture = MIC_IDLE_TEXTURE
+	_set_mic_texture("idle")
 	VoicePipeline.stop_listening()
 
 func _continue_voice_listening() -> void:
@@ -454,14 +505,16 @@ func _repeat_current_prompt() -> void:
 	await _continue_voice_listening()
 
 func _on_voice_started() -> void:
-	if mic_button_icon:
-		mic_button_icon.texture = MIC_RECORDING_TEXTURE
+	_set_mic_texture("listening")
 	print("[BeginningFP] Voice started")
 
 func _on_voice_ended(audio_data: PackedByteArray) -> void:
 	if not voice_listening or asr_request_active:
 		return
 	_stop_voice_listening()
+	if mic_button:
+		mic_button.visible = true
+	_set_mic_texture("processing")
 	if feifei:
 		feifei.show_hint(_loc("recognizing"), FeifeiBody.STATE_HINT, 0.0)
 	asr_request_active = true
@@ -624,6 +677,7 @@ func _handle_proposal_not_understood(fallback_text: String) -> void:
 	_start_voice_listening()
 
 func _handle_asr_intent_not_matched(result: Dictionary) -> void:
+	_flash_spirit_stone("hint")
 	var fallback: String = _get_asr_retry_hint_for_state()
 	var npc_line := HybridAPI.get_asr_guidance_npc_line(result, fallback)
 	if npc_line.is_empty():
@@ -676,6 +730,7 @@ func _is_retraction_downgrade(result: Dictionary) -> bool:
 	return HybridAPI.get_asr_matched_rule(result) == HybridAPI.ASR_RULE_RETRACTION_AFTER_TARGET
 
 func _handle_voice_attempt_failed(reason: String) -> void:
+	_flash_spirit_stone("hint")
 	if state not in [
 		PrologueState.AWAIT_SOURCE_NAME,
 		PrologueState.AWAIT_SPECIAL_NAME,
