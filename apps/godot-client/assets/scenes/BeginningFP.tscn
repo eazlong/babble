@@ -16,7 +16,6 @@ script = ExtResource("1_scene_ctrl")
 
 [node name="OwnerRoomBackground" type="Sprite2D" parent="." unique_id=257890102]
 z_index = -100
-scale = Vector2(0.75, 0.675)
 texture = ExtResource("2_tov5l")
 centered = false
 
