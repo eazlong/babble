@@ -21,7 +21,7 @@
       "color": [1.0, 0.8, 0.3, 0.9]
     }
   },
-  "texture_path": "res://assets/sprites/particles/gold_particle.png",
+  "texture_path": "res://assets/textures/particles/gold_particle.png",
   "duration": 1.5,
   "auto_recycle": true,
   "vfx_layer": 1

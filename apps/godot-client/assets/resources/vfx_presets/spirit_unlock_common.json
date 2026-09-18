@@ -21,7 +21,7 @@
       "color": [0.9, 0.9, 0.95, 0.8]
     }
   },
-  "texture_path": "res://assets/sprites/particles/spirit_particle.png",
+  "texture_path": "res://assets/textures/particles/spirit_particle.png",
   "duration": 2.5,
   "auto_recycle": true,
   "vfx_layer": 3

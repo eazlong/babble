@@ -130,6 +130,8 @@ If a Tripo3D job times out, resume from the `.tripo.json` sidecar instead of res
 | 漂浮书页背景 (T59) | P1 藏书阁背景 | `assets/textures/backgrounds/library_floating_books.png` | 1400x520 | Agnes landscape → Pillow 左右半幅重排拼接（各 656×476 → 700×520） | $0.003 | 散落漂浮纸页小书 + 柔和金光 + 青色魔法藏书氛围 + 纵深 | scene-verified | QA 通过：无拼缝、无可读文字、氛围正确；实际源 1312×736（计划脚本按 1280 写，已适配） |
 | 字灵 DB 接线 (T60) | P1 解锁浮层显示字灵立绘 | `assets/data/spirits/spirit_database.json`, `assets/scripts/ui/SpiritUnlockOverlay.gd` | — | manual code（+ 新增 GUT 测试 `test/autoload/test_spirit_database_art.gd`） | $0 | — | scene-verified | ①DB 16 条各加 `art` 字段；②`display_spirit_unlock()` 用 `ResourceLoader.exists` + `load()` 填入既有空占位 `_spirit_image`（缺失置 null 回退）；③卡片高度 300→340 容纳立绘。测试 4 个：16 条 art 可解析 + 浮层实测加载 256/320 立绘 |
 
+| 粒子纹理补齐 ×4（T49 遗留缺口） | P1 VFX 预设引用贴图 | `assets/textures/particles/{spirit,star,gold,firefly}_particle.png` | 64x64 RGBA | Pillow 确定性合成（径向光晕 / 五角星 / 四向 glint / 萤火虫点；白色 + alpha 落差） | $0 | — | scene-verified | **白色亮度设计**：颜色交给 `ParticleProcessMaterial.color` 乘算（spirit 白 / star 金 / gold 金 / firefly 黄绿）；**路径修正**：6 个 preset .json 原引用不存在的 `res://assets/sprites/particles/` → 改为规范的 `assets/textures/particles/`（全仓已无残留引用）；新增 GUT 测试 `test/core/test_vfx_preset_textures.gd`（守「所有 preset 的 texture_path 可解析」+「4 纹理 64×64」），该缺口本可被其捕获 |
+
 ## Required Verification Commands
 
 Run after moving accepted generated files into `assets/...`:
