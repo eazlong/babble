@@ -34,9 +34,13 @@ from PIL import Image, ImageDraw, ImageFilter
 CANVAS_W, CANVAS_H = 1320, 440   # 贴图尺寸（与代码里的世界坐标放置绑定，勿随意改）
 INSET = 44                       # 地图相对灰黑板的留白（要够宽：板外缘会再被衰减 26px）
 PANEL_RADIUS = 22                # 灰黑板圆角
-PANEL_RGB = (34, 36, 41)         # 灰黑
+PANEL_RGB = (58, 38, 22)         # 暖深褐（对齐房间深木：木梁 (65,41,23) / 门板 (86,51,22)）
 PANEL_ALPHA = 246                # 板面不透明度（留一点通透感，不至于像纯黑贴片）
 EDGE_FEATHER = 26                # 整块板外缘的柔化（必须收到 alpha=0，否则贴图边界会留一圈硬切）
+FRAME = 16                       # 细木框宽度
+FRAME_RGB_TOP = (140, 94, 52)    # 木框左上（受光）
+FRAME_RGB_BOT = (70, 44, 24)     # 木框右下（入暗）
+FRAME_BEVEL = (208, 168, 112)    # 框内缘倒角亮线
 
 # 六道光点：以中央小岛为圆心的环。坐标写在「原图带 1320x440」坐标系里，
 # 合成时按 INSET 映射进板内（小岛中心实测 ≈(660,211)，即带宽/带高正中）。
@@ -137,10 +141,38 @@ def main() -> int:
     grad = np.linspace(1.12, 0.90, CANVAS_H).reshape(-1, 1, 1)
     panel_rgb = np.zeros((CANVAS_H, CANVAS_W, 3), np.float32)
     panel_rgb[:] = np.array(PANEL_RGB, np.float32)
-    panel_rgb = np.clip(panel_rgb * grad, 0, 255).astype(np.uint8)   # (H,1,1) 广播到整幅板面
+    panel_rgb = np.clip(panel_rgb * grad, 0, 255)                    # (H,1,1) 广播到整幅板面
+
+    # 细木框：板外缘一圈暖褐木色，左上受光、右下入暗（房间光源在左侧窗）
+    ring = Image.new("L", (CANVAS_W, CANVAS_H), 0)
+    dr = ImageDraw.Draw(ring)
+    dr.rounded_rectangle([2, 2, CANVAS_W - 3, CANVAS_H - 3], radius=PANEL_RADIUS, fill=255)
+    dr.rounded_rectangle(
+        [2 + FRAME, 2 + FRAME, CANVAS_W - 3 - FRAME, CANVAS_H - 3 - FRAME],
+        radius=max(4, PANEL_RADIUS - FRAME // 2), fill=0,
+    )
+    gx = (mx / (CANVAS_W - 1) + my / (CANVAS_H - 1)) / 2.0            # 0=左上 1=右下
+    wood = (np.array(FRAME_RGB_TOP, np.float32)[None, None, :] * (1 - gx[:, :, None])
+            + np.array(FRAME_RGB_BOT, np.float32)[None, None, :] * gx[:, :, None])
+    rv = (np.array(ring.filter(ImageFilter.GaussianBlur(1.2))).astype(np.float32) / 255.0)[:, :, None]
+    panel_rgb = np.clip(panel_rgb * (1 - rv) + wood * rv, 0, 255).astype(np.uint8)
+
     panel = Image.new("RGBA", (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
     panel.paste(Image.fromarray(panel_rgb, "RGB"), (0, 0), mask)
     panel.putalpha(mask)
+
+    # 框内缘倒角亮线：把"木框"和"板面"分开，避免远看糊成一整块
+    bevel = Image.new("L", (CANVAS_W, CANVAS_H), 0)
+    ImageDraw.Draw(bevel).rounded_rectangle(
+        [2 + FRAME - 1, 2 + FRAME - 1, CANVAS_W - 2 - FRAME, CANVAS_H - 2 - FRAME],
+        radius=max(4, PANEL_RADIUS - FRAME // 2), outline=255, width=2,
+    )
+    bevel = bevel.filter(ImageFilter.GaussianBlur(1.1)).point(lambda v: int(v * 0.6))
+    layer = Image.new("RGBA", (CANVAS_W, CANVAS_H), FRAME_BEVEL + (255,))
+    layer.putalpha(bevel)
+    layer.putalpha(Image.fromarray((np.array(layer.split()[3]).astype(np.float32)
+                                    * np.array(mask).astype(np.float32) / 255.0).astype(np.uint8)))
+    panel = Image.alpha_composite(panel, layer)
 
     tmp = Image.new("RGBA", (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
     tmp.paste(band, (INSET, INSET))
