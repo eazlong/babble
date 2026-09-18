@@ -1,0 +1,52 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/lost_traveler/lost_traveler_happy_01.png" id="1_wja54"]
+[ext_resource type="Texture2D" path="res://assets/sprites/lost_traveler/lost_traveler_happy_02.png" id="2_cdwxy"]
+[ext_resource type="Texture2D" path="res://assets/sprites/lost_traveler/lost_traveler_idle_01.png" id="3_4wygm"]
+[ext_resource type="Texture2D" path="res://assets/sprites/lost_traveler/lost_traveler_idle_02.png" id="4_x4qnj"]
+[ext_resource type="Texture2D" path="res://assets/sprites/lost_traveler/lost_traveler_idle_03.png" id="5_68her"]
+[ext_resource type="Texture2D" path="res://assets/sprites/lost_traveler/lost_traveler_talk_01.png" id="6_fviii"]
+[ext_resource type="Texture2D" path="res://assets/sprites/lost_traveler/lost_traveler_talk_02.png" id="7_i0bnn"]
+[ext_resource type="Texture2D" path="res://assets/sprites/lost_traveler/lost_traveler_talk_03.png" id="8_olxsd"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_wja54")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_cdwxy")
+}],
+"loop": true,
+"name": &"happy",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_4wygm")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_x4qnj")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_68her")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_fviii")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_i0bnn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_olxsd")
+}],
+"loop": true,
+"name": &"talk",
+"speed": 6.0
+}]

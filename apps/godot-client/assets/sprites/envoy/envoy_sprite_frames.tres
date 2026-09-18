@@ -1,0 +1,52 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/envoy/envoy_happy_01.png" id="1_lpgt8"]
+[ext_resource type="Texture2D" path="res://assets/sprites/envoy/envoy_happy_02.png" id="2_0ny54"]
+[ext_resource type="Texture2D" path="res://assets/sprites/envoy/envoy_idle_01.png" id="3_85ll0"]
+[ext_resource type="Texture2D" path="res://assets/sprites/envoy/envoy_idle_02.png" id="4_0wwu1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/envoy/envoy_idle_03.png" id="5_70als"]
+[ext_resource type="Texture2D" path="res://assets/sprites/envoy/envoy_talk_01.png" id="6_h43a4"]
+[ext_resource type="Texture2D" path="res://assets/sprites/envoy/envoy_talk_02.png" id="7_4m5if"]
+[ext_resource type="Texture2D" path="res://assets/sprites/envoy/envoy_talk_03.png" id="8_25cbl"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_lpgt8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_0ny54")
+}],
+"loop": true,
+"name": &"happy",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_85ll0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_0wwu1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_70als")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_h43a4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_4m5if")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_25cbl")
+}],
+"loop": true,
+"name": &"talk",
+"speed": 6.0
+}]

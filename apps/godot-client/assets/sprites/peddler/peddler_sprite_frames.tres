@@ -1,0 +1,52 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/peddler/peddler_happy_01.png" id="1_osbf1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/peddler/peddler_happy_02.png" id="2_1xsv8"]
+[ext_resource type="Texture2D" path="res://assets/sprites/peddler/peddler_idle_01.png" id="3_gn4a6"]
+[ext_resource type="Texture2D" path="res://assets/sprites/peddler/peddler_idle_02.png" id="4_maw6b"]
+[ext_resource type="Texture2D" path="res://assets/sprites/peddler/peddler_idle_03.png" id="5_yd6gb"]
+[ext_resource type="Texture2D" path="res://assets/sprites/peddler/peddler_talk_01.png" id="6_ebbl7"]
+[ext_resource type="Texture2D" path="res://assets/sprites/peddler/peddler_talk_02.png" id="7_cxahy"]
+[ext_resource type="Texture2D" path="res://assets/sprites/peddler/peddler_talk_03.png" id="8_ftsek"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_osbf1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_1xsv8")
+}],
+"loop": true,
+"name": &"happy",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_gn4a6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_maw6b")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_yd6gb")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_ebbl7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_cxahy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_ftsek")
+}],
+"loop": true,
+"name": &"talk",
+"speed": 6.0
+}]

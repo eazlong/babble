@@ -1,0 +1,52 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/wandering_daoist/wandering_daoist_happy_01.png" id="1_8svfj"]
+[ext_resource type="Texture2D" path="res://assets/sprites/wandering_daoist/wandering_daoist_happy_02.png" id="2_0tb1s"]
+[ext_resource type="Texture2D" path="res://assets/sprites/wandering_daoist/wandering_daoist_idle_01.png" id="3_r4sxv"]
+[ext_resource type="Texture2D" path="res://assets/sprites/wandering_daoist/wandering_daoist_idle_02.png" id="4_0sigu"]
+[ext_resource type="Texture2D" path="res://assets/sprites/wandering_daoist/wandering_daoist_idle_03.png" id="5_dcfdh"]
+[ext_resource type="Texture2D" path="res://assets/sprites/wandering_daoist/wandering_daoist_talk_01.png" id="6_5u4fs"]
+[ext_resource type="Texture2D" path="res://assets/sprites/wandering_daoist/wandering_daoist_talk_02.png" id="7_3jkwv"]
+[ext_resource type="Texture2D" path="res://assets/sprites/wandering_daoist/wandering_daoist_talk_03.png" id="8_sgx7h"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_8svfj")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_0tb1s")
+}],
+"loop": true,
+"name": &"happy",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_r4sxv")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_0sigu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_dcfdh")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_5u4fs")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_3jkwv")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_sgx7h")
+}],
+"loop": true,
+"name": &"talk",
+"speed": 6.0
+}]
