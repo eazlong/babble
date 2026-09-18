@@ -2,18 +2,23 @@
 """把生成的世界地图合成成游戏用的「序章介绍地图」。
 
 产物：assets/textures/backgrounds/beginning_mist_continents.png（1320x440）
+      灰黑背景板 + 内嵌地图 + 六道纯光点
 
 为什么是 1320x440：
   BeginningFPController 里 DistantContinents 是 **世界空间** Node2D，位于 (960,350)，
-  子节点 Sprite2D centered=true、无缩放 —— 所以贴图按 1:1 以 (960,350) 居中显示。
-  相机在 (960,540)、视口 1920x1080 => 贴图 1320x440 会占屏幕 y 130~570：
-  上不压顶部任务条（y 66~106）、下不压麦克风，左右留出房间。改贴图尺寸无需改代码。
+  子节点 Sprite2D centered=true、无缩放 —— 贴图按 1:1 以 (960,350) 居中显示。
+  相机在 (960,540)、视口 1920x1080 => 贴图占屏幕 y 130~570：
+  上不压顶部任务条（y 66~106）、下不压麦克风。改贴图尺寸/内容**无需改代码**。
 
-六道光为什么要自己贴，而不是让模型画：
-  台词是「你看。六道光，就是六块大陆。」——精确数量（6）属于符号化任务，
-  图像模型给不准（本轮实测同一 prompt 只给 4~5 个光点、且落在山上而非大陆上）。
-  改用项目里已存在的六件神器图标（artifact_*.png，256x256 透明底）作为道标，
-  既凑准 6 个，又顺势把「每块大陆对应一件神器」的设定画进去。
+为什么要有灰黑背景板（用户反馈：地图不够明显）：
+  地图本身是暖米色绢本，直接叠在暖木墙上对比不足。所以在贴图内先铺一层灰黑板
+  （留 INSET 内边距），地图缩进板内、四周柔化融进板面，整块板再做成软边 ——
+  视觉上就是「房间里的一个投影面板」，地图被深色板衬出来。
+
+六道光为什么由代码画、且用纯光点：
+  （1）精确数量（6）属符号化任务：图像模型同一 prompt 只给 4~5 个光点；
+  （2）用户要求「换成光点」—— 纯光点是几何图形，画上去比生成干净可控。
+  六点以中央小岛为圆心均匀环绕，对上台词「你看。六道光，就是六块大陆」。
 
 用法：
   .venv/bin/python tools/build_world_map.py --src <生成图.png> [--out ...]
@@ -22,43 +27,38 @@
 from __future__ import annotations
 
 import argparse
-import glob
-import os
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
-# 六道光在 1320x440 贴图内的坐标。
-#
-# 为什么是"以中央小岛为圆心的环"：模型不会数准"六块大陆/六道光"（精确数量属于
-# 符号化任务），而底图上大陆又被雾盖住、无法可靠地自动找陆地（实测"暖色=陆地"
-# 判据同时命中雾与海）。改成有意设计的构图：六道光均匀环绕中央无雾小岛 ——
-# 既凑准 6 个、又正好对上台词「你看。六道光，就是六块大陆」（光本就是从雾里透出来的）。
-# 小岛中心 (660,210) 是用视觉工具读格网测出来的（横向 50%、y≈210，即横幅正中）。
-LIGHTS: list[tuple[str, int, int]] = [
-    ("artifact_donghuang_bell.png", 300, 210),  # 第1学期 长安西市 → 东皇钟
-    ("artifact_compass.png", 476, 316),         # 第2学期 苗疆竹海 → 问路司南
-    ("artifact_ruyi.png", 846, 314),            # 第3学期 星沙绿洲 → 通晓玉如意
-    ("artifact_mirror.png", 1022, 208),         # 第4学期 机关偃师城 → 辩真明镜
-    ("artifact_horn.png", 842, 106),            # 第5学期 龙门漕运港 → 岁月号角
-    ("artifact_hetu.png", 478, 104),            # 第6学期 昆仑神宫 → 万象河图
+CANVAS_W, CANVAS_H = 1320, 440   # 贴图尺寸（与代码里的世界坐标放置绑定，勿随意改）
+INSET = 44                       # 地图相对灰黑板的留白（要够宽：板外缘会再被衰减 26px）
+PANEL_RADIUS = 22                # 灰黑板圆角
+PANEL_RGB = (34, 36, 41)         # 灰黑
+PANEL_ALPHA = 246                # 板面不透明度（留一点通透感，不至于像纯黑贴片）
+EDGE_FEATHER = 26                # 整块板外缘的柔化（必须收到 alpha=0，否则贴图边界会留一圈硬切）
+
+# 六道光点：以中央小岛为圆心的环。坐标写在「原图带 1320x440」坐标系里，
+# 合成时按 INSET 映射进板内（小岛中心实测 ≈(660,211)，即带宽/带高正中）。
+LIGHTS: list[tuple[int, int]] = [
+    (300, 210),   # 第1学期 长安西市 → 东皇钟
+    (476, 316),   # 第2学期 苗疆竹海 → 问路司南
+    (846, 314),   # 第3学期 星沙绿洲 → 通晓玉如意
+    (1022, 208),  # 第4学期 机关偃师城 → 辨真明镜
+    (842, 106),   # 第5学期 龙门漕运港 → 岁月号角
+    (478, 104),   # 第6学期 昆仑神宫 → 万象河图
 ]
 
-BAND_H = 440
-BAND_W = 1320
-ICON = 96          # 图标显示边长（再小就认不出神器）
-GLOW_R = 62        # 图标下的暖金辉光半径
-FEATHER = 96       # 边缘柔化宽度（px）
 
+def crop_band(src: Image.Image, out_w: int, out_h: int) -> Image.Image:
+    """从生成图居中取一条横带，缩到目标尺寸。
 
-def crop_band(src: Image.Image) -> Image.Image:
-    """从生成图里取居中的 3:1 横幅带。
-
-    提示词已要求「主体内容在画面中间的横带、上下留空雾」，所以居中裁切即得。
+    提示词要求「主体内容在画面中间的横带、上下留空」，所以居中裁切即得。
     """
     im = src.convert("RGB")
-    y0 = (im.height - BAND_H) // 2
-    return im.crop((0, y0, im.width, y0 + BAND_H)).resize((BAND_W, BAND_H), Image.LANCZOS)
+    band_h_src = int(im.width * out_h / out_w)
+    y0 = max(0, (im.height - band_h_src) // 2)
+    return im.crop((0, y0, im.width, min(im.height, y0 + band_h_src))).resize((out_w, out_h), Image.LANCZOS)
 
 
 def warm_grade(im: Image.Image, amount: float = 0.16) -> Image.Image:
@@ -69,99 +69,88 @@ def warm_grade(im: Image.Image, amount: float = 0.16) -> Image.Image:
     return Image.fromarray(np.clip(a * (1 - amount) + warm * amount, 0, 255).astype(np.uint8))
 
 
-def add_light(base: Image.Image, icon_path: str, cx: int, cy: int) -> None:
-    """在 (cx,cy) 处叠一道「光」：暗青底衬 + 暖金辉光 + 光环 + 神器图标。
+def add_light_dot(base: Image.Image, cx: int, cy: int) -> None:
+    """一道光点：暗衬 + 双层暖金辉光 + 光环 + 十字星芒 + 白亮核。
 
-    为什么要暗色底衬：图标本身是暖色调手绘，直接压在暖色陆地/暖米色雾上几乎看不见
-    （实测"万象河图"那块浅米色石板完全消失，视觉只数出 5 个光点）。先铺一层暗青
-    柔边圆盘把背景压下去，图标才立得住，读作"雾里透出的一点光"。
+    暗衬的作用（关键）：光点大多落在浅米色雾/白云上，亮核在浅底上会"白吃白"、
+    被读成云的高光或脏点。用"光把周围压暗"的反向对比才托得住 —— 实测暗衬从
+    112/模糊23 提到 150/模糊15（更实、更收拢）后，压在云上的点才明确读作"光"。
     """
-    yy, xx = np.mgrid[0:BAND_H, 0:BAND_W]
+    w, h = base.size
+    yy, xx = np.mgrid[0:h, 0:w]
     dist = np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2)
 
-    # 1) 暗青底衬（越靠中心越暗，边缘柔化）—— 提供对比度
-    dark = Image.new("L", (BAND_W, BAND_H), 0)
-    ImageDraw.Draw(dark).ellipse(
-        [cx - GLOW_R * 1.45, cy - GLOW_R * 1.45, cx + GLOW_R * 1.45, cy + GLOW_R * 1.45], fill=104
-    )
-    dark = dark.filter(ImageFilter.GaussianBlur(GLOW_R * 0.55))
-    base.paste(Image.new("RGB", (BAND_W, BAND_H), (34, 52, 62)), (0, 0), dark)
+    dark = Image.new("L", (w, h), 0)
+    ImageDraw.Draw(dark).ellipse([cx - 62, cy - 62, cx + 62, cy + 62], fill=150)
+    base.paste(Image.new("RGB", (w, h), (28, 42, 52)), (0, 0), dark.filter(ImageFilter.GaussianBlur(15)))
 
-    # 2) 暖金辉光（加性）
-    falloff = np.clip(1.0 - dist / GLOW_R, 0.0, 1.0) ** 2.0
     arr = np.array(base).astype(np.float32)
-    arr += falloff[:, :, None] * np.array([255.0, 216.0, 146.0])[None, None, :] * 0.55
+    outer = np.clip(1.0 - dist / 68.0, 0.0, 1.0) ** 2.1
+    inner = np.clip(1.0 - dist / 22.0, 0.0, 1.0) ** 1.5
+    arr += outer[:, :, None] * np.array([255.0, 206.0, 130.0])[None, None, :] * 0.40
+    arr += inner[:, :, None] * np.array([255.0, 238.0, 192.0])[None, None, :] * 0.70
     base.paste(Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8)), (0, 0))
 
-    # 3) 光环（一道细的暖金光圈，把光点框出来）
-    ring = Image.new("RGBA", (BAND_W, BAND_H), (0, 0, 0, 0))
-    ImageDraw.Draw(ring).ellipse(
-        [cx - GLOW_R * 0.98, cy - GLOW_R * 0.98, cx + GLOW_R * 0.98, cy + GLOW_R * 0.98],
-        outline=(255, 226, 168, 190), width=2,
-    )
-    base.paste(Image.alpha_composite(base.convert("RGBA"), ring.filter(ImageFilter.GaussianBlur(1.1))).convert("RGB"), (0, 0))
-
-    # 4) 神器图标本体（透明底等比缩放居中 + 轻微外发光帮助分离）
-    icon = Image.open(icon_path).convert("RGBA")
-    bbox = icon.split()[3].getbbox()
-    if bbox:
-        icon = icon.crop(bbox)
-    sc = ICON / max(icon.width, icon.height)
-    icon = icon.resize((max(1, round(icon.width * sc)), max(1, round(icon.height * sc))), Image.LANCZOS)
-    pad = 14
-    halo = Image.new("L", (icon.width + pad * 2, icon.height + pad * 2), 0)
-    halo.paste(icon.split()[3], (pad, pad))
-    halo = halo.filter(ImageFilter.GaussianBlur(6))
-    layer = Image.new("RGBA", halo.size, (255, 232, 186, 255))
-    layer.putalpha(halo.point(lambda v: int(v * 0.85)))
-    x0, y0 = cx - icon.width // 2 - pad, cy - icon.height // 2 - pad
-    base.paste(layer, (x0, y0), layer)
-    base.paste(icon, (x0 + pad, y0 + pad), icon)
-
-
-def edge_fade(im: Image.Image, feather: int = FEATHER) -> Image.Image:
-    """四周 alpha 渐隐 —— 这是**关键**：贴图在世界空间、直接盖在房间上，
-    硬边会变成一块方形贴纸；渐隐后读作「浮在空中的魔法投影」。
-
-    只用"到边距离"做羽化还不够（实测视觉仍读成"贴在墙上的一块矩形画布，
-    底边还是平直的"），所以再叠一层**椭圆径向衰减**，让整块地图作为一个软边
-    椭圆团化在房间里；同时整体略降不透明度（0.95），让墙面透出来一点。
-    """
-    w, h = im.size
-    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
-    d = np.minimum.reduce([xx, yy, (w - 1) - xx, (h - 1) - yy])
-    edge = np.clip(d / feather, 0.0, 1.0) ** 1.25
-    rn = np.sqrt(((xx - (w - 1) / 2) / ((w - 1) / 2)) ** 2 + ((yy - (h - 1) / 2) / ((h - 1) / 2)) ** 2)
-    radial = np.clip((1.06 - rn) / 0.34, 0.0, 1.0) ** 1.15
-    out = im.convert("RGBA")
-    a0 = np.array(out)[:, :, 3].astype(np.float32) / 255.0
-    out.putalpha(Image.fromarray((np.clip(a0 * edge * radial * 0.95, 0, 1) * 255).astype(np.uint8)))
-    return out
+    ov = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(ov)
+    d.ellipse([cx - 35, cy - 35, cx + 35, cy + 35], outline=(255, 230, 178, 170), width=2)
+    for dx, dy in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+        d.line([cx + dx * 10, cy + dy * 10, cx + dx * 31, cy + dy * 31], fill=(255, 224, 164, 150), width=2)
+    ov = ov.filter(ImageFilter.GaussianBlur(1.0))
+    d = ImageDraw.Draw(ov)
+    d.ellipse([cx - 9, cy - 9, cx + 9, cy + 9], fill=(255, 246, 220, 240))
+    d.ellipse([cx - 5, cy - 5, cx + 5, cy + 5], fill=(255, 255, 255, 255))
+    base.paste(Image.alpha_composite(base.convert("RGBA"), ov).convert("RGB"), (0, 0))
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", required=True, help="生成的地图原图")
-    ap.add_argument("--artifacts-dir", default="assets/textures/objects/artifacts")
     ap.add_argument("--out", default="assets/textures/backgrounds/beginning_mist_continents.png")
     args = ap.parse_args()
 
-    band = warm_grade(crop_band(Image.open(args.src)))
-    for name, cx, cy in LIGHTS:
-        p = os.path.join(args.artifacts_dir, name)
-        if not os.path.exists(p):
-            print(f"  !! 缺图标 {p}")
-            continue
-        add_light(band, p, cx, cy)
-    out = edge_fade(band)
+    inner_w, inner_h = CANVAS_W - INSET * 2, CANVAS_H - INSET * 2
+    band = warm_grade(crop_band(Image.open(args.src), inner_w, inner_h))
+    sx, sy = inner_w / CANVAS_W, inner_h / CANVAS_H
+    for lx, ly in LIGHTS:
+        add_light_dot(band, int(lx * sx), int(ly * sy))
+
+    # 地图四周柔化，融进板面（否则板内会出现一圈硬边）
+    a = np.array(band).astype(np.float32)
+    yy, xx = np.mgrid[0:inner_h, 0:inner_w].astype(np.float32)
+    d = np.minimum.reduce([xx, yy, (inner_w - 1) - xx, (inner_h - 1) - yy])
+    band = Image.fromarray((a * np.clip(d / 24.0, 0.0, 1.0)[:, :, None] ** 0.8).astype(np.uint8))
+
+    # 灰黑背景板（软边 + 上亮下暗，像一块有厚度的板）
+    mask = Image.new("L", (CANVAS_W, CANVAS_H), 0)
+    ImageDraw.Draw(mask).rounded_rectangle(
+        [2, 2, CANVAS_W - 3, CANVAS_H - 3], radius=PANEL_RADIUS, fill=PANEL_ALPHA
+    )
+    mask = mask.filter(ImageFilter.GaussianBlur(EDGE_FEATHER * 0.5))
+    # 再乘一层"到边距离"衰减，保证贴图四条边 alpha 一定是 0
+    # （只靠圆角模糊不够：实测四边仍残留 alpha=150，换到房间上就是一圈硬切）
+    my, mx = np.mgrid[0:CANVAS_H, 0:CANVAS_W].astype(np.float32)
+    md = np.minimum.reduce([mx, my, (CANVAS_W - 1) - mx, (CANVAS_H - 1) - my])
+    mask = Image.fromarray(
+        (np.array(mask).astype(np.float32) * np.clip(md / EDGE_FEATHER, 0.0, 1.0) ** 1.2).astype(np.uint8)
+    )
+    grad = np.linspace(1.12, 0.90, CANVAS_H).reshape(-1, 1, 1)
+    panel_rgb = np.zeros((CANVAS_H, CANVAS_W, 3), np.float32)
+    panel_rgb[:] = np.array(PANEL_RGB, np.float32)
+    panel_rgb = np.clip(panel_rgb * grad, 0, 255).astype(np.uint8)   # (H,1,1) 广播到整幅板面
+    panel = Image.new("RGBA", (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
+    panel.paste(Image.fromarray(panel_rgb, "RGB"), (0, 0), mask)
+    panel.putalpha(mask)
+
+    tmp = Image.new("RGBA", (CANVAS_W, CANVAS_H), (0, 0, 0, 0))
+    tmp.paste(band, (INSET, INSET))
+    out = Image.alpha_composite(panel, tmp)
     out.save(args.out)
 
-    a = np.array(out)
-    opaque = float((a[:, :, 3] > 200).mean())
-    print(f"saved {args.out}  size={out.size}  不透明占比={opaque*100:.1f}%  四边alpha="
-          f"{a[:, 0, 3].max()}/{a[:, -1, 3].max()}/{a[0, :, 3].max()}/{a[-1, :, 3].max()}")
-    placed = [f"{name.split('_')[1]}@({x},{y})" for name, x, y in LIGHTS]
-    print(f"  六道光已放在：{placed}")
+    arr = np.array(out)
+    print(f"saved {args.out}  size={out.size}  板面不透明占比={float((arr[:,:,3]>200).mean())*100:.1f}%  "
+          f"四边alpha={arr[:,0,3].max()}/{arr[:,-1,3].max()}/{arr[0,:,3].max()}/{arr[-1,:,3].max()}")
+    print(f"  六道光点（板内坐标）：{[(int(x*sx)+INSET, int(y*sy)+INSET) for x, y in LIGHTS]}")
     return 0
 
 
