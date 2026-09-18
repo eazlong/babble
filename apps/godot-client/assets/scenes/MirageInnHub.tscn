@@ -20,36 +20,6 @@ motion_mirroring = Vector2(1920, 0)
 texture = ExtResource("2_6th42")
 centered = false
 
-[node name="FarTreeLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1011304631]
-z_index = -60
-motion_scale = Vector2(0.35, 0.35)
-motion_mirroring = Vector2(1920, 0)
-
-[node name="TreesFar" type="Sprite2D" parent="ParallaxBackground/FarTreeLayer" unique_id=2091856055]
-position = Vector2(0, 744)
-scale = Vector2(0.8629445, 0.38268793)
-centered = false
-
-[node name="MidTreeLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=344716866]
-z_index = -40
-motion_scale = Vector2(0.55, 0.55)
-motion_mirroring = Vector2(1920, 0)
-
-[node name="TreesMid" type="Sprite2D" parent="ParallaxBackground/MidTreeLayer" unique_id=2056027179]
-position = Vector2(680.00006, 240)
-scale = Vector2(0.7401497, 0.81178945)
-centered = false
-
-[node name="GroundLayer" type="ParallaxLayer" parent="ParallaxBackground" unique_id=2142025001]
-z_index = -20
-motion_scale = Vector2(0.8, 0.8)
-motion_mirroring = Vector2(1920, 0)
-
-[node name="Ground" type="Sprite2D" parent="ParallaxBackground/GroundLayer" unique_id=63355508]
-position = Vector2(-3.410605e-13, 936)
-scale = Vector2(1.13, 0.4)
-centered = false
-
 [node name="HUDLayer" type="CanvasLayer" parent="." unique_id=904199957]
 layer = 10
 

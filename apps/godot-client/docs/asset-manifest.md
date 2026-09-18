@@ -132,6 +132,8 @@ If a Tripo3D job times out, resume from the `.tripo.json` sidecar instead of res
 
 | 粒子纹理补齐 ×4（T49 遗留缺口） | P1 VFX 预设引用贴图 | `assets/textures/particles/{spirit,star,gold,firefly}_particle.png` | 64x64 RGBA | Pillow 确定性合成（径向光晕 / 五角星 / 四向 glint / 萤火虫点；白色 + alpha 落差） | $0 | — | scene-verified | **白色亮度设计**：颜色交给 `ParticleProcessMaterial.color` 乘算（spirit 白 / star 金 / gold 金 / firefly 黄绿）；**路径修正**：6 个 preset .json 原引用不存在的 `res://assets/sprites/particles/` → 改为规范的 `assets/textures/particles/`（全仓已无残留引用）；新增 GUT 测试 `test/core/test_vfx_preset_textures.gd`（守「所有 preset 的 texture_path 可解析」+「4 纹理 64×64」），该缺口本可被其捕获 |
 
+| 资产清理 (T67) | P2 归档无用资源 + 清空视差节点 | 删除 8 图：`assets/textures/backgrounds/{fog,fog_mid,beginning_trees_far,beginning_trees_mid,mirage_inn_player_room_bg,mirage_inn_hall_bg_raw}.png`、`assets/textures/objects/beginning_mirage_inn_ruins.png`、`assets/textures/ui/badge_forest.png`；改：`assets/scenes/MirageInnHub.tscn`、`assets/audio/AUDIO_PLACEHOLDERS.txt` | — | 引用计数 + 文本编辑 | $0 | — | scene-verified | 逐图先查 `grep -rl <文件名>`（scripts/scenes/resources/data）：**8/8 引用=0** 才移入 `tmp/asset-gen/archive/`；`hotel/`、forest props 目录**不存在**（无该项）；MirageInnHub **6 个空视差节点**（FarTreeLayer/TreesFar、MidTreeLayer/TreesMid、GroundLayer/Ground）已删 → `grep -c "TreesFar\|TreesMid"` = **0**、场景解析 0 错；AUDIO_PLACEHOLDERS.txt 改为一行指向 `design/art/asset-requirements-master.md` §7；**Q7 归属（`inn_no_title.png` / `feifei_part_副本.png`）交用户裁定，未自作主张** |
+
 ## Required Verification Commands
 
 Run after moving accepted generated files into `assets/...`:
