@@ -408,7 +408,7 @@ no horror, no dark haunted mood, no messy props, no text baked into image
 | 角色帧 | `{character}_{state}_{NN}.png` | `feifei_fly_01.png`、`oakley_idle_03.png` |
 | UI | `ui_{element}_{state}.png` | `ui_mic_button_idle.png`、`ui_starbar_bg.png` |
 | 徽记 | `badge_{scene}.png` | `badge_beginning.png` |
-| 物件 | `{object}_{state}.png` | `bookshelf_closed.png`、`artifact_seat_empty.png` |
+| 物件 | `{object}_{state}.png` | `scroll_dormant.png`、`artifact_seat_empty.png` |
 | 粒子 | `{effect}_particle.png` | `inn_magic_spark.png` |
 | 骨骼角色 | `{character}_part.png`（蒙皮图集）+ `{character}_frames.tres` **已废弃** | `feifei_part.png` |
 

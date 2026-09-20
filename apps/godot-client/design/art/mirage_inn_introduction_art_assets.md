@@ -18,7 +18,7 @@
 | **整体风格** | 卡通 + 东方幻想 + 温暖客栈 | 轻松但坚定；不是恐怖废墟，也不是纯经营小屋 |
 | **审美目标** | 美观大方 + 儿童吸引力 | 画面干净、层次明确、细节有惊喜；不靠杂乱装饰制造热闹 |
 | **叙事氛围** | 客栈受损但仍有力量 | 神器丢失造成空缺感，阵法和词灵书阁保留希望感 |
-| **信息密度** | 低负担导览 | 玩家第一次进入客栈，只需看懂三个房间和一次书架语音互动 |
+| **信息密度** | 低负担导览 | 玩家第一次进入客栈，只需看懂三个房间和一次画卷语音互动 |
 | **色彩饱和度** | 中等饱和度（55-75%） | 比序章迷雾更暖，但阵法房间和词灵书阁可使用更冷的魔法色 |
 | **线条特征** | 圆润木结构、柔和符文 | 儿童友好，避免尖锐破败、恐怖裂纹或压迫性暗场 |
 | **魔法元素** | 金色微光 + 青绿色词灵光 | 金色用于阵法/神器线索，青绿色用于词灵与书阁 |
@@ -27,9 +27,9 @@
 
 | 原则 | 执行要求 | 目的 |
 |------|----------|------|
-| **一眼可懂** | 每个视图只突出一个主焦点：大厅三门、阵法六座、书架、词灵、客房门光 | 让小朋友不用读说明也能理解当前关注点 |
+| **一眼可懂** | 每个视图只突出一个主焦点：大厅三门、阵法六座、墙上画卷、词灵、客房门光 | 让小朋友不用读说明也能理解当前关注点 |
 | **安全温暖** | 木质圆角、暖光、柔和阴影；破损只表现为空缺和旧痕，不表现尖刺、霉斑、恐怖暗影 | 保持冒险感，但不制造害怕情绪 |
-| **小惊喜** | 每个房间至少一个“会动/会亮”的细节：阵法微光、书架缝隙、漂浮书页、词灵呼吸光 | 提高探索期待，让导览不枯燥 |
+| **小惊喜** | 每个房间至少一个“会动/会亮”的细节：阵法微光、画卷内光、漂浮书页、词灵呼吸光 | 提高探索期待，让导览不枯燥 |
 | **大形清楚** | 主要物体轮廓用大块面表达，装饰纹样不抢主轮廓 | 适合儿童快速识别，也适合移动端缩放 |
 | **奖励感** | 衣橱空位、词灵变清楚、第一微光都要有“以后会变多”的期待 | 把学习和收集感连接起来 |
 | **克制装饰** | 不堆满道具、文字、图标；每个房间保留 20-30% 安静区域 | 保证画面大方，不像杂乱活动页 |
@@ -39,7 +39,7 @@
 - 不使用恐怖废墟、鬼屋、阴森旅店、破败血迹、尖锐裂纹等表达。
 - 不使用过度饱和的糖果色铺满全屏；重点光效可以鲜明，背景必须稳。
 - 不在背景图中写死大量文字、英文单词或教程说明，避免本地化和教学词变化问题。
-- 不把三扇门、书架、衣橱画成明显按钮；本场景没有点击事件。
+- 不把三扇门、墙上画卷、衣橱画成明显按钮；本场景没有点击事件。
 - 不让装饰物遮挡 Feifei 气泡、任务面板、麦克风按钮和主视觉焦点。
 
 ### 色彩系统
@@ -61,8 +61,8 @@
 |------|------|------|
 | **基准分辨率** | 1920x1080 (16:9) | 当前场景按全屏 `Control` 视图构建 |
 | **玩家角色** | 不可见 | 通过第一人称镜头、语音和Feifei引导表达玩家存在 |
-| **交互方式** | 语音推进 | 不设计点击态；唯一主动输入是玩家说“书架” |
-| **Feifei层级** | CanvasLayer layer=20 | 复用 `FeifeiShoulder`，位置和气泡规格沿用序章 |
+| **交互方式** | 语音推进 | 不设计点击态；唯一主动输入是玩家说“画中小世界” |
+| **Feifei层级** | CanvasLayer layer=20 | 实例化 `FeifeiBody.tscn`（骨骼动画）；位置和气泡规格沿用序章 |
 | **HUD层级** | CanvasLayer layer=10 | 任务追踪器和麦克风按钮 |
 | **Overlay层级** | CanvasLayer layer=30 | 结尾淡出转场 |
 
@@ -75,7 +75,7 @@
 | 顺序 | 流程段 | 对应 flow_id | 视觉 | 正式美术目标 |
 |------|--------|--------------|------|--------------|
 | 1 | 主人房（醒来接续） | `inn_introduction.owner_room` | 复用序章主人房基准背景 | 确认这是玩家自己的房间；书柜和衣橱是主视觉；房间延续 `BeginningFP` 的同一空间 |
-| 2 | 呼唤书架 | `inn_introduction.bookshelf_voice_prompt` | 麦克风按钮显示，书架可被叫醒 | 书架缝隙透出微光，明确“叫出 `bookshelf`”是唯一主动输入 |
+| 2 | 呼唤画卷 | `inn_introduction.scroll_voice_prompt` | 麦克风按钮显示，墙上画卷可被叫醒 | 画卷的洞门内透出暖光，明确“叫出「画中小世界」”是唯一主动输入 |
 | 3 | 词灵书阁 | `inn_introduction.word_spirit_library` | 青绿色空间 + `hello` 词灵 | 独立空间，区别于主人房；第一个词灵清楚可爱 |
 | 4 | 衣橱预告 | `inn_introduction.wardrobe_preview` | 衣橱高亮 | 回到主人房；只展示空奖励位，不暗示复杂换装系统已开放 |
 | 5 | 大厅三房间总览 | `inn_introduction.hall` | 三个房间入口 | 导览中段的空间总览；清楚显示左/中/右三间房 |
@@ -99,13 +99,13 @@
 |--------|----------|------|------|------|
 | `mirage_inn_hall_bg.png` | `assets/textures/backgrounds/` | 1920x1080 | PNG-24 | 大厅总览，导览第 5 站；导览中段重新理解三房间结构 |
 | `mirage_inn_formation_room_bg.png` | `assets/textures/backgrounds/` | 1920x1080 | PNG-24 | 阵法房间背景，中心留给阵法与神器座 |
-| `mirage_inn_owner_room_bg.png` | `assets/textures/backgrounds/` | 1920x1080 | PNG-24 | 主人房基准背景（与 BeginningFP 共用）；书架/衣橱以 cutout 叠加 |
+| `mirage_inn_owner_room_bg.png` | `assets/textures/backgrounds/` | 1920x1080 | PNG-24 | 主人房基准背景（与 BeginningFP 共用）；墙上画卷的**画心**与衣橱以 cutout 叠加（画卷的木杆/青色绫裱已画死在背景里） |
 | `word_spirit_library_bg.png` | `assets/textures/backgrounds/` | 1920x1080 | PNG-24 | 词灵书阁独立空间 |
 | `mirage_inn_guest_room_bg.png` | `assets/textures/backgrounds/` | 1920x1080 | PNG-24 | 客房预告背景，门后保留远方光感 |
 | `artifact_seat_empty.png` | `assets/textures/objects/inn/` | 128x128 | PNG + Alpha | 空神器座，阵法房间使用6个 |
 | `artifact_first_light.png` | `assets/textures/objects/inn/` | 96x96 | PNG + Alpha | 第一神器线索微光，可循环呼吸 |
-| `bookshelf_closed.png` | `assets/textures/objects/inn/` | 420x520 | PNG + Alpha | 主人房书架默认状态 |
-| `bookshelf_awake.png` | `assets/textures/objects/inn/` | 420x520 | PNG + Alpha | 玩家说“书架”后的发光状态 |
+| `scroll_dormant.png` | `assets/textures/objects/inn/` | 198x351 | PNG + Alpha | 主人房墙上画卷的**画心**（书阁入口，静置态） |
+| `scroll_awake.png` | `assets/textures/objects/inn/` | 198x351 | PNG + Alpha | 玩家说“画中小世界”后画心内亮起（由静置态确定性派生，剪影一致） |
 | `wardrobe_empty.png` | `assets/textures/objects/inn/` | 360x460 | PNG + Alpha | 衣橱和空奖励位 |
 | `word_spirit_hello.png` | `assets/textures/objects/inn/` | 256x256 | PNG + Alpha | 第一个词灵，可用于 `hello` 教学 |
 | `guest_room_distant_light.png` | `assets/textures/objects/inn/` | 420x520 | PNG + Alpha | 客房门后远方声音/光影 |
@@ -118,12 +118,12 @@
 |--------|----------|------|------|------|
 | `formation_ring.png` | `assets/textures/objects/inn/` | 720x720 | PNG + Alpha | 阵法中心圆环，支持轻微旋转或透明度脉冲 |
 | `formation_lines.png` | `assets/textures/objects/inn/` | 900x900 | PNG + Alpha | 六神器座连接线，避免硬编码线条 |
-| `bookshelf_open_01.png` ~ `bookshelf_open_04.png` | `assets/textures/objects/inn/` | 420x520 | PNG + Alpha | 书架打开成入口的短动画 |
+| ~~`bookshelf_open_01.png` ~ `bookshelf_open_04.png`~~ | — | — | — | **【2026-09-20 已删除】** 原为「书架打开成入口」的短动画；入口改成画卷后取消（本就 0 代码引用） |
 | `word_spirit_glow.png` | `assets/textures/objects/inn/` | 320x320 | PNG + Alpha | 词灵外圈呼吸光 |
 | `library_floating_books.png` | `assets/textures/objects/inn/` | 1400x520 | PNG + Alpha | 词灵书阁漂浮书页/书脊层 |
 | `wardrobe_reward_slot_empty.png` | `assets/textures/objects/inn/` | 96x160 | PNG + Alpha | 空服装奖励槽，可复用2-4次 |
 | `inn_room_dust_motes.png` | `assets/textures/particles/` | 512x512 | PNG + Alpha | 客栈内轻微尘光粒子 |
-| `inn_magic_spark.png` | `assets/textures/particles/` | 256x256 | PNG + Alpha | 阵法、书架、词灵通用魔法粒子 |
+| `inn_magic_spark.png` | `assets/textures/particles/` | 256x256 | PNG + Alpha | 阵法、画卷、词灵通用魔法粒子 |
 
 ---
 
@@ -175,14 +175,14 @@
 | 房间基调 | 暖木色、安稳、像玩家可以回来的地方 |
 | 共用规范 | 使用与 `BeginningFP` 相同的 `mirage_inn_owner_room_bg.png`，保证醒来与导览是同一空间 |
 | 床 | 第一人称醒来时床在镜头外；导览第一站背景不需要完整床铺 |
-| 书架 | 比衣橱更显眼；可有微光缝隙暗示通往词灵书阁 |
+| 墙上画卷 | 比衣橱更显眼；画心内可有暖光暗示里面有一方小世界（通往词灵书阁） |
 | 衣橱 | 有 2-4 个空奖励位；不要展示太多服装，避免玩家误以为已开放 |
-| 空间布局 | 书架建议在左/中区域，衣橱在右侧，符合当前实现 |
-| 视觉状态 | `bookshelf_closed` 和 `bookshelf_awake` 要明显区分，但不要刺眼 |
+| 空间布局 | 画卷挂在后墙中央（背景画死的立轴，实测 x890-1112 / y222-676），衣橱在右侧，符合当前实现 |
+| 视觉状态 | `scroll_dormant` 和 `scroll_awake` 要明显区分（实测两态平均像素差 13.1），但不要刺眼 |
 
 ### 5.4 词灵书阁
 
-**画面目标**: 明确这是书架后的独立空间，不是普通书房。
+**画面目标**: 明确这是画卷里的一方小世界，不是普通书房。
 
 | 元素 | 规格 |
 |------|------|
@@ -212,9 +212,9 @@
 
 | 资源 | 路径 | 本场景用途 |
 |------|------|------------|
-| `feifei_frames.tres` | `assets/sprites/feifei/` | Feifei飞入、肩膀待机、提示 |
-| `ui_feifei_bubble_fp.png` | `assets/textures/ui/fp/` | Feifei对白气泡 |
-| `ui_mic_button_idle.png` | `assets/textures/ui/fp/` | 等待玩家说“书架” |
+| `feifei_part.png` | `assets/sprites/feifei/` | Feifei 骨骼蒙皮部件图集（驱动飞入、待机、提示） |
+| ~~`ui_feifei_bubble_fp.png`~~ | — | **已退役**：气泡由 `FeifeiBody.gd` 程序化绘制（`Panel` + `Polygon2D`） |
+| `ui_mic_button_idle.png` | `assets/textures/ui/fp/` | 等待玩家说“画中小世界” |
 | `ui_mic_button_recording.png` | `assets/textures/ui/fp/` | 录音中状态 |
 | `ui_quest_tracker_bg.png` | `assets/textures/ui/fp/` | 当前导览任务提示 |
 
@@ -231,7 +231,7 @@
 |--------|----------|------|------|------|
 | `inn_ambient.ogg` | `assets/audio/ambient/` | OGG Vorbis | 60-120s循环 | 客栈内木屋、轻风、微弱魔法底噪 |
 | `formation_room_hum.ogg` | `assets/audio/ambient/` | OGG Vorbis | 30-60s循环 | 阵法房间低频魔法声 |
-| `bookshelf_awake.ogg` | `assets/audio/sfx/` | OGG Vorbis | 1-2s | 玩家说“书架”后入口醒来 |
+| ~~`bookshelf_awake.ogg`~~ | — | — | — | **【2026-09-20 已删除】** 原为「玩家说书架后入口醒来」的音效；入口改画卷后 0 播放调用点，已连同 AudioManager 白名单与 CREDITS 清退 |
 | `library_enter.ogg` | `assets/audio/sfx/` | OGG Vorbis | 2-4s | 进入词灵书阁 |
 | `word_spirit_clear.ogg` | `assets/audio/sfx/` | OGG Vorbis | 1-2s | 词灵变清楚 |
 | `guest_distant_hello.ogg` | `assets/audio/sfx/` | OGG Vorbis | 1-3s | 客房门后远方声音氛围，可与TTS分离 |
@@ -255,7 +255,7 @@ no horror, no dark haunted mood, no messy props, no text baked into image
 |------|--------------|
 | 客栈大厅 | 温暖木质大厅，三扇清楚的房门，中央门带微弱紫金阵法光，左门温馨，右门安静，画面干净大方 |
 | 阵法房间 | 六角阵法房，六个空神器座，中心有一小点金色希望光，神秘但不阴森 |
-| 主人房 | 儿童友好的温暖房间，大书架有魔法缝隙光，右侧衣橱有空奖励展示格，像玩家自己的小窝；与 `BeginningFP` 主人房基准背景共用同一张 owner room 背景 |
+| 主人房 | 儿童友好的温暖房间，后墙立轴的画心会亮（书阁入口），右侧衣橱有空奖励展示格，像玩家自己的小窝；与 `BeginningFP` 主人房基准背景共用同一张 owner room 背景 |
 | 词灵书阁 | 青绿色魔法书阁，漂浮书页，小小发光词灵，梦幻但清楚，空间轻盈 |
 | 客房预告 | 安静客房门，门缝透出远方光，浅色声波暗示“Hello”，有期待感，不恐怖 |
 
@@ -264,7 +264,7 @@ no horror, no dark haunted mood, no messy props, no text baked into image
 每张草图提交前先做以下自检：
 
 - 5秒内能说出画面主焦点是什么。
-- 缩到 25% 大小时，三扇门、书架、词灵、客房门仍能辨认。
+- 缩到 25% 大小时，三扇门、墙上画卷、词灵、客房门仍能辨认。
 - 画面至少有一个“想靠近看看”的发光或动态潜力点。
 - 没有让孩子误会可以点击的按钮式图案。
 - 没有过暗、过脏、过密、过尖锐的区域。

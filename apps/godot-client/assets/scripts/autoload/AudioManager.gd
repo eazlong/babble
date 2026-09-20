@@ -40,7 +40,7 @@ func _ready() -> void:
 	_register_sfx_names()
 
 const SFX_NAMES: Array[String] = [
-	"magic_sparkle", "badge_unlock", "bookshelf_awake", "library_enter",
+	"magic_sparkle", "badge_unlock", "library_enter",
 	"word_spirit_clear", "guest_distant_hello", "changan_mist_surge",
 	"ui_spirit_stone_listen", "ui_spirit_stone_success", "ui_spirit_stone_hint",
 	"celebration", "area_unlock", "changan_bell_ring",
@@ -135,6 +135,15 @@ func play_audio_from_base64(base64_data: String, format: String = "wav") -> void
 		play_tts(stream)
 	else:
 		push_error("Unsupported audio format: " + format)
+
+
+## 公开的 WAV 解码入口：把 wav 字节转成 AudioStreamWAV。
+## 录制 TTS 回放（HybridAPI._play_recorded_tts）直接用原始字节建流，
+## 不走 Godot 的 .wav 导入产物，省掉每次重录后的全量重导入。
+func create_wav_stream_from_bytes(wav_bytes: PackedByteArray) -> AudioStreamWAV:
+	if wav_bytes.size() <= 44:
+		return null
+	return _create_wav_stream(wav_bytes)
 
 
 func _create_wav_stream(wav_bytes: PackedByteArray) -> AudioStreamWAV:

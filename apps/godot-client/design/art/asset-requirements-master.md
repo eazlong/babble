@@ -254,11 +254,11 @@ no horror, no dark haunted mood, no messy props, no text baked into image
 
 | 资源 | 规格 | 状态 |
 |------|------|------|
-| `bookshelf_closed.png` / `bookshelf_awake.png` | 420×520 | ✅ |
+| `scroll_dormant.png` / `scroll_awake.png` | 198×351 | ✅ |
 | `wardrobe_empty.png` | 360×460 | ✅ |
 | `word_spirit_hello.png` | 256×256 | ✅ |
 | `guest_room_distant_light.png` | 420×520 | ✅ |
-| `bookshelf_open_01~04.png` | 420×520 ×4 | ⬜ P1 |
+| ~~`bookshelf_open_01~04.png`~~ | — | ❌ 取消（2026-09-20 随书柜美术删除） |
 | `wardrobe_reward_slot_empty.png` | 96×160 | ⬜ P1 |
 | `guest_voice_ripple.png` | 360×180 | ⬜ P2 |
 | `inn_magic_spark.png` | 256×256 粒子 | ⬜ P1 |
@@ -384,7 +384,7 @@ no horror, no dark haunted mood, no messy props, no text baked into image
 |------|------|------|------|
 | `inn_ambient.ogg` | 60-120s 循环 | 木屋、轻风、微弱魔法底噪 | ⬜ |
 | `formation_room_hum.ogg` | 30-60s 循环 | 阵法房间低频魔法声 | ⬜ |
-| `bookshelf_awake.ogg` | 1-2s | 说「书架」后入口醒来 | ⬜ |
+| ~~`bookshelf_awake.ogg`~~ | — | 说「书架」后入口醒来 | ❌ 删除（2026-09-20，入口改画卷后 0 调用点） |
 | `library_enter.ogg` | 2-4s | 进入词灵书阁 | ⬜ |
 | `word_spirit_clear.ogg` | 1-2s | 词灵变清楚 | ⬜ |
 | `guest_distant_hello.ogg` | 1-3s | 客房门后远方声音 | ⬜ |

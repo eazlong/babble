@@ -82,9 +82,6 @@ def build(name):
         for k, f in enumerate([392.0, 523.25, 659.25, 783.99, 1046.5]):
             s = _add(s, tone(f, 1.6, vol=0.25, decay=2.2), int((0.6 + k * 0.55) * SR))
         return s
-    if name == "bookshelf_awake":  # 闷响 + 吱呀
-        thud = tone(70, 0.4, vol=0.7, decay=8.0)
-        return _add(thud, tone(180, 1.0, vol=0.15, decay=1.5, harmonics=((2.7, 0.4),)), len(thud) - int(0.4 * SR))
     if name == "library_enter":
         s = noise(3.0, vol=0.15, lp=0.08)
         return _add(s, tone(261.6, 3.0, vol=0.12, decay=0.4), 0)

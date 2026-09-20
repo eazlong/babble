@@ -17,7 +17,7 @@ def synth(name):
 def test_durations_in_spec():
     specs = {  # name: (min_s, max_s)  来自 master §7
         "magic_sparkle": (1, 3), "badge_unlock": (5, 8),
-        "bookshelf_awake": (1, 2), "library_enter": (2, 4),
+        "library_enter": (2, 4),
         "word_spirit_clear": (1, 2), "guest_distant_hello": (1, 3),
         "changan_mist_surge": (3, 5), "ui_spirit_stone_listen": (0.5, 1),
         "ui_spirit_stone_success": (1, 1.5), "ui_spirit_stone_hint": (0.5, 1),

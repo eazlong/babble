@@ -19,9 +19,9 @@
 | formation_room_hum.ogg | synth: tools/synth_sfx.py `formation_room_hum` | 自产 | 45s，55Hz 低频嗡鸣 |
 | changan_market_ambient.ogg | synth: tools/synth_sfx.py `market_ambience` | 自产 | 90s，人群嗡嗡（无语言，master §7.3） |
 
-## SFX（assets/audio/sfx/，13 条）
+## SFX（assets/audio/sfx/，12 条）
 
-`magic_sparkle` / `badge_unlock` / `bookshelf_awake` / `library_enter` / `word_spirit_clear` /
+`magic_sparkle` / `badge_unlock` / `library_enter` / `word_spirit_clear` /
 `guest_distant_hello` / `changan_mist_surge` / `ui_spirit_stone_listen` / `ui_spirit_stone_success` /
 `ui_spirit_stone_hint` / `celebration` / `area_unlock` / `changan_bell_ring`
 
