@@ -17,52 +17,52 @@
 				{
 					"key": "inn_intro_owner_room_two_things",
 					"text": {
-						"en": "There are two important things here: the bookshelf and the wardrobe.",
-						"zh": "这里有两样重要的东西：书架，还有衣橱。"
+						"en": "There are two important things here: the scroll on the wall, and the wardrobe.",
+						"zh": "这里有两样重要的东西：墙上的画卷，还有衣橱。"
 					}
 				},
 				{
-					"key": "inn_intro_owner_room_bookshelf_tease",
+					"key": "inn_intro_owner_room_scroll_tease",
 					"text": {
-						"en": "The bookshelf is not just for books. Behind it is the Word Spirit Library.",
-						"zh": "书架不只是放书的地方。它后面连着词灵书阁。"
+						"en": "That is no ordinary painting. A small world is hidden inside it, and that world leads to the Word Spirit Library.",
+						"zh": "那不是一幅普通的画。画卷里藏着一方小世界，那里连着词灵书阁。"
 					}
 				}
 			]
 		},
 		{
-			"flow_id": "inn_introduction.bookshelf_voice_prompt",
+			"flow_id": "inn_introduction.scroll_voice_prompt",
 			"speaker": "feifei",
 			"voice": "spirit",
 			"lines": [
 				{
-					"key": "inn_intro_bookshelf_try_call",
+					"key": "inn_intro_scroll_try_call",
 					"text": {
-						"en": "Now try calling it. Just say: bookshelf.",
-						"zh": "现在，试着叫它。只要说：书架。"
+						"en": "Now try calling it. Just say: the little world in the painting.",
+						"zh": "现在，试着叫它。只要说：画中小世界。"
 					}
 				}
 			]
 		},
 		{
-			"flow_id": "inn_introduction.bookshelf_opened",
+			"flow_id": "inn_introduction.scroll_opened",
 			"speaker": "feifei",
 			"voice": "spirit",
 			"lines": [
 				{
-					"key": "inn_intro_bookshelf_heard",
-					"speaker": "bookshelf",
+					"key": "inn_intro_scroll_heard",
+					"speaker": "scroll",
 					"voice": "object",
 					"text": {
-						"en": "I heard you.",
-						"zh": "我听见了。"
+						"en": "I heard you. The little world inside the painting is waking up.",
+						"zh": "我听见了。画里的小世界，醒了。"
 					}
 				},
 				{
-					"key": "inn_intro_bookshelf_voice_known",
+					"key": "inn_intro_scroll_voice_known",
 					"text": {
-						"en": "Good. It knows your voice now.",
-						"zh": "很好。它现在认得你的声音了。"
+						"en": "Good. The scroll on the wall knows your voice now.",
+						"zh": "很好。墙上的画卷，现在认得你的声音了。"
 					}
 				}
 			]
@@ -456,6 +456,55 @@
 					"text": {
 						"en": "The next chapter is not available yet. Rest at the inn for now.",
 						"zh": "后续情节尚未开放"
+					}
+				}
+			]
+		},
+		{
+			"flow_id": "inn_introduction.hub_choice_prompt",
+			"speaker": "feifei",
+			"voice": "spirit",
+			"lines": [
+				{
+					"key": "inn_introduction.hub_choice_prompt",
+					"text": {
+						"en": "The formation is glowing. Do you want to keep going, or practice in the Word Spirit Library? Say \"Let's go\" to keep going, or \"Word Spirit Library\" to practice.",
+						"zh": "阵法亮着呢。你想继续赶路，还是去词灵阁练一练？想继续赶路就说：Let's go；想去词灵阁就说：词灵阁。"
+					}
+				}
+			]
+		},
+		{
+			"flow_id": "inn_introduction.hub_choice_charge_prompt",
+			"speaker": "feifei",
+			"voice": "spirit",
+			"lines": [
+				{
+					"key": "inn_introduction.hub_choice_charge_prompt",
+					"text": {
+						"en": "The formation is short {missing} charge(s), so we must recharge before setting off. Say \"Word Spirit Library\" to review and recharge, or \"Let's go\" to keep going.",
+						"zh": "阵法能量还差 {missing} 格，出发前要先充能。去词灵阁复习就说：词灵阁；想继续赶路就说：Let's go。"
+					}
+				}
+			]
+		},
+		{
+			"flow_id": "inn_introduction.hub_choice_practice_prompt",
+			"speaker": "feifei",
+			"voice": "spirit",
+			"lines": [
+				{
+					"key": "inn_introduction.hub_choice_practice_pending",
+					"text": {
+						"en": "The next chapter is not available yet.",
+						"zh": "后续情节尚未开放。"
+					}
+				},
+				{
+					"key": "inn_introduction.hub_choice_practice_offer",
+					"text": {
+						"en": "Would you like to practice in the Word Spirit Library? Say \"Word Spirit Library\" to go.",
+						"zh": "要不要去词灵阁练一练？想去就说：词灵阁。"
 					}
 				}
 			]

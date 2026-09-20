@@ -9,14 +9,16 @@ const VoiceFailureInterventionScript = preload("res://assets/scripts/components/
 
 enum InnIntroState {
 	OWNER_ROOM,
-	AWAIT_BOOKSHELF_CALL,
+	AWAIT_SCROLL_CALL,
 	WORD_SPIRIT_LIBRARY,
 	WARDROBE_PREVIEW,
 	HALL,
 	FORMATION_ROOM,
 	GUEST_ROOM_PREVIEW,
 	SUMMARY,
-	HUB_AWAIT_DEPART,
+	## hub 复访入口：腓腓把两条路都摆出来，玩家自己选——继续主线，还是去词灵阁玩。
+	HUB_AWAIT_CHOICE,
+	## 玩家选了出发但阵法能量不足：只认词灵阁口令，先把门控讲清楚（ADR 0003 §4/§10）。
 	HUB_AWAIT_CHARGE,
 	COMPLETED
 }
@@ -41,6 +43,14 @@ const LIBRARY_ENTRY_MARKERS: Array[String] = [
 	"word spirit",
 ]
 
+## hub 回客栈时的二选一提示（ADR 0003 §15：词灵阁始终可进）。
+## - 通用：两条路都能走（能量满，或有在途情节可免费续行）；
+## - 充能：能量不足，先讲门控再听词灵阁口令；
+## - 加练：没有可玩下一情节，主线走不了，但词灵阁照样开着。
+const HUB_CHOICE_FLOW: String = "inn_introduction.hub_choice_prompt"
+const HUB_CHOICE_CHARGE_FLOW: String = "inn_introduction.hub_choice_charge_prompt"
+const HUB_CHOICE_PRACTICE_FLOW: String = "inn_introduction.hub_choice_practice_prompt"
+
 const HALL_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_hall_bg.png")
 const FORMATION_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_formation_room_bg.png")
 const OWNER_ROOM_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_owner_room_bg.png")
@@ -48,8 +58,11 @@ const WORD_SPIRIT_LIBRARY_BACKGROUND = preload("res://assets/textures/background
 const GUEST_ROOM_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_guest_room_bg.png")
 const ARTIFACT_SEAT_EMPTY = preload("res://assets/textures/objects/inn/artifact_seat_empty.png")
 const ARTIFACT_FIRST_LIGHT = preload("res://assets/textures/objects/inn/artifact_first_light.png")
-const BOOKSHELF_CLOSED = preload("res://assets/textures/objects/inn/bookshelf_closed.png")
-const BOOKSHELF_AWAKE = preload("res://assets/textures/objects/inn/bookshelf_awake.png")
+## 书阁入口已从书柜改为墙上画卷（口令「画中小世界」）。
+const SCROLL_DORMANT = preload("res://assets/textures/objects/inn/scroll_dormant.png")
+const SCROLL_AWAKE = preload("res://assets/textures/objects/inn/scroll_awake.png")
+## 书柜现在只是房间陈设（不再是入口），保留它房间才不会空。
+const BOOKSHELF_FURNITURE = preload("res://assets/textures/objects/inn/bookshelf_closed.png")
 const WARDROBE_EMPTY = preload("res://assets/textures/objects/inn/wardrobe_empty.png")
 const WORD_SPIRIT_HELLO = preload("res://assets/textures/objects/inn/word_spirit_hello.png")
 const GUEST_ROOM_DISTANT_LIGHT = preload("res://assets/textures/objects/inn/guest_room_distant_light.png")
@@ -83,11 +96,19 @@ var library_view: Control
 var guest_view: Control
 var fade_overlay: ColorRect
 var first_light: TextureRect
-var bookshelf_closed: TextureRect
-var bookshelf_awake: TextureRect
+var scroll_dormant_prop: TextureRect
+var scroll_awake_prop: TextureRect
 var wardrobe_empty: TextureRect
 var formation_pips: Array[TextureRect] = []
 var formation_projection: TextureRect
+
+## ASR test 模式：本场景（导览 / hub 两种模式）各自需要哪句"玩家台词"。
+## 必须由场景自己声明，不能靠 project.godot 的全局轮换——玩家从存档直接续到本场景时，
+## 全局轮换还停在开头，会把序章的名字答案当成"唤醒画卷"喂进来（实测：前两轮 off_topic、
+## 孩子被反复重问，看起来就是"说画中小世界一直不成功"）。
+const TEST_ASR_AUDIO_DIR: String = "res://assets/test_audio/"
+const TEST_ASR_INTRO_ANSWERS: Array[String] = ["pa_03_intro_scroll_call.wav"]
+const TEST_ASR_HUB_ANSWERS: Array[String] = ["pa_04_hub_depart.wav"]
 
 func _ready() -> void:
 	var manager: Variant = _game_manager()
@@ -98,6 +119,7 @@ func _ready() -> void:
 	_update_formation_energy_visuals()
 	_setup_voice_failure_intervention()
 	_connect_runtime_signals()
+	_configure_test_asr_audio()
 	if mic_button:
 		mic_button.visible = false
 	if hub_mode:
@@ -110,6 +132,15 @@ func _ready() -> void:
 		audio.play_bgm_named("res://assets/audio/bgm/archive_hall_bgm.ogg")
 		audio.set_bgm_volume(0.3)
 		audio.play_ambient_named("res://assets/audio/amb/inn_ambient.ogg")
+
+## test-audio 模式下给本场景装一套自己的答案（导览=唤醒画卷；hub=出发），
+## 并把轮换位置归零，这样无论从哪个场景进来都对得上。
+func _configure_test_asr_audio() -> void:
+	if not HybridAPI.asr_default_answer_test_enabled:
+		return
+	var answers: Array[String] = TEST_ASR_HUB_ANSWERS if hub_mode else TEST_ASR_INTRO_ANSWERS
+	HybridAPI.set_asr_default_answer_test_enabled(true, TEST_ASR_AUDIO_DIR, answers)
+	HybridAPI.reset_asr_test_audio_index()
 
 func _process(delta: float) -> void:
 	_animate_first_light(delta)
@@ -142,12 +173,15 @@ func _start_intro() -> void:
 	await _show_view(owner_room_view)
 	await _speak_flow("inn_introduction.owner_room", 2.0)
 
-	state = InnIntroState.AWAIT_BOOKSHELF_CALL
-	_set_quest_text(_loc("quest_bookshelf"))
-	await _speak_flow("inn_introduction.bookshelf_voice_prompt", 2.0)
+	state = InnIntroState.AWAIT_SCROLL_CALL
+	_set_quest_text(_loc("quest_scroll"))
+	await _speak_flow("inn_introduction.scroll_voice_prompt", 2.0)
 	_start_voice_listening()
 
-## 客栈 hub（复访）：复盘 + 语音出发。
+## 客栈 hub（复访）：阵法房间复盘 + 二选一（继续主线 / 去词灵阁玩）。
+## 无论存档处于哪种状态，入口都先给选择，不再按状态单向派活：
+## 能量满只提出发、能量不足只提充能、没有下一情节干脆不监听——那三种写法都让
+## "我想去词灵阁玩"没有出口（ADR 0003 §15 要求词灵阁始终可进）。
 func _start_hub() -> void:
 	await _show_view(formation_view)
 	var manager: Variant = _game_manager()
@@ -157,29 +191,65 @@ func _start_hub() -> void:
 	if feifei:
 		feifei.visible = true
 		feifei.show_hint(_hub_words_hint(), FeifeiBody.STATE_HINT, 0.0)
+	await _enter_hub_choice()
 
-	if manager and manager.has_active_formation_trip() and not GameManager.get_scene_path(str(manager.get_formation_active_episode())).is_empty():
-		state = InnIntroState.HUB_AWAIT_DEPART
-		_set_quest_text(_formation_energy_status_text() + "\n" + _loc("quest_depart"))
-		await _speak_flow("inn_introduction.hub_depart_prompt", 2.5)
-		_start_voice_listening()
-		return
-
-	if _next_lesson_path().is_empty():
-		_set_quest_text(_localized_flow_text("inn_introduction.hub_content_pending"))
-		await _speak_flow("inn_introduction.hub_content_pending", 2.5)
-		return
-	if manager and manager.should_recharge_before_departure():
-		state = InnIntroState.HUB_AWAIT_CHARGE
-		_set_quest_text(_formation_energy_status_text() + "\n" + _localized_flow_text("inn_introduction.hub_charge_prompt"))
-		await _speak_flow("inn_introduction.hub_charge_prompt", 2.5)
-		_start_voice_listening()
-		return
-
-	state = InnIntroState.HUB_AWAIT_DEPART
-	_set_quest_text(_formation_energy_status_text() + "\n" + _loc("quest_depart"))
-	await _speak_flow("inn_introduction.hub_depart_prompt", 2.5)
+## 进入二选一：说“出发 / Let's go”继续主线，说“词灵阁 / 书阁 / 充能”去归卷厅复习。
+func _enter_hub_choice() -> void:
+	state = InnIntroState.HUB_AWAIT_CHOICE
+	_set_quest_text(_formation_energy_status_text() + "\n" + _hub_choice_quest_line())
+	await _speak_flow(_hub_choice_flow_id(), 2.5, {"missing": _formation_energy_missing_text()})
 	_start_voice_listening()
+
+## 按存档状态挑提示词（纯函数，便于单测）：
+## 没有可走的路 → 加练提示；要充能且不能免费续行 → 充能提示；其余 → 通用二选一。
+static func hub_choice_flow_for(has_resumable_trip: bool, has_next_lesson: bool, needs_charge: bool) -> String:
+	if not has_resumable_trip and not has_next_lesson:
+		return HUB_CHOICE_PRACTICE_FLOW
+	if needs_charge and not has_resumable_trip:
+		return HUB_CHOICE_CHARGE_FLOW
+	return HUB_CHOICE_FLOW
+
+func _hub_choice_flow_id() -> String:
+	var manager: Variant = _game_manager()
+	var needs_charge: bool = false
+	if manager:
+		needs_charge = bool(manager.should_recharge_before_departure())
+	return hub_choice_flow_for(_has_resumable_trip(), not _next_lesson_path().is_empty(), needs_charge)
+
+## 在途情节（"已付费"）且目标场景可玩 → 可以免费续行，不看阵法能量。
+func _has_resumable_trip() -> bool:
+	var manager: Variant = _game_manager()
+	if not manager or not manager.has_active_formation_trip():
+		return false
+	return manager.has_playable_lesson(str(manager.get_formation_active_episode()))
+
+## 此刻有没有可走的主线路：续行，或存在可玩的下一情节。
+func _hub_departure_available() -> bool:
+	return _has_resumable_trip() or not _next_lesson_path().is_empty()
+
+## 现在说「出发」能否立刻成行：续行免费，否则必须满格（ADR 0003 §4/§10）。
+func _hub_departure_ready() -> bool:
+	if _has_resumable_trip():
+		return true
+	var manager: Variant = _game_manager()
+	if not manager:
+		return false
+	return bool(manager.is_formation_full())
+
+func _formation_energy_missing_text() -> String:
+	var manager: Variant = _game_manager()
+	if not manager:
+		return "0"
+	return str(maxi(0, int(manager.get_formation_energy_max()) - int(manager.get_formation_energy())))
+
+func _hub_choice_quest_line() -> String:
+	if _hub_departure_available():
+		return _loc("quest_hub_choice")
+	return _loc("quest_hub_choice_practice")
+
+## ASR context 的 npc_question：拿正在问的那句提示当上下文，别写死一句。
+func _hub_choice_question_text() -> String:
+	return _localized_flow_text(_hub_choice_flow_id())
 
 func _hub_summary_text() -> String:
 	return "蜃影客栈 · %s" % _bell_progress_text()
@@ -211,22 +281,21 @@ func _next_lesson_path() -> String:
 	return GameManager.get_scene_path(str(manager.get_next_lesson()))
 
 func _depart_for_next_lesson() -> void:
+	var manager: Variant = _game_manager()
+	# 在途情节凭"已付费"免费续行，不看阵法能量（ADR 0003 §4/§10）。
+	if _has_resumable_trip():
+		var active_path: String = GameManager.get_scene_path(str(manager.get_formation_active_episode()))
+		_stop_voice_listening()
+		await _fade_to_black()
+		var active_result := get_tree().change_scene_to_file(active_path)
+		if active_result != OK:
+			push_error("[MirageInnHub] Failed to resume active episode: %s" % error_string(active_result))
+		return
 	var next_path: String = _next_lesson_path()
 	if next_path.is_empty():
-		_set_quest_text(_localized_flow_text("inn_introduction.hub_content_pending"))
-		await _speak_flow("inn_introduction.hub_content_pending", 2.5)
+		# 没有再可玩的主线情节：不能装作能出发。回到二选一，词灵阁照样开着（ADR 0003 §15）。
+		await _enter_hub_choice()
 		return
-	var manager: Variant = _game_manager()
-	if manager and manager.has_active_formation_trip():
-		var active_id: String = str(manager.get_formation_active_episode())
-		var active_path: String = GameManager.get_scene_path(active_id)
-		if not active_path.is_empty() and GameManager.has_playable_lesson(active_id):
-			_stop_voice_listening()
-			await _fade_to_black()
-			var active_result := get_tree().change_scene_to_file(active_path)
-			if active_result != OK:
-				push_error("[MirageInnHub] Failed to resume active episode: %s" % error_string(active_result))
-			return
 	if manager:
 		if not manager.is_formation_full():
 			state = InnIntroState.HUB_AWAIT_CHARGE
@@ -247,11 +316,11 @@ func _depart_for_next_lesson() -> void:
 	if change_result != OK:
 		push_error("[MirageInnHub] Failed to change scene: %s" % error_string(change_result))
 
-func _continue_after_bookshelf_call() -> void:
+func _continue_after_scroll_call() -> void:
 	_stop_voice_listening()
 	if feifei:
 		feifei.play_happy()
-	await _speak_flow("inn_introduction.bookshelf_opened", 1.5)
+	await _speak_flow("inn_introduction.scroll_opened", 1.5)
 
 	state = InnIntroState.WORD_SPIRIT_LIBRARY
 	_set_quest_text(_loc("quest_library"))
@@ -366,9 +435,14 @@ func _build_formation_view() -> Control:
 
 func _build_owner_room_view() -> Control:
 	var root := _new_full_view("OwnerRoomView", OWNER_ROOM_BACKGROUND)
-	bookshelf_closed = _add_texture(root, "BookshelfClosed", BOOKSHELF_CLOSED, Vector2(318, 315), Vector2(420, 520))
-	bookshelf_awake = _add_texture(root, "BookshelfAwake", BOOKSHELF_AWAKE, Vector2(318, 315), Vector2(420, 520))
-	bookshelf_awake.visible = false
+	# 书阁入口已从书柜改为墙上画卷（口令「画中小世界」）。
+	# 画卷贴在背景画卷的画心位置（背景画心实测 x908-1092, y288-624），
+	# 贴图 198x351 四周留 6px 余量盖住旧画心，避免残留原先那张画。
+	scroll_dormant_prop = _add_texture(root, "ScrollDormant", SCROLL_DORMANT, Vector2(902, 282), Vector2(198, 351))
+	scroll_awake_prop = _add_texture(root, "ScrollAwake", SCROLL_AWAKE, Vector2(902, 282), Vector2(198, 351))
+	scroll_awake_prop.visible = false
+	# 书柜保留为房间陈设：入口虽是画卷，但房间不该空掉，且这套中式书柜是已画好的成品。
+	_add_texture(root, "Bookshelf", BOOKSHELF_FURNITURE, Vector2(318, 315), Vector2(420, 520))
 	wardrobe_empty = _add_texture(root, "Wardrobe", WARDROBE_EMPTY, Vector2(1240, 335), Vector2(360, 460))
 	return root
 
@@ -426,11 +500,11 @@ func _animate_first_light(delta: float) -> void:
 	var pulse := 0.55 + sin(Time.get_ticks_msec() / 1000.0 * 3.0) * 0.30
 	first_light.modulate.a = lerpf(first_light.modulate.a, pulse, delta * 4.0)
 
-func _set_bookshelf_awake(is_awake: bool) -> void:
-	if bookshelf_closed:
-		bookshelf_closed.visible = not is_awake
-	if bookshelf_awake:
-		bookshelf_awake.visible = is_awake
+func _set_scroll_awake(is_awake: bool) -> void:
+	if scroll_dormant_prop:
+		scroll_dormant_prop.visible = not is_awake
+	if scroll_awake_prop:
+		scroll_awake_prop.visible = is_awake
 
 func _fade_to_black() -> void:
 	if not fade_overlay:
@@ -521,8 +595,8 @@ func _start_voice_listening() -> void:
 	record_duration = 0.0
 	if mic_button:
 		mic_button.visible = true
-	if state == InnIntroState.AWAIT_BOOKSHELF_CALL:
-		_set_bookshelf_awake(true)
+	if state == InnIntroState.AWAIT_SCROLL_CALL:
+		_set_scroll_awake(true)
 	var voice_pipeline: Variant = _voice_pipeline()
 	if voice_pipeline:
 		voice_pipeline.start_listening()
@@ -552,36 +626,37 @@ func _on_voice_ended(audio_data: PackedByteArray) -> void:
 	if hybrid_api:
 		var asr_context: Dictionary
 		match state:
-			InnIntroState.HUB_AWAIT_DEPART:
-				asr_context = _build_hub_depart_asr_context()
+			InnIntroState.HUB_AWAIT_CHOICE:
+				asr_context = _build_hub_choice_asr_context()
 			InnIntroState.HUB_AWAIT_CHARGE:
 				asr_context = _build_library_entry_asr_context()
 			_:
-				asr_context = _build_bookshelf_asr_context()
+				asr_context = _build_scroll_asr_context()
 		hybrid_api.recognize_speech(audio_data, _source_language_code(), asr_context)
 
 func _on_asr_received(result: Dictionary) -> void:
-	if state == InnIntroState.HUB_AWAIT_DEPART:
-		await _handle_hub_depart_asr(result)
+	if state == InnIntroState.HUB_AWAIT_CHOICE:
+		await _handle_hub_choice_asr(result)
 		return
 	if state == InnIntroState.HUB_AWAIT_CHARGE:
 		await _handle_hub_charge_asr(result)
 		return
-	if state != InnIntroState.AWAIT_BOOKSHELF_CALL:
+	if state != InnIntroState.AWAIT_SCROLL_CALL:
 		return
 	if result.has("error"):
 		await _handle_voice_attempt_failed("asr_error")
 		return
 	var text := _asr_answer_text(result)
-	if _is_bookshelf_call(text):
+	if _is_scroll_call(text):
 		voice_failure_intervention.reset_failures()
 		voice_failure_intervention.add_turn("player", text)
-		await _continue_after_bookshelf_call()
+		await _continue_after_scroll_call()
 		return
 
 	await _handle_voice_attempt_failed("wrong_answer")
 
-func _handle_hub_depart_asr(result: Dictionary) -> void:
+## hub 二选一的语音裁决：出发意图走主线段（含能量门控），词灵阁意图进归卷厅。
+func _handle_hub_choice_asr(result: Dictionary) -> void:
 	if result.has("error"):
 		await _handle_voice_attempt_failed("asr_error")
 		return
@@ -590,25 +665,26 @@ func _handle_hub_depart_asr(result: Dictionary) -> void:
 		voice_failure_intervention.reset_failures()
 		voice_failure_intervention.add_turn("player", text)
 		_stop_voice_listening()
-		await _speak_flow("inn_introduction.hub_depart_ack", 2.0)
+		# 能量不足时不先道贺：由 _depart_for_next_lesson 讲明"要先充能"并改听词灵阁口令。
+		if _hub_departure_ready():
+			await _speak_flow("inn_introduction.hub_depart_ack", 2.0)
 		await _depart_for_next_lesson()
 		return
-
 	if await _try_enter_library_from_text(text):
 		return
 	await _handle_voice_attempt_failed("wrong_answer")
 
 func _handle_voice_attempt_failed(reason: String) -> void:
-	if state not in [InnIntroState.AWAIT_BOOKSHELF_CALL, InnIntroState.HUB_AWAIT_DEPART, InnIntroState.HUB_AWAIT_CHARGE]:
+	if state not in [InnIntroState.AWAIT_SCROLL_CALL, InnIntroState.HUB_AWAIT_CHOICE, InnIntroState.HUB_AWAIT_CHARGE]:
 		return
 	if voice_failure_intervention.register_failure(reason):
 		await get_tree().create_timer(0.45).timeout
 		_start_voice_listening()
 		return
 
-	var retry_text: String = _loc("bookshelf_retry")
-	if state == InnIntroState.HUB_AWAIT_DEPART:
-		retry_text = _loc("hub_depart_retry")
+	var retry_text: String = _loc("scroll_retry")
+	if state == InnIntroState.HUB_AWAIT_CHOICE:
+		retry_text = _loc("hub_choice_retry")
 	elif state == InnIntroState.HUB_AWAIT_CHARGE:
 		retry_text = _localized_flow_text("inn_introduction.hub_charge_retry")
 	if feifei:
@@ -616,9 +692,12 @@ func _handle_voice_attempt_failed(reason: String) -> void:
 	await get_tree().create_timer(0.35).timeout
 	_start_voice_listening()
 
-func _is_bookshelf_call(text: String) -> bool:
-	var lower := text.to_lower()
-	return lower.contains("书架") or lower.contains("bookshelf") or lower.contains("book shelf")
+func _is_scroll_call(text: String) -> bool:
+	# 唤醒词同样要先归一繁体：Whisper 对普通话口令经常输出繁体（实测「书架」→「書架」，
+	# 现在这句口令会输出成「畫中小世界」），而 candidate_answers 只有简体
+	# （见 StoryContinueMarkers.TRADITIONAL_VARIANTS，畫→画 就为此存在）。
+	var lower := StoryContinueMarkersScript.normalize_variants(text).to_lower()
+	return lower.contains("画中小世界") or lower.contains("little world") or lower.contains("painting")
 
 func _is_depart_call(text: String) -> bool:
 	return StoryContinueMarkersScript.matches(text)
@@ -627,29 +706,37 @@ func _set_quest_text(text: String) -> void:
 	if quest_label:
 		quest_label.text = text
 
+## 场景内文案表（zh = 母语，en = 目标语言）。做成类常量 + 静态取用，方便单测直接
+## 断言"提示里有没有把那两句口令都教出来"（hub 二选一最怕提示漏教一句）。
+const LOC_STRINGS: Dictionary = {
+	"quest_owner_room": {"zh": "任务：认识自己的房间", "en": "Quest: Learn about your room"},
+	"quest_formation": {"zh": "任务：查看阵法房间", "en": "Quest: Inspect the formation room"},
+	"quest_hall": {"zh": "任务：认识客栈大厅", "en": "Quest: Learn about the hall"},
+	"quest_scroll": {"zh": "任务：说“画中小世界”", "en": "Quest: Say \"the little world in the painting\""},
+	"quest_library": {"zh": "任务：进入词灵书阁", "en": "Quest: Enter the Word Spirit Library"},
+	"quest_wardrobe": {"zh": "任务：查看衣橱", "en": "Quest: Preview the wardrobe"},
+	"quest_guest_room": {"zh": "任务：查看客房", "en": "Quest: Preview the guest room"},
+	"quest_summary": {"zh": "任务：记住客栈的三个房间", "en": "Quest: Remember the three rooms"},
+	"quest_complete": {"zh": "客栈介绍完成：前往长安西市", "en": "Inn introduction complete: Go to Chang'an Market"},
+	"quest_depart": {"zh": "任务：对腓腓说出发", "en": "Quest: Tell feifei you are ready to go"},
+	"quest_hub_choice": {"zh": "任务：说“出发”继续赶路，或说“词灵阁”去玩小游戏", "en": "Quest: Say \"Let's go\" to keep going, or \"Word Spirit Library\" to play"},
+	"quest_hub_choice_practice": {"zh": "任务：说“词灵阁”去玩复习小游戏", "en": "Quest: Say \"Word Spirit Library\" to play the review mini-game"},
+	"hub_stay": {"zh": "今日已结束", "en": "All done for today"},
+	"hub_depart_retry": {"zh": "准备好出发，就对腓腓说：“Let's go!” 或者“出发”。", "en": "When you are ready, say to feifei: \"Let's go!\" or \"出发\"."},
+	"hub_choice_retry": {"zh": "想继续赶路，就说“出发”或者“Let's go”；想去词灵阁玩，就说“词灵阁”。", "en": "To keep going, say \"Let's go\". To play in the Word Spirit Library, say \"Word Spirit Library\"."},
+	"scroll_retry": {"zh": "对着墙上的画卷说“画中小世界”，它就会听见你。", "en": "Say \"the little world in the painting\" to the scroll on the wall, and it will hear you."},
+	"recognizing": {"zh": "正在识别你的声音...", "en": "Listening to your voice..."},
+	"coach_waiting": {"zh": "别着急，腓腓来帮你。", "en": "No rush. Feifei will help."},
+	"coach_fallback": {"zh": "我们慢慢来。请看着墙上的画卷，清楚地说：画中小世界。", "en": "Let's slow down. Look at the scroll painting on the wall and clearly say: the little world in the painting."},
+}
+
+static func loc(key: String, lang: String) -> String:
+	if not LOC_STRINGS.has(key):
+		return ""
+	return str(LOC_STRINGS[key].get(lang, LOC_STRINGS[key].get("zh", "")))
+
 func _loc(key: String) -> String:
-	var is_zh := _source_language_code() == "zh"
-	var strings := {
-		"quest_owner_room": {"zh": "任务：认识自己的房间", "en": "Quest: Learn about your room"},
-		"quest_formation": {"zh": "任务：查看阵法房间", "en": "Quest: Inspect the formation room"},
-		"quest_hall": {"zh": "任务：认识客栈大厅", "en": "Quest: Learn about the hall"},
-		"quest_bookshelf": {"zh": "任务：说“书架”", "en": "Quest: Say \"bookshelf\""},
-		"quest_library": {"zh": "任务：进入词灵书阁", "en": "Quest: Enter the Word Spirit Library"},
-		"quest_wardrobe": {"zh": "任务：查看衣橱", "en": "Quest: Preview the wardrobe"},
-		"quest_guest_room": {"zh": "任务：查看客房", "en": "Quest: Preview the guest room"},
-		"quest_summary": {"zh": "任务：记住客栈的三个房间", "en": "Quest: Remember the three rooms"},
-		"quest_complete": {"zh": "客栈介绍完成：前往长安西市", "en": "Inn introduction complete: Go to Chang'an Market"},
-		"quest_depart": {"zh": "任务：对腓腓说出发", "en": "Quest: Tell feifei you are ready to go"},
-		"hub_stay": {"zh": "今日已结束", "en": "All done for today"},
-		"hub_depart_retry": {"zh": "准备好出发，就对腓腓说：“Let's go!” 或者“出发”。", "en": "When you are ready, say to feifei: \"Let's go!\" or \"出发\"."},
-		"bookshelf_retry": {"zh": "对着书架说“书架”，它就会听见你。", "en": "Say \"bookshelf\" to the bookshelf, and it will hear you."},
-		"recognizing": {"zh": "正在识别你的声音...", "en": "Listening to your voice..."},
-		"coach_waiting": {"zh": "别着急，腓腓来帮你。", "en": "No rush. Feifei will help."},
-		"coach_fallback": {"zh": "我们慢慢来。请看着书架，清楚地说：“书架”。", "en": "Let's slow down. Look at the bookshelf and clearly say: \"bookshelf\"."},
-	}
-	if strings.has(key):
-		return strings[key].get("zh" if is_zh else "en", "")
-	return ""
+	return loc(key, _source_language_code())
 
 func _source_language_code() -> String:
 	var manager: Variant = _game_manager()
@@ -694,64 +781,64 @@ func _failure_turn_text(reason: String) -> String:
 				return "[wrong_answer] Player should say the Word Spirit Library entry phrase."
 			_:
 				return "[voice_retry] Player needs help with the library entry phrase."
-	if state == InnIntroState.HUB_AWAIT_DEPART:
+	if state == InnIntroState.HUB_AWAIT_CHOICE:
 		match reason:
 			"silence":
-				return "[no_voice_detected] Player did not respond to feifei's departure prompt."
+				return "[no_voice_detected] Player did not answer the hub choice: keep going, or practice in the Word Spirit Library."
 			"asr_error":
-				return "[asr_error] Voice service returned an error during the departure prompt."
+				return "[asr_error] Voice service returned an error during the hub choice prompt."
 			"wrong_answer":
-				return "[wrong_answer] Player should say Let's go/出发 to depart."
+				return "[wrong_answer] Player should say Let's go/出发 to keep going, or 词灵阁/书阁 to enter the Word Spirit Library."
 			_:
-				return "[voice_retry] Player needs help with the departure phrase."
+				return "[voice_retry] Player needs help choosing between departure and the Word Spirit Library."
 
 	match reason:
 		"silence":
-			return "[no_voice_detected] Player did not speak during the bookshelf voice prompt."
+			return "[no_voice_detected] Player did not speak during the scroll voice prompt."
 		"asr_error":
-			return "[asr_error] Voice service returned an error during the bookshelf voice prompt."
+			return "[asr_error] Voice service returned an error during the scroll voice prompt."
 		"wrong_answer":
-			return "[wrong_answer] Player should say bookshelf/书架 but said something else."
+			return "[wrong_answer] Player should say the little world in the painting/画中小世界 but said something else."
 		_:
-			return "[voice_retry] Player needs help saying bookshelf/书架."
+			return "[voice_retry] Player needs help saying the little world in the painting/画中小世界."
 
-func _build_bookshelf_asr_context() -> Dictionary:
+func _build_scroll_asr_context() -> Dictionary:
 	return {
 		"session_id": voice_failure_intervention.get_session_id(),
 		"user_id": _player_name(),
 		"npc_id": "feifei_mirage_inn",
 		"scene_id": "mirage_inn_introduction",
-		"npc_question": _loc("bookshelf_retry"),
+		"npc_question": _loc("scroll_retry"),
 		"expected_slots": [
 			{
 				"key": "answer",
 				"type": "keyword",
-				"description": "玩家对书架说出的唤醒词：书架/bookshelf",
+				"description": "玩家对墙上画卷说出的口令：画中小世界/painting",
 			}
 		],
 		"expected_answer_type": "keyword",
-		"candidate_answers": ["书架", "bookshelf", "book shelf"],
+		"candidate_answers": ["画中小世界", "little world in the painting", "little world", "painting"],
 		"recent_turns": voice_failure_intervention.get_recent_turns(),
 		"player_level": _player_level(),
 		"language": _source_language_code(),
 	}
 
-func _build_hub_depart_asr_context() -> Dictionary:
+func _build_hub_choice_asr_context() -> Dictionary:
 	return {
 		"session_id": voice_failure_intervention.get_session_id(),
 		"user_id": _player_name(),
 		"npc_id": "feifei_mirage_inn",
 		"scene_id": "mirage_inn_hub",
-		"npc_question": _loc("hub_depart_retry"),
+		"npc_question": _hub_choice_question_text(),
 		"expected_slots": [
 			{
 				"key": "answer",
 				"type": "keyword",
-				"description": "玩家对腓腓说出的出发意图：Let's go / 出发 / 下一课",
+				"description": "玩家对腓腓说的二选一：Let's go/出发 继续主线，或 词灵阁/书阁/充能 去复习",
 			}
 		],
 		"expected_answer_type": "keyword",
-		"candidate_answers": _depart_and_library_candidates(),
+		"candidate_answers": hub_choice_candidates(_hub_departure_available()),
 		"recent_turns": voice_failure_intervention.get_recent_turns(),
 		"player_level": _player_level(),
 		"language": _source_language_code(),
@@ -856,9 +943,13 @@ func _enter_word_spirit_library() -> void:
 func _library_entry_candidates() -> Array[String]:
 	return LIBRARY_ENTRY_MARKERS.duplicate()
 
-func _depart_and_library_candidates() -> Array[String]:
-	var candidates: Array[String] = StoryContinueMarkersScript.MARKERS.duplicate()
-	candidates.append_array(_library_entry_candidates())
+## 二选一封闭题的候选口令（纯函数，便于单测）：没有可走的主线时只留词灵阁入口——
+## 封闭题里混进一个此刻不存在的选项，只会让 ASR 把随口的回答纠成"出发"（CLAUDE.md §9）。
+static func hub_choice_candidates(departure_available: bool) -> Array[String]:
+	var candidates: Array[String] = []
+	if departure_available:
+		candidates.append_array(StoryContinueMarkersScript.MARKERS)
+	candidates.append_array(LIBRARY_ENTRY_MARKERS)
 	return candidates
 
 func _formation_energy_status_text() -> String:

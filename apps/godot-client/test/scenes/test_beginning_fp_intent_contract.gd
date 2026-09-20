@@ -152,5 +152,5 @@ func test_resume_marker_still_matches_superset_utterance() -> void:
 	# 口令表按包含匹配，所以"命中口令 + 后续撤回"这种句子会被口令表放行——
 	# 这正是 rule_010 门控存在的理由（本用例固化现状，门控负责兜住）。
 	assert_true(controller._is_resume_call("let's go... \u7b49\u4e00\u4e0b"), "标记表按包含匹配命中口令")
-	assert_false(controller._is_resume_call("bookshelf"), "无关话语不应命中口令")
+	assert_false(controller._is_resume_call("画中小世界"), "无关话语不应命中口令")
 	controller.free()

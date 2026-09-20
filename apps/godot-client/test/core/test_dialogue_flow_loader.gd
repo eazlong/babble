@@ -134,6 +134,10 @@ func test_mirage_inn_intro_uses_owner_room_and_hall_flows():
 	assert_true(loader.has_flow("inn_introduction.hub_depart_prompt"), "hub 出发提示 flow 应存在")
 	assert_true(loader.has_flow("inn_introduction.hub_depart_ack"), "hub 出发确认 flow 应存在")
 	assert_true(loader.has_flow("inn_introduction.hub_stay"), "hub 无下一课时停留 flow 应存在")
+	# 回客栈的二选一：继续主线 或 去词灵阁玩（ADR 0003 §15）。
+	assert_true(loader.has_flow("inn_introduction.hub_choice_prompt"), "hub 二选一提示 flow 应存在")
+	assert_true(loader.has_flow("inn_introduction.hub_choice_charge_prompt"), "hub 充能二选一提示 flow 应存在")
+	assert_true(loader.has_flow("inn_introduction.hub_choice_practice_prompt"), "hub 加练提示 flow 应存在")
 
 func test_mirage_inn_intro_flow_order_matches_canon():
 	var file := FileAccess.open("res://assets/resources/dialogue_flows/inn_introduction.json", FileAccess.READ)
@@ -145,8 +149,8 @@ func test_mirage_inn_intro_flow_order_matches_canon():
 		ids.append(str(flow["flow_id"]))
 	var expected: Array[String] = [
 		"inn_introduction.owner_room",
-		"inn_introduction.bookshelf_voice_prompt",
-		"inn_introduction.bookshelf_opened",
+		"inn_introduction.scroll_voice_prompt",
+		"inn_introduction.scroll_opened",
 		"inn_introduction.word_spirit_library",
 		"inn_introduction.wardrobe_preview",
 		"inn_introduction.hall",
@@ -159,8 +163,11 @@ func test_mirage_inn_intro_flow_order_matches_canon():
 		"inn_introduction.hub_charge_prompt",
 		"inn_introduction.hub_charge_retry",
 		"inn_introduction.hub_content_pending",
+		"inn_introduction.hub_choice_prompt",
+		"inn_introduction.hub_choice_charge_prompt",
+		"inn_introduction.hub_choice_practice_prompt",
 	]
-	assert_eq(ids, expected, "导览 flow 顺序应为主人房→书柜→书阁→衣橱→大厅→阵法→客房→总结")
+	assert_eq(ids, expected, "导览 flow 顺序应为主人房→画卷→书阁→衣橱→大厅→阵法→客房→总结，hub 段末尾接回客栈二选一")
 
 func test_get_lines_falls_back_to_english_for_unknown_language():
 	var loader: Variant = DialogueFlowLoaderScript.new()
