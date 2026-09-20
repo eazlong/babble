@@ -61,8 +61,6 @@ const ARTIFACT_FIRST_LIGHT = preload("res://assets/textures/objects/inn/artifact
 ## 书阁入口已从书柜改为墙上画卷（口令「画中小世界」）。
 const SCROLL_DORMANT = preload("res://assets/textures/objects/inn/scroll_dormant.png")
 const SCROLL_AWAKE = preload("res://assets/textures/objects/inn/scroll_awake.png")
-## 书柜现在只是房间陈设（不再是入口），保留它房间才不会空。
-const BOOKSHELF_FURNITURE = preload("res://assets/textures/objects/inn/bookshelf_closed.png")
 const WARDROBE_EMPTY = preload("res://assets/textures/objects/inn/wardrobe_empty.png")
 const WORD_SPIRIT_HELLO = preload("res://assets/textures/objects/inn/word_spirit_hello.png")
 const GUEST_ROOM_DISTANT_LIGHT = preload("res://assets/textures/objects/inn/guest_room_distant_light.png")
@@ -441,8 +439,7 @@ func _build_owner_room_view() -> Control:
 	scroll_dormant_prop = _add_texture(root, "ScrollDormant", SCROLL_DORMANT, Vector2(902, 282), Vector2(198, 351))
 	scroll_awake_prop = _add_texture(root, "ScrollAwake", SCROLL_AWAKE, Vector2(902, 282), Vector2(198, 351))
 	scroll_awake_prop.visible = false
-	# 书柜保留为房间陈设：入口虽是画卷，但房间不该空掉，且这套中式书柜是已画好的成品。
-	_add_texture(root, "Bookshelf", BOOKSHELF_FURNITURE, Vector2(318, 315), Vector2(420, 520))
+	# 书柜已随入口改画卷一并删除（用户 2026-09-20：删除书柜美术资源），房间里不再有书柜。
 	wardrobe_empty = _add_texture(root, "Wardrobe", WARDROBE_EMPTY, Vector2(1240, 335), Vector2(360, 460))
 	return root
 
