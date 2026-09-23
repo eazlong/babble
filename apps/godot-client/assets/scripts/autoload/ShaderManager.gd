@@ -11,6 +11,10 @@ extends Node
 ## ============================================================
 
 ## Shader路径映射
+## NOTE: 下面三个 .gdshader 已于 2026-09-22 的资源清理中删除（本管理器不是 autoload，
+## 无人实例化；唯一引用方 ShaderAnimator/SceneManagementSystem 也都是死代码）。
+## 加载处有 ResourceLoader.exists() 兜底，所以这里只会静默取不到 shader。
+## 要恢复某个特效：从 git 历史取回对应 .gdshader，或改指向 assets/resources/shaders/ 下仍在用的那几个。
 const SHADER_PATHS: Dictionary = {
     "spirit_glow": "res://assets/resources/shaders/spirit/spirit_glow.gdshader",
     "magic_burst": "res://assets/resources/shaders/effects/magic_burst.gdshader",

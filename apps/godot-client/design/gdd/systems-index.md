@@ -4,7 +4,7 @@ LinguaQuest RPG 系统设计索引。按设计顺序排列。
 
 | # | 系统 | GDD 文件 | 状态 | 审查日期 |
 |---|------|---------|------|---------|
-| 0 | Game Concept | [game-concept.md](game-concept.md) | ✅ Approved | 2026-06-25 |
+| 0 | Game Concept | [game-concept.md](game-concept.md) | ⚠️ Superseded | - |
 | 1 | Core Loop | [core-loop.md](core-loop.md) | ✅ Approved | 2026-06-26 |
 | 2 | LXP Assessment | [lxp-system.md](lxp-system.md) | ✅ Approved | 2026-06-26 |
 | 3 | Star Economy | [star-economy.md](star-economy.md) | ✅ Approved | 2026-06-26 |

@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "note": "归卷厅词牌线索词表（场景文档 v0.3 §4.4.1 / §9.5）。单词来自 vocabulary_learned，唯一写入点是长安集市两课的 reward_words。缺条目的词回退 word_spirit_library_scene.json 的 fallback_word_pool。sentence_gap 的 ___ 是发光空槽，clue_meaning 是给孩子的中文兜底线索。",
+  "clue_types_implemented": ["chinese_meaning", "sentence_gap"],
+  "clue_types_reserved": ["picture", "listen_spell", "synonym_antonym"],
+  "words": {
+    "city": {
+      "target": "CITY",
+      "clues": {
+        "chinese_meaning": "城市",
+        "sentence_gap": "Beijing is a big ___."
+      },
+      "clue_meaning": "城市"
+    },
+    "country": {
+      "target": "COUNTRY",
+      "clues": {
+        "chinese_meaning": "国家",
+        "sentence_gap": "China is a big ___."
+      },
+      "clue_meaning": "国家"
+    },
+    "street": {
+      "target": "STREET",
+      "clues": {
+        "chinese_meaning": "街道",
+        "sentence_gap": "There are many shops on this ___."
+      },
+      "clue_meaning": "街道"
+    },
+    "building": {
+      "target": "BUILDING",
+      "clues": {
+        "chinese_meaning": "楼房",
+        "sentence_gap": "That tall ___ is a hotel."
+      },
+      "clue_meaning": "楼房"
+    },
+    "house": {
+      "target": "HOUSE",
+      "clues": {
+        "chinese_meaning": "房子",
+        "sentence_gap": "My family lives in a small ___."
+      },
+      "clue_meaning": "房子"
+    },
+    "flat": {
+      "target": "FLAT",
+      "clues": {
+        "chinese_meaning": "公寓",
+        "sentence_gap": "We live in a ___ on the third floor."
+      },
+      "clue_meaning": "公寓"
+    },
+    "farm": {
+      "target": "FARM",
+      "clues": {
+        "chinese_meaning": "农场",
+        "sentence_gap": "The farmer works on a ___."
+      },
+      "clue_meaning": "农场"
+    },
+    "live": {
+      "target": "LIVE",
+      "clues": {
+        "chinese_meaning": "居住",
+        "sentence_gap": "I ___ in Chang'an."
+      },
+      "clue_meaning": "居住"
+    },
+    "home": {
+      "target": "HOME",
+      "clues": {
+        "chinese_meaning": "家",
+        "sentence_gap": "There is no place like ___."
+      },
+      "clue_meaning": "家"
+    },
+    "eagle": {
+      "target": "EAGLE",
+      "clues": {
+        "chinese_meaning": "鹰",
+        "sentence_gap": "The ___ flies high in the sky."
+      },
+      "clue_meaning": "鹰"
+    },
+    "owl": {
+      "target": "OWL",
+      "clues": {
+        "chinese_meaning": "猫头鹰",
+        "sentence_gap": "The ___ sleeps in the day."
+      },
+      "clue_meaning": "猫头鹰"
+    },
+    "honeybee": {
+      "target": "HONEYBEE",
+      "clues": {
+        "chinese_meaning": "蜜蜂",
+        "sentence_gap": "A ___ makes honey."
+      },
+      "clue_meaning": "蜜蜂"
+    },
+    "nest": {
+      "target": "NEST",
+      "clues": {
+        "chinese_meaning": "巢",
+        "sentence_gap": "The bird sits in its ___."
+      },
+      "clue_meaning": "巢"
+    },
+    "wall": {
+      "target": "WALL",
+      "clues": {
+        "chinese_meaning": "墙",
+        "sentence_gap": "The picture is on the ___."
+      },
+      "clue_meaning": "墙"
+    },
+    "flower": {
+      "target": "FLOWER",
+      "clues": {
+        "chinese_meaning": "花",
+        "sentence_gap": "This ___ smells sweet."
+      },
+      "clue_meaning": "花"
+    }
+  }
+}

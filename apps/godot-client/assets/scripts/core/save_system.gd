@@ -534,7 +534,7 @@ func delete(slot_id: int) -> void:
 	# Validate slot range
 	if slot_id < 1 or slot_id > MAX_SAVE_SLOTS:
 		current_state = State.ERROR
-		save_failed.emit(slot_id, "Invalid slot ID: %d. Must be 1..%d" % [slot_id, MAX_SAVE_SLOTS])
+		save_delete_failed.emit(slot_id, "Invalid slot ID: %d. Must be 1..%d" % [slot_id, MAX_SAVE_SLOTS])
 		return
 
 	# Prevent concurrent delete operations

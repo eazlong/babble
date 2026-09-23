@@ -1,8 +1,8 @@
-[gd_resource type="Theme" format=3]
+[gd_resource type="Theme" format=3 uid="uid://dnaspr5jfi52i"]
 
-[ext_resource type="FontFile" path="res://assets/resources/fonts/ZCOOLXiaoWei-Regular.ttf" id="1_ldokb"]
-[ext_resource type="FontFile" path="res://assets/resources/fonts/Inter-Regular.ttf" id="2_oeolt"]
-[ext_resource type="FontFile" path="res://assets/resources/fonts/STHeiti.ttc" id="font_stheiti"]
+[ext_resource type="FontFile" uid="uid://c13v5f7pdpn24" path="res://assets/resources/fonts/ZCOOLXiaoWei-Regular.ttf" id="1_ldokb"]
+[ext_resource type="FontFile" uid="uid://d17f2fbn3637m" path="res://assets/resources/fonts/Inter-Regular.ttf" id="2_oeolt"]
+[ext_resource type="FontFile" uid="uid://chic2q15mn8ju" path="res://assets/resources/fonts/STHeiti.ttc" id="font_stheiti"]
 
 [sub_resource type="FontVariation" id="FontVariation_vyceh"]
 fallbacks = Array[Font]([ExtResource("font_stheiti")])

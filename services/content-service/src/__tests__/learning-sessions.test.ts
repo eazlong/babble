@@ -7,7 +7,7 @@ async function startLearningSession() {
     url: '/api/v1/learning-sessions/start',
     payload: {
       child_id: 'child-001',
-      scene_id: 'spirit_forest',
+      scene_id: 'chang_an_market_west',
       task_id: 'say-hello'
     }
   })
@@ -26,7 +26,7 @@ test('POST /api/v1/learning-sessions/start creates an active game session and in
     url: '/api/v1/learning-sessions/start',
     payload: {
       child_id: 'child-001',
-      scene_id: 'spirit_forest',
+      scene_id: 'chang_an_market_west',
       task_id: 'say-hello'
     }
   })
@@ -36,7 +36,7 @@ test('POST /api/v1/learning-sessions/start creates an active game session and in
 
   expect(body.session).toMatchObject({
     child_id: 'child-001',
-    scene_id: 'spirit_forest',
+    scene_id: 'chang_an_market_west',
     current_task_id: 'say-hello',
     status: 'active'
   })
@@ -50,7 +50,7 @@ test('POST /api/v1/learning-sessions/start creates an active game session and in
       event_type: 'scene_entered',
       session_id: body.session.session_id,
       payload: {
-        scene_id: 'spirit_forest',
+        scene_id: 'chang_an_market_west',
         task_id: 'say-hello'
       }
     })
@@ -64,7 +64,7 @@ test('POST /api/v1/learning-sessions/:sessionId/prompt-turns stores a prompt tur
     method: 'POST',
     url: `/api/v1/learning-sessions/${session.session_id}/prompt-turns`,
     payload: {
-      scene_id: 'spirit_forest',
+      scene_id: 'chang_an_market_west',
       task_id: 'say-hello',
       prompt_text: 'Say: Hello, forest spirit!',
       target_phrases: ['Hello, forest spirit!'],
@@ -77,7 +77,7 @@ test('POST /api/v1/learning-sessions/:sessionId/prompt-turns stores a prompt tur
   expect(res.json().prompt_turn).toMatchObject({
     session_id: session.session_id,
     turn_number: 1,
-    scene_id: 'spirit_forest',
+    scene_id: 'chang_an_market_west',
     task_id: 'say-hello',
     prompt_text: 'Say: Hello, forest spirit!',
     target_phrases: ['Hello, forest spirit!'],
@@ -91,7 +91,7 @@ async function createPromptTurn(sessionId: string) {
     method: 'POST',
     url: `/api/v1/learning-sessions/${sessionId}/prompt-turns`,
     payload: {
-      scene_id: 'spirit_forest',
+      scene_id: 'chang_an_market_west',
       task_id: 'say-hello',
       prompt_text: 'Say: Hello, forest spirit!',
       target_phrases: ['Hello, forest spirit!'],
@@ -182,7 +182,7 @@ test('POST /api/v1/learning-sessions/start reuses active session for the same ch
     url: '/api/v1/learning-sessions/start',
     payload: {
       child_id: 'child-001',
-      scene_id: 'spell_library',
+      scene_id: 'miao_jiang_bamboo_sea',
       task_id: 'find-book'
     }
   })
@@ -194,7 +194,7 @@ test('POST /api/v1/learning-sessions/start reuses active session for the same ch
     event_type: 'scene_entered',
     sequence: 3,
     payload: {
-      scene_id: 'spell_library',
+      scene_id: 'miao_jiang_bamboo_sea',
       task_id: 'find-book'
     }
   })

@@ -4,8 +4,6 @@
 [ext_resource type="Texture2D" uid="uid://d3mfebogco6fk" path="res://assets/textures/backgrounds/mirage_inn_owner_room_layer_plate.png" id="2_tov5l"]
 [ext_resource type="Texture2D" uid="uid://bfd667bpq43n2" path="res://assets/textures/backgrounds/mirage_inn_owner_room_layer_lantern.png" id="20_lantern"]
 [ext_resource type="Texture2D" uid="uid://ss4k1bhc2a8r" path="res://assets/textures/backgrounds/mirage_inn_owner_room_layer_scroll.png" id="21_scroll"]
-[ext_resource type="Texture2D" uid="uid://o72pfohmsj4x" path="res://assets/textures/ui/fp/ui_starbar_bg.png" id="6_81tbv"]
-[ext_resource type="Texture2D" uid="uid://cx11cvl7rdcn3" path="res://assets/textures/ui/fp/ui_starbar_fill.png" id="8_star_fill"]
 [ext_resource type="Texture2D" uid="uid://pjkoh3hv2q6l" path="res://assets/textures/ui/fp/ui_quest_tracker_bg.png" id="9_quest_bg"]
 [ext_resource type="PackedScene" path="res://assets/scenes/ui/VoiceMicIndicator.tscn" id="11_mic_button"]
 [ext_resource type="Texture2D" uid="uid://b1o63kftolank" path="res://assets/textures/ui/fp/ui_compass_bg.png" id="12_compass_bg"]
@@ -45,34 +43,6 @@ position = Vector2(960, 540)
 
 [node name="HUDLayer" type="CanvasLayer" parent="." unique_id=82425486]
 layer = 10
-
-[node name="StarBar" type="Control" parent="HUDLayer" unique_id=1835237087]
-layout_mode = 3
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -200.0
-offset_top = 66.0
-offset_right = 200.0
-offset_bottom = 106.0
-grow_horizontal = 2
-
-[node name="Background" type="TextureRect" parent="HUDLayer/StarBar" unique_id=340892895]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("6_81tbv")
-
-[node name="Fill" type="TextureRect" parent="HUDLayer/StarBar" unique_id=1074243463]
-layout_mode = 1
-offset_left = 10.0
-offset_top = 5.0
-offset_right = 390.0
-offset_bottom = 35.0
-texture = ExtResource("8_star_fill")
 
 [node name="QuestTracker" type="Control" parent="HUDLayer" unique_id=123712628]
 layout_mode = 3
@@ -160,10 +130,6 @@ offset_bottom = -50.0
 grow_horizontal = 2
 grow_vertical = 0
 
-[node name="FeifeiLayer" parent="." unique_id=489726390 instance=ExtResource("19_feifei_body")]
-position = Vector2(1542, 587)
-scale = Vector2(0.15, 0.15)
-
 [node name="OverlayLayer" type="CanvasLayer" parent="." unique_id=9216045]
 layer = 30
 
@@ -198,3 +164,7 @@ offset_right = 100.0
 offset_bottom = 70.0
 text = "序章完成"
 horizontal_alignment = 1
+
+[node name="FeifeiLayer" parent="." unique_id=489726390 instance=ExtResource("19_feifei_body")]
+position = Vector2(1542, 587)
+scale = Vector2(0.15, 0.15)

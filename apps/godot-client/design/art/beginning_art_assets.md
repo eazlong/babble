@@ -75,7 +75,7 @@
 | 魔法投影层 | `MistCoveredContinents` / `beginning_mist_continents.png` | 1320x220；位置约 `(960,350)`，显隐与呼吸由 Controller 控制 | 表现为腓腓在床前投出的幻象，不是天空；可加柔光边 |
 | 投影光效 | `beginning_projection_glow.png`（可选） | 约 1400x520，PNG+Alpha | 投影背后柔光/粒子，不遮挡 Feifei 与 HUD |
 | 睁眼遮罩 | `WakeEyes` / `wake_eye_open.gdshader` | 全屏 ColorRect + ShaderMaterial | 三段式：眼睑张开 → 停顿 → 世界淡入 |
-| Feifei | `FeifeiLayer` / `FeifeiBody.tscn` | 复用现有肩膀/提示/说话状态 | 不再使用旧 `FeifeiShoulder` 路径 |
+| Feifei | `FeifeiLayer`（节点即 `FeifeiBody.tscn` 实例） | 骨骼动画组件；含 `idle`/`fly` 骨骼动画、`talk_mouth` 口型、随机眨眼 | 不再使用旧 `FeifeiShoulder` / 逐帧 `feifei_frames.tres` 路径 |
 | HUD | `HUDLayer` | 星星条、任务追踪器、指南针 | 沿用现有 UI 资源 |
 | Overlay | `OverlayLayer` | 徽章、睁眼遮罩 | 沿用现有层级 |
 | 麦克风 | `MicLayer` | 语音按钮 | 沿用语序章交互规格 |
@@ -92,12 +92,20 @@
 
 | 节点/资源 | 规格 | 美术要求 |
 |-----------|------|----------|
-| `FeifeiBody.tscn` | 复用现有组件；位置在床侧 | 0.3、0.4、1.0 缩放下表情可辨 |
-| `default` / `fly` | 飞入与过场 | 兼容现有飞入动画 |
-| `idle` | 床边待机 | 支持呼吸浮动 |
-| `hint` | 提示/沉默重试 | 表情温和但明确 |
-| `happy` | 玩家回答后庆祝 | 不产生过大位移 |
-| 气泡 | `ui_feifei_bubble_fp.png` | 淡黄圆角、金色边框，指向 Feifei |
+| `FeifeiBody.tscn` | **骨骼动画组件**（Skeleton2D + 蒙皮 Polygon2D），位置在床侧 | 0.3、0.4、1.0 缩放下表情可辨 |
+| 图集 | `assets/sprites/feifei/feifei_part.png`（2048×2048 分层部件图集） | 部件齐全、边缘无黑边 |
+| `fly` | 飞入与过场（`AnimationPlayer` 骨骼动画） | 兼容现有飞入动画 |
+| `idle` | 床边待机（骨骼动画自带浮动） | 身体上下浮动，**不要再叠加根节点呼吸 tween** |
+| `talk_mouth` | TTS 播报口型（`FaceAnimationPlayer` 循环） | 与身体动画并行，不互顶 |
+| 眨眼 | `BlinkController.gd` 随机 Tween | 每 2-6 秒一次，10% 概率连眨两次 |
+| `hint` | 提示/沉默重试（保持翅膀扇动） | 表情温和但明确 |
+| `happy` | 玩家回答后庆祝（脚本 tween 跳跃 + 1.3× 缩放） | 不产生过大位移；结束时不清气泡 |
+| 气泡 | 内置 `BubblePanel` + `BubbleTail`（`top_level` 防缩放） | 指向 Feifei，不随实例 scale 缩小 |
+
+> ⚠️ **2026-09-15 架构变更**：腓腓已由逐帧 `feifei_frames.tres` + `FeifeiShoulder.gd` 改为骨骼动画 `FeifeiBody.tscn`。
+> `BeginningFP.tscn` 已迁移完成（`FeifeiLayer` 节点即 `FeifeiBody` 实例）。
+> 旧的 `default`/`idle`/`hint`/`happy` **逐帧**要求作废；现行动画名为 `RESET`/`fly`/`idle`/`talk_mouth`。
+> 详见 `../../docs/feifei-character-design-guide.md`。
 
 ### 1.4 运行时 Overlay/Prop 资产
 
@@ -130,8 +138,8 @@
 | `mirage_inn_owner_room_bg.png` | `assets/textures/backgrounds/` | 1920x1080（或 2560x1600 等比） | 主人房基准背景，与 MirageInnIntroduction 共用 |
 | `beginning_mist_continents.png` | `assets/textures/backgrounds/` | 1320x220 | 室内魔法投影：六块大陆与雾带 |
 | `wake_eye_open.gdshader` | 现有 | shader | 睁眼遮罩 |
-| `feifei_frames.tres` | `assets/sprites/feifei/` | SpriteFrames | Feifei `default/idle/hint/happy` |
-| `ui_feifei_bubble_fp.png` | `assets/textures/ui/fp/` | 200x100 | Feifei 气泡 |
+| `feifei_part.png` | `assets/sprites/feifei/` | 2048×2048 图集 | Feifei 骨骼蒙皮部件图集（**替代已废弃的 `feifei_frames.tres`**） |
+| `ui_feifei_bubble_fp.png` | `assets/textures/ui/fp/` | 200x100 | Feifei 气泡 — **已退役**：气泡现由 `FeifeiBody.gd` 用 `Panel` + `StyleBoxFlat` + `Polygon2D` 尾巴程序化绘制，不再引用贴图 |
 | `ui_starbar_bg.png` / `ui_starbar_fill.png` | `assets/textures/ui/fp/` | 400x40 / 380x30 | 星星条 |
 | `ui_quest_tracker_bg.png` | `assets/textures/ui/fp/` | 250x120 | 任务面板 |
 | `ui_mic_button_idle.png` / `ui_mic_button_recording.png` | `assets/textures/ui/fp/` | 80x80 | 语音按钮 |
@@ -165,7 +173,7 @@
 - `ui_starbar_bg.png`：400x40，深蓝半透明圆角条 + 金色细边框。
 - `ui_starbar_fill.png`：380x30，橙金到魔法金渐变，获得星星时从左到右填充。
 - `ui_quest_tracker_bg.png`：250x120，深蓝半透明面板 + 浅蓝边框，支持中文两行任务文案。
-- `ui_feifei_bubble_fp.png`：200x100，淡黄圆角气泡，右下尾巴指向 Feifei。
+- `ui_feifei_bubble_fp.png`：**已退役**。气泡不再使用贴图——`FeifeiBody.gd` 以 `Panel` + `StyleBoxFlat`（`#656565` 底 + 金色 2px 边 + 14px 圆角）与 `Polygon2D` 三角尾巴程序化绘制，文字由 `RichTextLabel` 渲染。若后续要恢复贴图风格，需先改回 `FeifeiBody` 的气泡实现。
 - `ui_compass_bg.png` / `ui_compass_arrow.png`：100x100 / 60x60，古旧魔法罗盘 + 红金箭头，箭头可旋转且不裁边。
 - `badge_beginning.png`：150x150，序章完成徽章；建议结合主人房木色、Feifei 光点或六道光；“序章完成”由 `BadgeLabel` 渲染，不画进图里。
 
@@ -188,9 +196,8 @@
 assets/
 ├── sprites/
 │   └── feifei/
-│       ├── feifei_fly_01.png ...
-│       ├── feifei_glow.png
-│       └── feifei_frames.tres
+│       ├── feifei_part.png        # 骨骼蒙皮部件图集（唯一美术交付物）
+│       └── feifei_glow.png
 ├── textures/
 │   ├── backgrounds/
 │   │   ├── mirage_inn_owner_room_bg.png   # 与 MirageInnIntroduction 共用
@@ -204,7 +211,6 @@ assets/
 │       ├── badge_beginning.png
 │       ├── badge_glow.png
 │       └── fp/
-│           ├── ui_feifei_bubble_fp.png
 │           ├── ui_starbar_bg.png
 │           ├── ui_starbar_fill.png
 │           ├── ui_quest_tracker_bg.png
@@ -225,7 +231,7 @@ assets/
 | 批次 | 内容 | 目标 |
 |------|------|------|
 | 第一批 | `mirage_inn_owner_room_bg.png`（迁移命名 `room_1.png`） | 主人房开场与世界成立 |
-| 第二批 | Feifei 统一 `SpriteFrames`、`ui_feifei_bubble_fp.png` | 修复 Feifei 状态动画与提示气泡 |
+| 第二批 | Feifei 骨骼图集 `feifei_part.png` 与 `FeifeiBody.tscn` 组件 | 修复 Feifei 状态动画与提示气泡 |
 | 第三批 | `beginning_mist_continents.png` 投影化、`beginning_projection_glow.png` | 六道光视觉锚点 |
 | 第四批 | 星星条、任务面板、麦克风、指南针、徽章 | 移除 HUD/Overlay 占位 |
 | 第五批 | 睁眼 shader、尘光粒子、音频 | 提升序章演出质量 |
@@ -240,7 +246,9 @@ assets/
 |------|------|
 | 分辨率 | 主人房背景与全屏 UI 按 1920x1080 制作或等比缩放 |
 | Alpha | Feifei、UI、投影、光效 Alpha 正确 |
-| SpriteFrames | Feifei 包含 `default/idle/hint/happy` 动画名 |
+| 骨骼动画 | `FeifeiBody.tscn` 含 `RESET`/`fly`/`idle`/`talk_mouth` 动画；眨眼由 `BlinkController` 驱动 |
+| 部件完整性 | `feifei_part.png` 含 14 个蒙皮部件，边缘无黑边、可无缝拼接 |
+| 动画并行 | 身体 `AnimationPlayer`、口型 `FaceAnimationPlayer`、眨眼 Tween 三路互不顶替 |
 | 层级 | Feifei 高于 HUD、低于 Overlay；投影位于主人房背景之上 |
 | 占位移除 | 不再引用 `assets/textures/hotel/grass.png` / `level0.png` |
 | 退役检查 | `BeginningFP.tscn` 不再引用 fog / trees / ground / inn ruins |

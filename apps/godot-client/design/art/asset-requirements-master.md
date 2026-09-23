@@ -432,9 +432,9 @@ NPC 台词与腓腓提示由云端 TTS（ElevenLabs / F5-TTS）实时生成，**
 
 | 资源 | 用途 | 现状 | 状态 |
 |------|------|------|------|
-| `STHeiti-Regular.ttf` | 当前全局中文 | 55MB | ✅（体积需优化） |
-| `STHeiti.ttc` | 当前 | 55MB | ✅ |
-| `ChineseTheme.tres` | 全局 Theme | 241B，引用 STHeiti | ✅ |
+| ~~`STHeiti-Regular.ttf`~~ | ~~当前全局中文~~ | **2026-09-22 已删除**：零引用，且它只是 `STHeiti.ttc` face[0] 的单面子集 | 🗑️ 已清理 |
+| `STHeiti.ttc` | **实际生效**的全局中文回退（`ChineseTheme.tres` 的 `fallbacks`；`DialogueBox.gd:54` 亦直接加载） | 55MB | ✅（体积需优化：可子集化） |
+| `ChineseTheme.tres` | 全局 Theme（`project.godot` `[gui] theme/custom`） | 引用 ZCOOLXiaoWei（标题）+ Inter（正文）+ STHeiti.ttc（CJK 回退） | ✅ |
 | 国风标题体（宋体/楷体风格） | 神话背景、任务卷轴标题 | — | ⬜ P1 |
 | `Inter` / 现代无衬线 | 英文教学内容、字幕、系统按钮 | — | ⬜ P1 |
 

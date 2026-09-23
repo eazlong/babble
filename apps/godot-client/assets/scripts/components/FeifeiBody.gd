@@ -1,10 +1,13 @@
-## 骨骼版腓腓（序章世界空间角色）
+## 骨骼版腓腓（世界空间角色）
 ##
-## 承担与 FeifeiShoulder 等价的对外 API（play_entry_fly_in / settle_to_shoulder /
-## show_hint / play_happy / go_idle / feifei_sprite），但驱动的是 Skeleton2D + AnimationPlayer，
-## 并把对话气泡作为 top_level 子节点渲染在骨骼之上（z_index 10 > 骨骼最高 2）。
+## 承担腓腓的全部对外 API（play_entry_fly_in / settle_to_shoulder /
+## show_hint / play_happy / go_idle / talk_speaking_start / talk_speaking_end / feifei_sprite），
+## 驱动 Skeleton2D + AnimationPlayer，并把对话气泡作为 top_level 子节点渲染在骨骼之上（z_index 10 > 骨骼最高 2）。
 ##
-## 气泡样式与布局逻辑复用自 FeifeiShoulder.gd。
+## 气泡样式与布局逻辑沿用旧 `FeifeiShoulder.gd` 的取值。
+## ⚠️ `FeifeiShoulder.gd` / `feifei_frames.tres` / `FeifeiCompanion.tscn` 已于 2026-09-15 退役删除，
+## 本类是腓腓的唯一实现；全部 6 个场景（BeginningFP / MirageInnIntroduction / MirageInnHub /
+## ChangAnMarket / ChangAnMarketLesson02 / WordSpiritLibraryArchiveHall）都直接实例化本组件。
 class_name FeifeiBody
 extends CharacterBody2D
 
@@ -17,13 +20,13 @@ const HAPPY_SCALE_POP: float = 1.3
 const BREATHE_AMPLITUDE: float = 3.0
 const BREATHE_PERIOD: float = 1.5
 
-# ——— 状态常量（与 FeifeiShoulder / CoachOverlay 保持一致） ———
+# ——— 状态常量（与 CoachOverlay 保持一致） ———
 const STATE_IDLE: String = "idle"
 const STATE_HINT: String = "hint"
 const STATE_HAPPY: String = "happy"
 const STATE_TALK: String = "talk"
 
-# ——— 气泡样式（复用 FeifeiShoulder 取值） ———
+# ——— 气泡样式（沿用旧 FeifeiShoulder 取值） ———
 const BUBBLE_MIN_SIZE: Vector2 = Vector2(260.0, 112.0)
 const BUBBLE_MAX_WIDTH: float = 620.0
 const BUBBLE_PADDING: Vector2 = Vector2(32.0, 24.0)
@@ -35,25 +38,30 @@ const BUBBLE_BG_COLOR: Color = Color("#656565")
 const BUBBLE_BORDER_COLOR: Color = Color(0.95, 0.77, 0.28, 0.9)
 const BUBBLE_TEXT_COLOR: Color = Color(1.0, 0.96, 0.82, 1.0)
 const BUBBLE_TAIL_SIZE: Vector2 = Vector2(42.0, 28.0)
-const BUBBLE_TAIL_RIGHT_OFFSET: float = 42.0
 const BUBBLE_PANEL_Z_INDEX: int = 10
 const BUBBLE_TAIL_Z_INDEX: int = 9
 const BUBBLE_FONT_SIZE: int = 22
 const BUBBLE_TAIL_Y_INSET: float = 2.0
-const BUBBLE_TAIL_POINT3_OFFSET: float = 18.0
 
 # ——— 节点引用 ———
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
+## P1 并发修正：口型独立播放器。Godot 4.6 的 AnimationPlayer 是单播放状态，
+## play() 会顶掉正在播的动画——口型 talk_mouth 若与身体 talk 共用一个播放器，
+## 说话时身体会冻结。口型单独一个播放器，才能与身体动画、眨眼（Tween）真并行。
+@onready var face_animation_player: AnimationPlayer = $FaceAnimationPlayer
 @onready var bubble_panel: Panel = $BubblePanel
 @onready var bubble_label: RichTextLabel = $BubblePanel/BubbleLabel
 @onready var bubble_tail: Polygon2D = $BubbleTail
 @onready var bubble_anchor: Marker2D = $BubbleAnchor
+## P1：嘴部部件（talk_mouth 动画驱动其 polygon 顶点）
+@onready var mouth_polygon: Polygon2D = $polygons/mouth
 
 # 控制器会 tween feifei_sprite.position/scale；骨骼整体即根节点自身。
 var feifei_sprite: Node2D = self
 
 # ——— 内部状态 ———
 var _current_state: String = STATE_IDLE
+var _mouth_base_polygon: PackedVector2Array
 var _bubble_ttl: Timer
 var _breathe_tween: Tween
 var _rest_position: Vector2
@@ -83,9 +91,32 @@ func _ready() -> void:
 	_configure_bubble_style()
 	_hide_bubble()
 
+	# P1：记录基础嘴型（go_idle 停口型循环后恢复用）
+	if mouth_polygon:
+		_mouth_base_polygon = mouth_polygon.polygon.duplicate()
+
 func _process(_delta: float) -> void:
 	if bubble_panel and bubble_panel.visible:
 		_update_bubble_position()
+
+# ——— 口型动画（P1：talk_mouth 循环 mouth:polygon 顶点，由面部播放器驱动） ———
+
+func _start_talk_mouth() -> void:
+	# 用独立的面部播放器播口型循环，不与身体 AnimationPlayer 抢播放状态，
+	# 因此 body talk / 眨眼 都能与口型同时进行。
+	if face_animation_player and face_animation_player.has_animation("talk_mouth"):
+		face_animation_player.play("talk_mouth")
+
+func _stop_talk_mouth() -> void:
+	# 只停面部播放器（它只含 talk_mouth 循环）。4.6 的 stop() 无按名参数，
+	# 但面部播放器里只有一个动画，整体停即可，不会误伤身体 AnimationPlayer。
+	if face_animation_player:
+		face_animation_player.stop()
+	# 循环中途停止时最后一帧不是基础形状，恢复基础嘴型。
+	# 眼睛由 BlinkController 的 Tween 自管理（每次眨眼结束都会回到 _base_polygon），
+	# 这里不碰眼睛，避免把进行中的眨眼 tween 顶掉。
+	if mouth_polygon and not _mouth_base_polygon.is_empty():
+		mouth_polygon.polygon = _mouth_base_polygon
 
 # ——— 飞入动画 ———
 
@@ -131,6 +162,11 @@ func settle_to_shoulder() -> void:
 func show_hint(text: String, state: String = STATE_HINT, ttl: float = 3.0) -> void:
 	_current_state = state
 	_play_state_anim(state)
+	# 口型与状态同步：只有 TALK（TTS 播报）时嘴在动，其余状态停口型并恢复基础形。
+	if state == STATE_TALK:
+		_start_talk_mouth()
+	else:
+		_stop_talk_mouth()
 	_show_bubble(text)
 	if ttl > 0.0:
 		_bubble_ttl.start(ttl)
@@ -139,18 +175,38 @@ func show_hint(text: String, state: String = STATE_HINT, ttl: float = 3.0) -> vo
 	state_changed.emit(state)
 	hint_shown.emit()
 
-## 播放说话动画（头部点动 + 身体轻微起伏 + 翅膀小扇）。
+## 播放对话状态（TTS 播报时）：身体保持 idle + 嘴部 talk_mouth 循环 + 随机眨眼（BlinkController 自动）。
 ## 可与气泡显示配合：先 play_talk()，气泡结束后 go_idle()。
 func play_talk() -> void:
 	_current_state = STATE_TALK
 	_stop_breathe()
 	_play_state_anim(STATE_TALK)
+	# P1：说话时叠加循环口型动画（talk_mouth 独占 mouth:polygon，与身体骨骼无属性冲突）
+	_start_talk_mouth()
 	state_changed.emit(STATE_TALK)
+
+## TTS 播报窗口开始（飞飞音 spirit 的台词行调用）：身体切 idle + 嘴部 talk_mouth 循环。
+## 随机眨眼由 BlinkController 自动进行，无需此处处理。与 talk_speaking_end() 配对。
+func talk_speaking_start() -> void:
+	_current_state = STATE_TALK
+	_stop_breathe()
+	_play_state_anim(STATE_TALK)
+	_start_talk_mouth()
+	state_changed.emit(STATE_TALK)
+
+## TTS 播报窗口结束：停口型并恢复基础嘴型，身体保持 idle（已在播 idle 则无动作）。
+func talk_speaking_end() -> void:
+	_current_state = STATE_IDLE
+	_stop_talk_mouth()
+	_play_state_anim(STATE_IDLE)
+	state_changed.emit(STATE_IDLE)
 
 ## 播放 happy 庆祝动画（无对应骨骼动画，用 tween 模拟）。
 func play_happy() -> void:
 	_current_state = STATE_HAPPY
 	_stop_breathe()
+	# 庆祝时闭嘴（状态机完整性：非 TALK 状态口型必须停）
+	_stop_talk_mouth()
 	var base_y: float = _rest_position.y
 	var pop_scale: Vector2 = _rest_scale * HAPPY_SCALE_POP
 	var tween: Tween = create_tween()
@@ -163,14 +219,19 @@ func play_happy() -> void:
 	tween.parallel().tween_property(self, "position:y", base_y, 0.4) \
 		.set_ease(Tween.EASE_IN_OUT)
 	tween.tween_callback(func():
-		go_idle()
+		# 庆祝动画结束只切回 idle，不清气泡：调用方通常紧接着 show_hint 新对话行，
+		# 若这里 go_idle() 会把它刚显示的气泡藏掉（识别成功后气泡闪烁消失的根因）。
+		go_idle(false)
 	)
 	state_changed.emit(STATE_HAPPY)
 
-## 切回 idle 状态。
-func go_idle() -> void:
+## 切回 idle 状态。hide_bubble=false 用于庆祝动画结束等场景，保留对话气泡。
+func go_idle(hide_bubble: bool = true) -> void:
 	_current_state = STATE_IDLE
-	_hide_bubble()
+	if hide_bubble:
+		_hide_bubble()
+	# P1：停口型动画并恢复基础嘴型（循环中途停止时最后一帧不是基础形状）
+	_stop_talk_mouth()
 	_play_state_anim(STATE_IDLE)
 	state_changed.emit(STATE_IDLE)
 
@@ -201,7 +262,9 @@ func _play_state_anim(state: String) -> void:
 		STATE_IDLE:
 			# idle 骨骼动画自带 body:position:y 上下浮动，停掉根节点呼吸 tween 避免叠加。
 			_stop_breathe()
-			if animation_player and animation_player.has_animation("idle"):
+			# 已在播 idle 则不重播，避免循环相位跳变（对话行之间会频繁 go_idle/talk_speaking_end）。
+			if animation_player and animation_player.current_animation != "idle" \
+					and animation_player.has_animation("idle"):
 				animation_player.play("idle")
 		STATE_HINT:
 			# 保持翅膀扇动作为"在听"的视觉，无独立 hint 动画。
@@ -210,11 +273,14 @@ func _play_state_anim(state: String) -> void:
 		STATE_HAPPY:
 			pass # 由 play_happy() 驱动 tween。
 		STATE_TALK:
-			# talk 动画自带身体起伏与头部点动，不叠加呼吸 tween。
-			if animation_player and animation_player.has_animation("talk"):
-				animation_player.play("talk")
+			# TTS 播报时身体保持 idle（不播 talk 身体动画），口型由 talk_mouth（FaceAnimationPlayer）
+			# 驱动、眨眼由 BlinkController（Tween）驱动，三路并行互不干扰。
+			# 已在播 idle 则不重播，避免循环从头开始的相位跳变。
+			if animation_player and animation_player.current_animation != "idle" \
+					and animation_player.has_animation("idle"):
+				animation_player.play("idle")
 
-# ——— 气泡控制（逻辑复用自 FeifeiShoulder，世界空间定位） ———
+# ——— 气泡控制（沿用 FeifeiShoulder 布局逻辑，世界空间定位） ———
 
 func _show_bubble(text: String) -> void:
 	if not bubble_panel or not bubble_label:
@@ -315,15 +381,15 @@ func _update_bubble_position() -> void:
 func _update_bubble_tail(bubble_size: Vector2) -> void:
 	if not bubble_tail:
 		return
-	var base_x := bubble_panel.position.x + maxf(
-		BUBBLE_PADDING.x,
-		bubble_size.x - BUBBLE_TAIL_RIGHT_OFFSET - BUBBLE_TAIL_SIZE.x
-	)
+	# 气泡水平居中于头部上方（见 _update_bubble_position），
+	# 尖头须对齐头部中点、垂直指向角色。
+	var tip_x := bubble_panel.position.x + bubble_size.x * 0.5
 	var base_y := bubble_panel.position.y + bubble_size.y - BUBBLE_TAIL_Y_INSET
+	var half_width := BUBBLE_TAIL_SIZE.x * 0.5
 	bubble_tail.polygon = PackedVector2Array([
-		Vector2(base_x, base_y),
-		Vector2(base_x + BUBBLE_TAIL_SIZE.x, base_y),
-		Vector2(base_x + BUBBLE_TAIL_SIZE.x + BUBBLE_TAIL_POINT3_OFFSET, base_y + BUBBLE_TAIL_SIZE.y),
+		Vector2(tip_x - half_width, base_y),
+		Vector2(tip_x + half_width, base_y),
+		Vector2(tip_x, base_y + BUBBLE_TAIL_SIZE.y),
 	])
 
 func _strip_simple_bbcode(text: String) -> String:

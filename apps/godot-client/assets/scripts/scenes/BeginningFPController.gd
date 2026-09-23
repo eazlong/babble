@@ -12,7 +12,7 @@ const CoachContextTrackerScript = preload("res://assets/scripts/components/coach
 const VoiceFailureInterventionScript = preload("res://assets/scripts/components/voice/VoiceFailureIntervention.gd")
 const StoryContinueMarkersScript = preload("res://assets/scripts/core/story_continue_markers.gd")
 const DISTANT_CONTINENTS_TEXTURE: Texture2D = preload("res://assets/textures/backgrounds/beginning_mist_continents.png")
-const WAKE_EYE_SHADER: Shader = preload("res://assets/resources/shaders/effects/wake_eye_open.gdshader")
+const WakeEyeTransitionScript = preload("res://assets/scripts/components/WakeEyeTransition.gd")
 const MIC_IDLE_TEXTURE: Texture2D = preload("res://assets/textures/ui/fp/ui_mic_button_idle.png")
 const MIC_RECORDING_TEXTURE: Texture2D = preload("res://assets/textures/ui/fp/ui_mic_button_recording.png")
 
@@ -49,10 +49,8 @@ enum ProposalReaction {
 const SCENE_ID: String = "beginning"
 const FALLBACK_PLAYER_AGE: int = 8
 const HELLO_HINT_DELAY: float = 5.0
-# 睁眼三段式：眼睑分开、暗角褪去露出双眼 -> 停顿一拍 -> 眼睛淡出露出世界
-const EYE_REVEAL_DURATION: float = 1.4
-const EYE_HOLD_DURATION: float = 0.7
-const EYE_FADE_DURATION: float = 1.2
+## 睁眼过场的时长与曲线**都在组件里**（`WakeEyeTransition`）：那是纯表现，组件自己知道
+## 自己怎么动，控制器只负责"什么时候开始"。这里只留腓腓提前起飞的错位量。
 const WAKE_FEIFEI_HEAD_START: float = 0.55
 const TTS_PLAYBACK_TIMEOUT: float = 60.0
 const TTS_MIC_BUFFER_MIN: float = 0.25
@@ -81,6 +79,22 @@ const DECLINE_MARKERS_ZH: Array[String] = [
 	"不喜欢", "不好", "不要", "不行", "不想", "不对", "不是",
 	"换一个", "换一个吧", "换个", "别的", "另一个", "另外", "再换",
 ]
+# 委托标记（rule_005 允许侧的客户端兜底，见 _is_delegation_utterance）：
+# 只服务于**可委托槽位**（英语名第 1 次询问）。英文用整词匹配，中文用短语匹配。
+const DELEGATION_MARKERS_ZH: Array[String] = [
+	"帮我起", "帮我取", "帮我选", "帮我挑", "帮我决定", "帮我找一个", "帮我想",
+	"你帮我", "你来起", "你来取", "你来选", "你来决定", "你决定",
+	"你起一个", "你取一个", "你选一个", "给我起", "给我取", "给我选",
+	"随便选", "随便挑", "随便起", "随便取", "随便一个", "随便吧",
+	"你看着办", "听你的", "你说了算", "想不出来", "想不到",
+]
+const DELEGATION_MARKERS_EN: Array[String] = [
+	"you pick", "you choose", "you decide", "you name", "pick one", "pick for me",
+	"choose for me", "decide for me", "any name", "anyone", "whatever",
+	"up to you", "your call", "surprise me", "no idea", "dont know", "don't know",
+]
+# 委托句尾语气词（"帮我起一个" + "吧/呀/啊"）：整句以标记开头且尾部只剩这些字时也算委托。
+const DELEGATION_TAIL_PARTICLES: Array[String] = ["吧", "呀", "啊", "哦", "噢", "嘛", "啦"]
 
 @onready var feifei: FeifeiBody = $FeifeiLayer
 @onready var quest_tracker: Control = $HUDLayer/QuestTracker
@@ -108,11 +122,26 @@ var recent_proposed_special_names: Array[String] = []
 ## 主人房续行确认的录音上下文。避免读档目标是学习场景时误开对应 learning session。
 var voice_recording_context: Dictionary = {}
 
-var wake_overlay: ColorRect
+## 睁眼过场组件（全屏黑遮罩 + shader 画的"眼睛"窗口）。
+## 时间轴与曲线都在组件里（可被 GUT 单独测），这里只负责建它与 await。
+var wake_eye: Control
 var distant_continents: Node2D
 
 signal prologue_completed()
 signal task_completed(task_name: String)
+
+## ASR test 模式：主人房有两条完全不同的路径，答案顺序也不同，必须按进入方式声明。
+## - 续行（有存档）：只问一次「出发」，说完就切回存档场景；
+## - 全新开局：先问中文名、再问英语名。
+## 靠 project.godot 的全局表同时满足两者是不可能的，所以这里按路径各自给一份并归零轮换位置。
+const TEST_ASR_AUDIO_DIR: String = "res://assets/test_audio/"
+const TEST_ASR_NEW_GAME_ANSWERS: Array[String] = [
+	"pa_01_prologue_source_name.wav",
+	"pa_02_prologue_special_name.wav",
+]
+const TEST_ASR_RESUME_ANSWERS: Array[String] = [
+	"pa_04_hub_depart.wav",
+]
 
 func _ready() -> void:
 	# 环境音（批次 1 T16）：BeginningFP 无 BGM，只铺开始环境音床（两条启动路径都生效）
@@ -122,9 +151,11 @@ func _ready() -> void:
 		# 启动时不直接跳存档点：先回到主人房，
 		# 与腓腓交互确认后再继续剧情。
 		# CLAUDE.md §11：不要在 _ready() 中直接抢切场景。
+		_configure_test_asr_audio(true)
 		call_deferred("_start_resume_room")
 		return
 
+	_configure_test_asr_audio(false)
 	GameManager.set_checkpoint("BeginningFP", not GameManager.is_test_mode_skip_auto_load_save())
 	_load_dialogue_flows()
 	_create_prologue_visuals()
@@ -153,6 +184,16 @@ func _start_resume_room() -> void:
 	state = PrologueState.AWAIT_RESUME_CONFIRM
 	_set_quest_text(_loc("quest_resume_depart"))
 	_start_voice_listening(_build_resume_recording_context())
+
+## test-audio 模式下按启动路径装答案（续行只问「出发」，全新开局先问名字），
+## 并把轮换位置归零，避免"从存档续进来时答案错位"。
+func _configure_test_asr_audio(resume_mode: bool) -> void:
+	if not HybridAPI.asr_default_answer_test_enabled:
+		return
+	var answers: Array[String] = TEST_ASR_RESUME_ANSWERS if resume_mode else TEST_ASR_NEW_GAME_ANSWERS
+	HybridAPI.set_asr_default_answer_test_enabled(true, TEST_ASR_AUDIO_DIR, answers)
+	HybridAPI.reset_asr_test_audio_index()
+
 
 func _confirm_resume_from_room() -> void:
 	if completion_started:
@@ -241,53 +282,15 @@ func _start_prologue() -> void:
 	_start_voice_listening()
 
 func _create_wake_overlay() -> void:
-	wake_overlay = ColorRect.new()
-	wake_overlay.name = "WakeEyes"
-	wake_overlay.color = Color.BLACK
-	wake_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	wake_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	var material := ShaderMaterial.new()
-	material.shader = WAKE_EYE_SHADER
-	material.set_shader_parameter("eye_open", 0.0)
-	material.set_shader_parameter("overlay_alpha", 1.0)
-	wake_overlay.material = material
-	$OverlayLayer.add_child(wake_overlay)
+	wake_eye = WakeEyeTransitionScript.new()
+	wake_eye.name = "WakeEyes"
+	$OverlayLayer.add_child(wake_eye)
 
 func _play_wake_from_dream() -> void:
-	if not wake_overlay:
+	if wake_eye == null:
 		return
+	await wake_eye.play()
 
-	# 第一段：眼睛从细缝逐渐张开（眼睑中央分开，露出世界）。
-	var material := wake_overlay.material as ShaderMaterial
-	if material:
-		material.set_shader_parameter("eye_open", 0.0)
-		material.set_shader_parameter("overlay_alpha", 1.0)
-		var reveal := create_tween()
-		reveal.tween_method(
-			func(value: float): material.set_shader_parameter("eye_open", value),
-			0.0, 1.0, EYE_REVEAL_DURATION
-		).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
-		await reveal.finished
-
-		# 第二段：睁眼停顿一拍。
-		await get_tree().create_timer(EYE_HOLD_DURATION).timeout
-	else:
-		# 降级兜底：shader 不可用时直接整层淡出，确保世界被揭露、不卡全黑。
-		var guard := create_tween()
-		guard.tween_property(wake_overlay, "modulate:a", 0.0, EYE_REVEAL_DURATION + EYE_HOLD_DURATION) \
-			.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
-		await guard.finished
-		wake_overlay.visible = false
-		return
-
-	# 第三段：眼睛全开后，整层遮罩淡出彻底露出世界。
-	var fade := create_tween()
-	fade.tween_method(
-		func(value: float): material.set_shader_parameter("overlay_alpha", value),
-		1.0, 0.0, EYE_FADE_DURATION
-	).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
-	await fade.finished
-	wake_overlay.visible = false
 
 func _on_player_response(text: String) -> void:
 	last_player_input = text.strip_edges()
@@ -554,14 +557,25 @@ func _on_asr_received(result: Dictionary) -> void:
 
 func _handle_special_name_asr_result(result: Dictionary) -> void:
 	var intent := HybridAPI.get_asr_intent(result)
-	if intent == "delegate":
+	var utterance: String = HybridAPI.get_asr_corrected_text(result).strip_edges()
+	var extracted_name: String = HybridAPI.get_asr_extracted_value(result, "name", "").strip_edges()
+	# 委托路径。模型判 delegate 时直接走；此外在**非提议态**加一层客户端兜底
+	# （见 _is_delegation_utterance）：模型可能把「帮我起一个吧」判成 provide/off_topic，
+	# 而本状态的 provide 路径会把原话当成孩子的英语名落盘
+	# （_handle_special_name → set_player_info → save_progress），
+	# off_topic 路径只会重问一次——两者都表现为"说了委托，腓腓没去取名"。
+	var delegated := intent == "delegate"
+	if not delegated and special_name_slot_state != SLOT_PROPOSED:
+		delegated = _is_delegation_utterance(utterance) or (
+			not extracted_name.is_empty() and not _is_english_name_candidate(extracted_name)
+		)
+	if delegated:
 		# 首次 delegate 提议一个；PROPOSED 下再次 delegate 由 _propose_special_name()
 		# 内部通过 recent_proposed_special_names 排除近期值，换一个新候选（CLAUDE.md §8）。
 		await _propose_special_name()
 		return
 
-	var text: String = HybridAPI.get_asr_corrected_text(result).strip_edges()
-	var extracted_name: String = HybridAPI.get_asr_extracted_value(result, "name", "").strip_edges()
+	var text: String = utterance
 	if not extracted_name.is_empty():
 		# 提议态下 extracted 可能是玩家"接受提议"的回填，也可能是自己换的新名字。
 		# 若回填值就是当前提议值，按接受处理，避免重复确认。
@@ -624,6 +638,48 @@ func _contains_decline_word_en(text: String) -> bool:
 	var tokens := text.replace("'", " ").replace(",", " ").replace(".", " ").replace("!", " ").replace("?", " ").split(" ", false)
 	for token in tokens:
 		if DECLINE_MARKERS_EN.has(str(token)):
+			return true
+	return false
+
+## 玩家把英语名委托给腓腓的判定（纯函数，便于单测）。
+## 与 _is_decline_utterance 同型：意图判定仍归模型（rule_003 / ADR-0001），这里只做客户端兜底。
+## 只在本状态（可委托槽位）被调用，因此不会把别的槽位上的 off_topic 升级成 delegate——
+## 与 rule_005 的收窄方向一致。
+## NOTE 英文必须整词匹配：子串匹配会让 "Carl"/"Mia" 这类名字里的 "ar"/"ia" 误命中。
+func _is_delegation_utterance(text: String) -> bool:
+	var normalized := text.strip_edges().to_lower()
+	if normalized.is_empty():
+		return false
+	if _contains_any(normalized, DELEGATION_MARKERS_ZH):
+		return true
+	if _contains_delegation_phrase_en(normalized):
+		return true
+	return _is_delegation_phrase_with_tail(normalized)
+
+## 英文整词匹配：把标点换成空格后逐词比对标记词组（支持多词标记）。
+func _contains_delegation_phrase_en(text: String) -> bool:
+	var normalized := text
+	for separator in ["'", ",", ".", "!", "?", "，", "。", "！", "？"]:
+		normalized = normalized.replace(separator, " ")
+	var padded := " %s " % " ".join(normalized.split(" ", false))
+	for marker in DELEGATION_MARKERS_EN:
+		if padded.contains(" %s " % marker):
+			return true
+	return false
+
+## 中文兜底：整句以委托语开头、且尾部只剩语气词时也算委托。
+## 例：『帮我起一个吧』『你帮我取一个啊』。要求标记在句首，避免把
+## 『我想自己起一个吧』这类"玩家要自己取名"的句子误判成委托。
+func _is_delegation_phrase_with_tail(text: String) -> bool:
+	var stripped := text.strip_edges()
+	for particle in DELEGATION_TAIL_PARTICLES:
+		while stripped.ends_with(particle):
+			stripped = stripped.substr(0, stripped.length() - particle.length())
+			stripped = stripped.strip_edges()
+	if stripped.is_empty():
+		return false
+	for marker in DELEGATION_MARKERS_ZH:
+		if stripped.begins_with(marker):
 			return true
 	return false
 
@@ -927,9 +983,15 @@ func _set_compass_label(text: String) -> void:
 	if label:
 		label.text = text
 
+## 本状态要识别的**口语**语言，不能按"期望答案语言"推。
+## 英语名这一步玩家既可能报英语名，也可能用中文说「帮我起一个吧」——
+## 腓腓的中文提问（beginning.ask_special_name）本来就用 SOURCE_LANGUAGE_CODE 合成。
+## 旧的 SPECIAL_LANGUAGE_CODE("en") 会把中文语音交给强制英语解码，识别结果不可用。
+## "cn_en" 是 voice-service 既有的双语提示（xfyun 本身就是 mul_cn 混合识别模式；
+## whisper 侧 _normalize_whisper_language 映射为 zh）。见 CLAUDE.md §7。
 func _get_asr_language_for_state() -> String:
 	if state == PrologueState.AWAIT_SPECIAL_NAME:
-		return GameManager.SPECIAL_LANGUAGE_CODE
+		return GameManager.BILINGUAL_ASR_LANGUAGE_CODE
 	return GameManager.SOURCE_LANGUAGE_CODE
 
 func _build_asr_context_for_state() -> Dictionary:

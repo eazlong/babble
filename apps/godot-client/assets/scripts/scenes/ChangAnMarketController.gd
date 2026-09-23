@@ -81,13 +81,32 @@ func _ready() -> void:
 	_build_visuals()
 	_setup_voice_failure_intervention()
 	_connect_runtime_signals()
-	
-	# TODO(情节1 雾门问居): 还缺 city / street / building / house / i live in / my home is in 的测试音频。
-	# 补齐后按步骤顺序写进下面的列表，即可用 test-audio 模式自动跑完整条链路。
-	HybridAPI.set_asr_default_answer_test_enabled(true, "res://assets/test_audio/", ["my_name_is_carl.wav"])
+
+	# ASR test 模式：本课的"玩家该说的话"从 scene_config 的 test_asr_audio_names 取
+	# （按步骤顺序，一条对应一轮语音作答）。脚本 scripts/record_player_answers.py 生成音频，
+	# scripts/sync_player_answers_to_configs.py 把清单写回 config，两边不会漂移。
+	# 之前这里硬编码成 ["my_name_is_carl.wav"]，第一轮之后每轮都听到同一句 →
+	# 卡在 name_register 反复重问，整课走不下去。
+	_configure_test_asr_audio()
 	if mic_button:
 		mic_button.visible = false
 	_start_lesson()
+
+func _configure_test_asr_audio() -> void:
+	var names: Array[String] = []
+	for value in config.get("test_asr_audio_names", []):
+		var trimmed := str(value).strip_edges()
+		if not trimmed.is_empty():
+			names.append(trimmed)
+	if names.is_empty():
+		return
+	HybridAPI.set_asr_default_answer_test_enabled(
+		true,
+		str(config.get("test_asr_audio_dir", "res://assets/test_audio/")),
+		names
+	)
+	# 每课从自己的第一条答案开始，不受上一个场景轮换位置影响。
+	HybridAPI.reset_asr_test_audio_index()
 
 func _process(delta: float) -> void:
 	_animate_mist(delta)
@@ -314,9 +333,13 @@ func _handle_voice_attempt_failed(reason: String) -> void:
 	await get_tree().create_timer(0.25).timeout
 	_start_voice_listening()
 
+## 步骤里声明为"报名字"的锚点短语；命中它时把玩家自己的名字加进候选，
+## 见 _effective_candidate_phrases 的说明。
+const NAME_STEP_ANCHORS: Array[String] = ["my name is", "i am", "name"]
+
 func _build_asr_context() -> Dictionary:
 	var expected: Dictionary = current_step.get("asr", {})
-	var phrases: Array = expected.get("clear_phrases", []) + expected.get("acceptable_phrases", [])
+	var phrases: Array = _effective_candidate_phrases(expected)
 	return {
 		"session_id": voice_failure_intervention.get_session_id(),
 		"user_id": _player_name(),
@@ -336,6 +359,29 @@ func _build_asr_context() -> Dictionary:
 		"player_level": _player_level(),
 		"language": _special_language_code()
 	}
+
+## 候选短语 = 步骤声明的 clear/acceptable + （报名字步骤）玩家自己的名字。
+##
+## 为什么需要补名字：voice-service 的取值层对 provide 会把**自由槽的表面形式**收紧，
+## 实测同一句「My name is Leo.」在同一个步骤上下文里会给出两种 extracted
+## （`"My name is Leo."` 或 `"Leo"`）。后者经 `_asr_text()`（优先 extracted）
+## 送进 LessonResponseMatcher 后既不含 clear_phrase「my name is」也不含关键词「name」
+## → 判 needs_help，孩子会被无限重问。把名字本身加进候选，两条取值路径都能过。
+func _effective_candidate_phrases(expected: Dictionary) -> Array:
+	var phrases: Array = expected.get("clear_phrases", []) + expected.get("acceptable_phrases", [])
+	if not _is_name_step(expected):
+		return phrases
+	var player_name: String = _player_name().strip_edges()
+	if not player_name.is_empty() and player_name != "anonymous" and not phrases.has(player_name):
+		phrases.append(player_name)
+	return phrases
+
+func _is_name_step(expected: Dictionary) -> bool:
+	var declared: Array = expected.get("clear_phrases", []) + expected.get("acceptable_phrases", [])
+	for phrase in declared:
+		if NAME_STEP_ANCHORS.has(str(phrase).to_lower()):
+			return true
+	return false
 
 func _asr_text(result: Dictionary) -> String:
 	var hybrid_api: Variant = _hybrid_api()

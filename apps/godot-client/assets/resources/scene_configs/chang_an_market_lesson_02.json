@@ -306,5 +306,15 @@
       "flow_id": "eaves_02.next_hint",
       "reward_words": []
     }
-  ]
+  ],
+  "test_asr_audio_names": [
+    "pa_12_lesson02_where_is_eagle.wav",
+    "pa_13_lesson02_tell_eagle_home.wav",
+    "pa_14_lesson02_where_is_owl.wav",
+    "pa_15_lesson02_tell_owl_home.wav",
+    "pa_16_lesson02_where_are_bees.wav",
+    "pa_17_lesson02_tell_bees_home.wav",
+    "pa_18_lesson02_all_home.wav"
+  ],
+  "test_asr_audio_dir": "res://assets/test_audio/"
 }

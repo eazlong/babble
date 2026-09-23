@@ -1,5 +1,9 @@
 # 游戏元素设计文档
 
+> ⚠️ **部分失效（Partially Superseded）**：本文基于已废弃的「游戏故事设计 v2.0」编写，其世界观叙事部分不再有效；
+> 但文中记录的组件（InteractiveObject / EasterEggTrigger / SceneModeSelector / SpiritPreview / NPCExtraDialogue）仍是现用代码。
+> 正典以 `docs/new/PRD-v1.md` 为准。
+
 > **基于**：游戏故事设计 v2.0（第 11-12 节）  
 > **日期**：2026-06-23  
 > **目标**：将故事设计转化为可实现的 Godot 游戏元素

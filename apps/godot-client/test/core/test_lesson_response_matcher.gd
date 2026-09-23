@@ -46,8 +46,8 @@ func test_chang_an_market_dialogue_flow_loads():
 	var ok: bool = loader.load_dialogue_flows()
 
 	assert_true(ok, "长安西市第一课 dialogue flow 应能成功加载")
-	assert_true(loader.has_flow("west_market_01.good_morning"))
-	assert_true(loader.has_flow("west_market_01.afternoon_review_success"))
+	assert_true(loader.has_flow("gate_01.name_register"))
+	assert_true(loader.has_flow("gate_01.gate_open"))
 
 func test_chang_an_market_config_contains_target_words():
 	var file := FileAccess.open("res://assets/resources/scene_configs/chang_an_market_lesson_01.json", FileAccess.READ)
@@ -58,8 +58,8 @@ func test_chang_an_market_config_contains_target_words():
 	assert_true(parsed is Dictionary)
 	var words: Array = parsed.get("target_words", [])
 	assert_eq(words.size(), 9)
-	assert_true(words.has("meet"))
-	assert_true(words.has("afternoon"))
+	assert_true(words.has("city"))
+	assert_true(words.has("house"))
 
 func test_chang_an_market_scene_instantiates():
 	var packed: PackedScene = load("res://assets/scenes/ChangAnMarket.tscn")
@@ -69,5 +69,5 @@ func test_chang_an_market_scene_instantiates():
 	assert_not_null(scene)
 	assert_eq(scene.name, "ChangAnMarket")
 	assert_not_null(scene.get_node_or_null("HUDLayer/QuestTracker/QuestLabel"))
-	assert_not_null(scene.get_node_or_null("FeifeiLayer/FeifeiShoulder"))
+	assert_not_null(scene.get_node_or_null("FeifeiLayer"))
 	scene.free()

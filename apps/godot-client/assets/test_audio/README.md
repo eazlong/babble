@@ -16,8 +16,15 @@
 |---|---|---|
 | 序章 BeginningFP | `BeginningFPController.TEST_ASR_NEW_GAME_ANSWERS`（全新开局）/ `TEST_ASR_RESUME_ANSWERS`（续行） | `pa_01`,`pa_02` / `pa_04` |
 | 蜃影客栈导览 | `MirageInnIntroductionController.TEST_ASR_INTRO_ANSWERS` | `pa_03` |
-| 蜃影客栈 hub | `MirageInnIntroductionController.TEST_ASR_HUB_ANSWERS` | `pa_04` |
+| 蜃影客栈 hub（二选一） | `MirageInnIntroductionController.TEST_ASR_HUB_ANSWERS` | `pa_19`（词灵阁→归卷厅小游戏）／`pa_04`（出发→长安西市） |
 | 长安西市 Lesson01/02 | `scene_configs/chang_an_market_lesson_0*.json` 的 `test_asr_audio_names` | `pa_05…pa_11` / `pa_12…pa_18` |
+
+**hub 是二选一，两条路各有录音**：`TEST_ASR_HUB_ANSWERS` 指哪条，test 模式就跑哪一支。
+当前默认指向 **`pa_19`（去词灵阁玩小游戏）**；想验证主线那支就改回 `pa_04`。
+
+⚠️ **别去改 `pa_04` 的文案**。主人房「续行」那一步（`BeginningFPController._is_resume_call`）
+只认 `StoryContinueMarkers` 的出发口令（出发/走吧/启程/继续…），跟 hub 是**两道不同的门**；
+把 `pa_04` 换成「词灵阁」会让续行直接卡在主人房——那儿没有去词灵阁的出口。
 
 每个场景在 `_ready()` 里 `set_asr_default_answer_test_enabled(...)` + `reset_asr_test_audio_index()`，
 所以从哪儿进来都对得上。`project.godot` 里只留一条占位（启动到第一个场景之前用；别留空，

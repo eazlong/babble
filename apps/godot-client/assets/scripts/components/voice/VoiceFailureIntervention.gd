@@ -180,7 +180,7 @@ func _show_intervention_text(text: String) -> void:
 func _show_hint(text: String) -> void:
 	if text.is_empty() or not hint_presenter or not hint_presenter.has_method("show_hint"):
 		return
-	if hint_presenter is FeifeiShoulder or hint_presenter is FeifeiBody:
+	if hint_presenter is FeifeiBody:
 		hint_presenter.show_hint(text, hint_state, 0.0)
 	else:
 		hint_presenter.show_hint(text, hint_state)

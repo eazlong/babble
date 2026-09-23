@@ -1,8 +1,10 @@
 {
 	"dirs": [
 		"test/core",
+		"test/scenes",
 		"test/ui",
-		"test/autoload"
+		"test/autoload",
+		"test/components"
 	],
 	"should_maximize": false,
 	"hide_orphans": true,

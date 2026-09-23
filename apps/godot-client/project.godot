@@ -52,7 +52,7 @@ window/stretch/aspect="expand"
 
 [game]
 
-test_mode_skip_auto_load_save=true
+test_mode_skip_auto_load_save=false
 
 [gui]
 
@@ -62,7 +62,14 @@ theme/custom="res://assets/resources/fonts/ChineseTheme.tres"
 
 asr_default_answer_test_enabled=true
 asr_test_audio_dir="res://assets/test_audio/"
-asr_test_audio_names=PackedStringArray("wo_jiao_kaka_kaka_de_ka.wav", "bang_wo_qi_yi_ge_ba.wav", "ok.wav", "shu_jia.wav")
+; 玩家台词的轮换由各场景自己声明（见 BeginningFPController / MirageInnIntroductionController
+; / ChangAnMarketController 的 TEST_ASR_* 与 scene_config 的 test_asr_audio_names）。
+; 这里只给一个启动前的占位：全局顺序没法同时满足"从序章开始玩"和"带存档续到某个场景"，
+; 曾经因此把序章的名字答案喂给了"唤醒书架"（孩子怎么说都过不去）。
+; 注意别留空——空列表会让收集逻辑退化成"把 test_audio 下所有 wav 都排进来"。
+asr_test_audio_names=PackedStringArray("pa_01_prologue_source_name.wav")
+recorded_tts_enabled=true
+recorded_tts_dir="res://assets/test_audio/tts/"
 
 [input]
 

@@ -6,21 +6,18 @@ const SCENE_ID_MAP: Dictionary = {
 	"BeginningFP": "beginning",
 	"beginning": "beginning",
 	"MirageInnIntroduction": "mirage_inn_introduction",
-	"SpellLibrary": "spell_library",
-	"spell_library": "spell_library",
-	"RainbowGarden": "rainbow_garden",
-	"rainbow_garden": "rainbow_garden",
 	"ChangAnMarket": "chang_an_market_lesson_01",
 	"chang_an_market_lesson_01": "chang_an_market_lesson_01",
+	"ChangAnMarketLesson02": "chang_an_market_lesson_02",
+	"chang_an_market_lesson_02": "chang_an_market_lesson_02",
 	"WordSpiritLibraryArchiveHall": "word_spirit_library_archive_hall",
 	"word_spirit_library_archive_hall": "word_spirit_library_archive_hall",
 }
 const LEARNING_SCENES: Array[String] = [
 	"beginning",
 	"mirage_inn_introduction",
-	"spell_library",
-	"rainbow_garden",
 	"chang_an_market_lesson_01",
+	"chang_an_market_lesson_02",
 	"word_spirit_library_archive_hall",
 ]
 const RECORDING_DIR: String = "user://magic_echo_recordings"

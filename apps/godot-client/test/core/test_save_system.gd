@@ -31,3 +31,19 @@ func test_max_save_slots():
 
 func test_save_dir_constant():
 	assert_eq(SaveSystem.SAVE_DIR, "user://saves/", "保存目录常量正确")
+
+func test_delete_invalid_slot_emits_save_delete_failed_not_save_failed() -> void:
+	watch_signals(SaveSystem)
+
+	for invalid_slot in [0, -1, SaveSystem.MAX_SAVE_SLOTS + 1]:
+		SaveSystem.delete(invalid_slot)
+		assert_signal_emitted_with_parameters(
+			SaveSystem,
+			"save_delete_failed",
+			[invalid_slot, "Invalid slot ID: %d. Must be 1..%d" % [invalid_slot, SaveSystem.MAX_SAVE_SLOTS]]
+		)
+
+	assert_signal_not_emitted(SaveSystem, "save_failed", "Invalid slot must not emit save_failed")
+
+	# Restore state so later tests are not affected.
+	SaveSystem.current_state = SaveSystem.State.IDLE

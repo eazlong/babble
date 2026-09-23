@@ -1,38 +1,146 @@
 [
   {
-    "scene_id": "spirit_forest",
-    "scene_name": "精灵森林",
-    "scene_name_en": "Spirit Forest",
+    "scene_id": "chang_an_market_west",
+    "scene_name": "长安西市",
+    "scene_name_en": "Chang'an West Market",
     "order": 1,
-    "description": "初识魔法，学习问候语、颜色和数字",
-    "npcs": ["oakley"],
-    "vocabulary_focus": ["greetings", "colors", "numbers"],
-    "tasks": ["greet_oakley", "activate_flowers", "open_chest"],
-    "badge_id": "forest_badge",
+    "description": "倾听与破冰：迈出第一步的勇气，唤醒东皇钟",
+    "npcs": [
+      "feifei",
+      "tianji_steward",
+      "a_ling",
+      "haoran"
+    ],
+    "vocabulary_focus": [
+      "greetings",
+      "self_introduction",
+      "where_do_you_live",
+      "polite_requests"
+    ],
+    "tasks": [
+      "name_register",
+      "ask_where_live",
+      "restore_paper",
+      "where_is_your_home"
+    ],
+    "badge_id": "donghuang_bell_badge",
     "required_lxp": 30
   },
   {
-    "scene_id": "spell_library",
-    "scene_name": "咒语图书馆",
-    "scene_name_en": "Spell Library",
+    "scene_id": "miao_jiang_bamboo_sea",
+    "scene_name": "苗疆竹海",
+    "scene_name_en": "Miao Jiang Bamboo Sea",
     "order": 2,
-    "description": "学习课堂用语和学习用品",
-    "npcs": ["bookmark", "luna"],
-    "vocabulary_focus": ["classroom_items", "commands", "actions"],
-    "tasks": ["organize_books", "follow_commands", "practice_dialogue"],
-    "badge_id": "library_badge",
+    "description": "指引与定位：面对未知，唤醒问路司南",
+    "npcs": [
+      "feifei",
+      "bamboo_guide"
+    ],
+    "vocabulary_focus": [
+      "position_words",
+      "route_directions",
+      "action_commands"
+    ],
+    "tasks": [
+      "learn_local_etiquette",
+      "guide_travelers",
+      "mark_the_route"
+    ],
+    "badge_id": "wenlu_sinan_badge",
     "required_lxp": 60
   },
   {
-    "scene_id": "rainbow_garden",
-    "scene_name": "彩虹花园",
-    "scene_name_en": "Rainbow Garden",
+    "scene_id": "xingsha_oasis",
+    "scene_name": "星沙绿洲",
+    "scene_name_en": "Star Sand Oasis",
     "order": 3,
-    "description": "探索自然，学习天气、动物、方位",
-    "npcs": ["petalia"],
-    "vocabulary_focus": ["weather", "animals", "plants", "positions", "emotions"],
-    "tasks": ["fix_weather_crystal", "find_lost_animals", "plant_flowers"],
-    "badge_id": "garden_badge",
+    "description": "共情与委婉：参加异族仪式，唤醒通晓玉如意",
+    "npcs": [
+      "feifei",
+      "oasis_elder",
+      "envoy"
+    ],
+    "vocabulary_focus": [
+      "polite_requests",
+      "could_may",
+      "empathy_expressions"
+    ],
+    "tasks": [
+      "join_ritual",
+      "build_trust",
+      "exchange_gifts"
+    ],
+    "badge_id": "tongxiao_yuruyi_badge",
     "required_lxp": 90
+  },
+  {
+    "scene_id": "jigong_yanshi_city",
+    "scene_name": "机关偃师城",
+    "scene_name_en": "Mechanism Yanshi City",
+    "order": 4,
+    "description": "逻辑与辨析：比较与因果，唤醒辩真明镜",
+    "npcs": [
+      "feifei",
+      "yanshi_master"
+    ],
+    "vocabulary_focus": [
+      "comparatives",
+      "cause_effect",
+      "feature_description"
+    ],
+    "tasks": [
+      "compare_machines",
+      "explain_causes",
+      "find_the_real_one"
+    ],
+    "badge_id": "bianzhen_mingjing_badge",
+    "required_lxp": 120
+  },
+  {
+    "scene_id": "longmen_caoyun_port",
+    "scene_name": "龙门漕运港",
+    "scene_name_en": "Longmen Transport Port",
+    "order": 5,
+    "description": "追溯与叙事：复述事件经过，唤醒岁月号角",
+    "npcs": [
+      "feifei",
+      "harbor_master",
+      "boatman"
+    ],
+    "vocabulary_focus": [
+      "past_tense",
+      "narrative_sequence",
+      "event_retelling"
+    ],
+    "tasks": [
+      "retell_incident",
+      "reconcile_misunderstanding",
+      "log_the_voyage"
+    ],
+    "badge_id": "suiyue_haojiao_badge",
+    "required_lxp": 150
+  },
+  {
+    "scene_id": "kunlun_divine_palace",
+    "scene_name": "昆仑神宫",
+    "scene_name_en": "Kunlun Divine Palace",
+    "order": 6,
+    "description": "理解与共识：百家书院长老席前的公开表达",
+    "npcs": [
+      "feifei",
+      "elder_council"
+    ],
+    "vocabulary_focus": [
+      "viewpoint_expressions",
+      "public_speaking",
+      "consensus_building"
+    ],
+    "tasks": [
+      "final_speech",
+      "answer_questions",
+      "reach_consensus"
+    ],
+    "badge_id": "wanxiang_hetu_badge",
+    "required_lxp": 200
   }
 ]

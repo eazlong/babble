@@ -30,6 +30,11 @@ func connect_for_session(next_session_id: String) -> void:
 	reconnect_attempts = 0
 	_wants_connection = true
 	_connecting_since = Time.get_ticks_msec() / 1000.0
+	# 复用中的 peer 不能再次 connect_to_url（ERR_ALREADY_IN_USE），新会话换一个干净的。
+	if socket.get_ready_state() != WebSocketPeer.STATE_CLOSED:
+		socket.close()
+		socket = WebSocketPeer.new()
+	connected = false
 	var url = COACH_WS_URL + "?session_id=" + session_id.uri_encode()
 	var err = socket.connect_to_url(url)
 	if err != OK:

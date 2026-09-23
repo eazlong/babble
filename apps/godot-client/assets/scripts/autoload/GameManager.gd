@@ -6,6 +6,10 @@ const SOURCE_LANGUAGE_CODE: String = "zh"
 const SOURCE_LANGUAGE_NAME: String = "中文"
 const SPECIAL_LANGUAGE_CODE: String = "en"
 const SPECIAL_LANGUAGE_NAME: String = "英语"
+## 中英混合的 ASR 语言提示（voice-service 既有取值：whisper 映射为 zh，
+## xfyun 的 iat 本身就是 mul_cn）。用于"玩家可能用母语求助、也可能用目标语言作答"
+## 的槽位——典型是序章英语名（既要收英语名，也要收「帮我起一个吧」）。
+const BILINGUAL_ASR_LANGUAGE_CODE: String = "cn_en"
 const DEFAULT_SPECIAL_LANGUAGE_PLAYER_NAME: String = "Carl"
 const DEFAULT_SAVE_SLOT: int = 1
 const FORMATION_ENERGY_MAX: int = 8
@@ -74,6 +78,16 @@ var ink_shadow_queue: Array[String] = []
 # key = knowledge_item_id, value = {score, last_seen, half_life, band}
 var mastery_cache: Dictionary = {}
 
+## 星辉钱包（Star Economy §1：跨会话永久保留的结算货币）。
+## 场景只调用 add_stars()，不直接改这个字段（CLAUDE.md §12）。
+var star_wallet: int = 0
+
+## 本地学习记录（场景文档 v0.3 §9.2 / §9.5：本轮只落客户端，不上报）。
+## 字段名与 §9.2 的写入表保持一致，将来接 summary-service 时是纯传输层改动。
+var letter_recognition_records: Array[Dictionary] = []
+var error_records: Array[Dictionary] = []
+var word_mastery_updates: Array[Dictionary] = []
+
 # 信号
 signal language_changed(lang: String)
 signal player_info_updated(name: String, age: int)
@@ -122,6 +136,12 @@ func _restore_from_save_data(data: Dictionary) -> void:
 
 	# 掌握度本地缓存恢复
 	mastery_cache = data.get("mastery_cache", {}).duplicate(true) if data.get("mastery_cache", {}) is Dictionary else {}
+
+	# 星辉钱包与本地学习记录（v0.3）。旧存档没有这些键 → 默认值，不视为损坏。
+	star_wallet = maxi(0, int(data.get("star_wallet", 0)))
+	letter_recognition_records = _restore_dictionary_array(data.get("letter_recognition_records", []))
+	error_records = _restore_dictionary_array(data.get("error_records", []))
+	word_mastery_updates = _restore_dictionary_array(data.get("word_mastery_updates", []))
 
 	var areas_data: Array = data.get("unlocked_areas", data.get("unlocked_scenes", ["BeginningFP"]))
 	unlocked_areas.clear()
@@ -242,6 +262,10 @@ func save_progress() -> void:
 		"unlocked_spirits": unlocked_spirits,
 		"spirit_usage_counts": spirit_usage_counts,
 		"mastery_cache": mastery_cache,
+		"star_wallet": star_wallet,
+		"letter_recognition_records": letter_recognition_records,
+		"error_records": error_records,
+		"word_mastery_updates": word_mastery_updates,
 		"magic_echo": _magic_echo_save_data()
 	}
 	var save_system = get_node("/root/SaveSystem")
@@ -307,6 +331,60 @@ func set_ink_shadow_queue(queue: Array[String]) -> void:
 func get_ink_shadow_queue() -> Array[String]:
 	return ink_shadow_queue.duplicate()
 
+## ── 星辉与本地学习记录（v0.3；场景只调用这些方法，不直接改字段）──────────
+
+## 星辉入账（Star Economy §1：跨会话永久保留）。返回入账后的总额。
+func add_stars(count: int) -> int:
+	if count <= 0:
+		return star_wallet
+	star_wallet += count
+	return star_wallet
+
+func get_star_wallet() -> int:
+	return star_wallet
+
+## 字母识别记录：供后续校准 letter_high/medium_threshold（场景文档 §13.3）。
+func record_letter_recognition(word_id: String, letter: String, confidence: float) -> void:
+	letter_recognition_records.append({
+		"word_id": word_id,
+		"letter": letter,
+		"confidence": confidence,
+		"recorded_at": Time.get_datetime_string_from_system(true) + "Z",
+	})
+
+func get_letter_recognition_records() -> Array[Dictionary]:
+	return letter_recognition_records.duplicate(true)
+
+## 错误记录：墨影词牌生成时写入（场景文档 §9.2）。
+func record_error(word_id: String, error_type: String) -> void:
+	error_records.append({
+		"word_id": word_id,
+		"error_type": error_type,
+		"recorded_at": Time.get_datetime_string_from_system(true) + "Z",
+	})
+
+func get_error_records() -> Array[Dictionary]:
+	return error_records.duplicate(true)
+
+## 掌握度增量：刻印成功后写入（场景文档 §9.2）。
+func record_mastery_update(word_id: String, delta: float) -> void:
+	word_mastery_updates.append({
+		"word_id": word_id,
+		"delta": delta,
+		"recorded_at": Time.get_datetime_string_from_system(true) + "Z",
+	})
+
+func get_word_mastery_updates() -> Array[Dictionary]:
+	return word_mastery_updates.duplicate(true)
+
+func _restore_dictionary_array(raw: Variant) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if raw is Array:
+		for item in raw:
+			if item is Dictionary:
+				out.append(item.duplicate(true))
+	return out
+
 func reset() -> void:
 	player_name = ""
 	player_age = 0
@@ -318,6 +396,10 @@ func reset() -> void:
 	spirit_usage_counts.clear()
 	archive_hall_progress.clear()
 	ink_shadow_queue.clear()
+	star_wallet = 0
+	letter_recognition_records.clear()
+	error_records.clear()
+	word_mastery_updates.clear()
 	formation_energy = FORMATION_ENERGY_MAX
 	formation_active_episode = ""
 	save_progress()

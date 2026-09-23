@@ -185,6 +185,13 @@ test_mode_skip_auto_load_save=false
 - `MagicEchoManager.reconcile_local_recordings()`
 - 保留 pending upload 或清理无法绑定的孤儿文件
 
+读档完成后，启动场景不自动跳转到 `current_scene`：
+
+- 启动统一先进入 `BeginningFP` 主人房；
+- 由玩家与腓腓完成续行交互后，再切回 `GameManager.get_scene_path()`；
+- 主人房续行期间不要覆盖存档里的 `current_scene`（即不要调用 `set_checkpoint("BeginningFP")`）。
+- 续行只通过对话触发：腓腓主动发起提示，玩家说“出发 / Let's go / 继续”；不要新增点击/触摸热区或可见按钮。
+
 ## 11. 切场景不要在 `_ready()` 中直接抢切
 
 Godot 可能报：
@@ -193,10 +200,10 @@ Godot 可能报：
 Parent node is busy adding/removing children, remove_child() can't be called at this time.
 ```
 
-如果 `_ready()` 中需要 resume 到其他场景，优先延迟：
+如果 `_ready()` 中需要进入续行或切场景流程（例如主人房续行），优先延迟：
 
 ```gdscript
-call_deferred("_resume_to_saved_scene")
+call_deferred("_start_resume_room")
 ```
 
 或等待一帧后切换。避免在节点树还在添加/删除时直接 `change_scene_to_file()`。

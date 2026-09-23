@@ -1,11 +1,11 @@
 [gd_scene load_steps=3 format=3]
 
-[ext_resource type="Texture2D" uid="uid://bjm5j6jnh78ku" path="res://assets/textures/ui/fp/ui_mic_button_idle.png" id="1_idle"]
+[ext_resource type="Texture2D" uid="uid://cncwhuianlp8c" path="res://assets/textures/ui/spritestone/ui_spirit_stone_idle.png" id="1_idle"]
 [ext_resource type="Script" path="res://assets/scripts/ui/VoiceMicIndicator.gd" id="2_script"]
 
 [node name="VoiceMicIndicator" type="Control"]
-custom_minimum_size = Vector2(80, 80)
-pivot_offset = Vector2(40, 40)
+custom_minimum_size = Vector2(140, 140)
+pivot_offset = Vector2(70, 70)
 mouse_filter = 2
 script = ExtResource("2_script")
 
@@ -17,6 +17,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("1_idle")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="PendingUploadBadge" type="Label" parent="."]
 visible = false

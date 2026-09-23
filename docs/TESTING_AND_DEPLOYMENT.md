@@ -289,9 +289,9 @@ pnpm --filter @linguaquest/parent-dashboard dev
 | Spirit Coach Service | 8305 | `GET /health` |
 | Quest Service | 8306 | `GET /health` |
 | Reward Service | 8307 | `GET /health` |
-| Parent Dashboard | 3300 | `GET /` |
-| Redis | 6379 | `redis-cli ping` |
-| PostgreSQL | 5432 | `pg_isready` |
+| Parent Dashboard (dev) | 3333 | `GET /` |
+| Redis (compose) | 6380→6379 | `redis-cli ping` |
+| PostgreSQL (compose) | 5433→5432 | `pg_isready` |
 
 ---
 
@@ -330,6 +330,29 @@ docker run -d \
 # 验证健康检查
 docker exec dialogue-service wget -qO- http://localhost:8302/health
 ```
+
+### 家长控制台 Docker 容器
+
+家长控制台（Next.js `apps/parent-dashboard`）已可打包为 Docker 容器并纳入 compose：
+
+```bash
+# 启动家长控制台 + 其认证依赖 auth-service
+docker compose up --build parent-dashboard
+
+# 访问
+open http://localhost:3333
+```
+
+涉及文件与详细说明见 [docs/parent-dashboard-docker.md](./parent-dashboard-docker.md)。
+
+| 服务 | 容器内端口 | 宿主端口 | 说明 |
+|------|-----------|---------|------|
+| parent-dashboard | 3333 | 3333 | Next.js standalone Web |
+| auth-service | 8303 | 8310 | 认证 + 家长 API 代理；宿主映射 8310 避开 summary-service 的 8303 |
+
+> 两个镜像均以**仓库根为 build context**（`context: .` + 对应 `dockerfile` 路径），
+> 以满足 pnpm `--frozen-lockfile` 与 tsconfig 基配置的引用。启动前需在 `.env`
+> 提供真实的 `SUPABASE_URL` / `SUPABASE_KEY`。
 
 ### 生产 Docker Compose (待创建)
 

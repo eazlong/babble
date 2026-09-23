@@ -1,7 +1,9 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3300'
-const API_URL = process.env.API_URL || 'http://localhost:8302'
+// 部署环境（docker-compose）：parent-dashboard 宿主 3333、auth-service 宿主 8310。
+// 测试已运行容器时设 NO_WEBSERVER=1 跳过自启 webserver。
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3333'
+const API_URL = process.env.API_URL || 'http://localhost:8310'
 
 export default defineConfig({
   testDir: './e2e',
@@ -32,7 +34,7 @@ export default defineConfig({
   webServer: process.env.NO_WEBSERVER ? undefined : [
     {
       command: 'cd .. && pnpm --filter @linguaquest/parent-dashboard dev',
-      url: 'http://localhost:3300',
+      url: 'http://localhost:3333',
       reuseExistingServer: true,
       timeout: 60000,
     },

@@ -14,19 +14,19 @@ test('GET /api/v1/scenes returns all scenes', async () => {
   expect(res.statusCode).toBe(200)
   const scenes = res.json()
   expect(Array.isArray(scenes)).toBe(true)
-  expect(scenes).toHaveLength(3)
-  expect(scenes[0].scene_id).toBe('spirit_forest')
-  expect(scenes[1].scene_id).toBe('spell_library')
-  expect(scenes[2].scene_id).toBe('rainbow_garden')
+  expect(scenes).toHaveLength(6)
+  expect(scenes[0].scene_id).toBe('chang_an_market_west')
+  expect(scenes[1].scene_id).toBe('miao_jiang_bamboo_sea')
+  expect(scenes[2].scene_id).toBe('xingsha_oasis')
 })
 
 test('GET /api/v1/scenes/:sceneId returns a single scene', async () => {
-  const res = await app.inject({ method: 'GET', url: '/api/v1/scenes/spirit_forest' })
+  const res = await app.inject({ method: 'GET', url: '/api/v1/scenes/chang_an_market_west' })
   expect(res.statusCode).toBe(200)
   const scene = res.json()
-  expect(scene.scene_id).toBe('spirit_forest')
-  expect(scene.scene_name).toBe('精灵森林')
-  expect(scene.npcs).toContain('oakley')
+  expect(scene.scene_id).toBe('chang_an_market_west')
+  expect(scene.scene_name).toBe('长安西市')
+  expect(scene.npcs).toContain('feifei')
   expect(scene.required_lxp).toBe(30)
 })
 
@@ -46,4 +46,12 @@ test('scene data has all required fields', async () => {
       expect(scene).toHaveProperty(field)
     }
   }
+})
+
+
+test("scene badge ids are unique", async () => {
+  const res = await app.inject({ method: "GET", url: "/api/v1/scenes" })
+  const scenes = res.json()
+  const badgeIds = scenes.map((s: { badge_id: string }) => s.badge_id)
+  expect(new Set(badgeIds).size).toBe(badgeIds.length)
 })

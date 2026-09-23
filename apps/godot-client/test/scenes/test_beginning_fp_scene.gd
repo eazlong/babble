@@ -87,5 +87,5 @@ func test_intro_scene_drops_outdoor_parallax_layers() -> void:
 	var scene: Node = packed.instantiate()
 	assert_null(scene.get_node_or_null("ParallaxBackground"), "intro should rely on runtime views instead of outdoor parallax")
 	assert_not_null(scene.get_node_or_null("HUDLayer/QuestTracker/QuestLabel"), "intro quest label should remain")
-	assert_not_null(scene.get_node_or_null("FeifeiLayer/FeifeiShoulder"), "intro Feifei shoulder should remain")
+	assert_not_null(scene.get_node_or_null("FeifeiLayer"), "intro Feifei shoulder should remain")
 	scene.free()

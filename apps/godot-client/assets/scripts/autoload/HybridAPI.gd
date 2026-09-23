@@ -45,6 +45,15 @@ var asr_test_audio_files: Array[String] = []
 var asr_test_audio_names: Array[String] = []
 var _asr_test_audio_index: int = 0
 
+## ——— 录制 TTS 回放模式 ———
+## 开发/演示用：按 (voice, language, text) 查预先录好的 wav，不再实时打 TTS 接口。
+## 录音由 scripts/record_dialogue_tts.py 生成（键算法必须与 _recorded_tts_key 一致）。
+## 落空的台词会自动回退到实时 TTS，并在 _recorded_tts_misses 里留痕，便于补录。
+const RECORDED_TTS_DIR: String = "res://assets/test_audio/tts/"
+var recorded_tts_enabled: bool = false
+var recorded_tts_dir: String = RECORDED_TTS_DIR
+var _recorded_tts_misses: Dictionary = {}
+
 # ——— 并行ASR状态追踪 ———
 var _parallel_asr_pending: bool = false
 var _parallel_asr_result: Dictionary = {}
@@ -120,6 +129,29 @@ func set_asr_default_answer_test_enabled(
 func _configure_asr_test_options() -> void:
 	_configure_asr_test_options_from_project_settings()
 	_configure_asr_test_options_from_cmdline()
+	_configure_recorded_tts_options()
+
+## 录制 TTS 回放的开关：project.godot 的 hybrid_api/recorded_tts_enabled，
+## 或命令行 --tts-recorded。默认关闭（关闭时行为与改动前完全一致）。
+func _configure_recorded_tts_options() -> void:
+	var enabled := bool(ProjectSettings.get_setting("hybrid_api/recorded_tts_enabled", false))
+	var dir := str(ProjectSettings.get_setting("hybrid_api/recorded_tts_dir", "")).strip_edges()
+	for arg in OS.get_cmdline_args():
+		if arg == "--tts-recorded":
+			enabled = true
+		elif arg.begins_with("--tts-recorded-dir="):
+			enabled = true
+			dir = arg.trim_prefix("--tts-recorded-dir=")
+	for arg in OS.get_cmdline_user_args():
+		if arg == "--tts-recorded":
+			enabled = true
+		elif arg.begins_with("--tts-recorded-dir="):
+			enabled = true
+			dir = arg.trim_prefix("--tts-recorded-dir=")
+	if not dir.is_empty():
+		recorded_tts_dir = dir if dir.ends_with("/") else dir + "/"
+	if enabled:
+		set_recorded_tts_enabled(true)
 
 func _configure_asr_test_options_from_project_settings() -> void:
 	var enabled := bool(ProjectSettings.get_setting("hybrid_api/asr_default_answer_test_enabled", false))
@@ -212,7 +244,7 @@ func _collect_asr_test_audio_files(audio_dir: String, names: Array[String]) -> A
 	all_files.sort()
 	return all_files
 
-## 返回下一个测试音频文件的字节（轮换）。未配置文件时返回空字节数组。
+## 每轮语音作答取下一个测试音频（轮换）。未配置文件时返回空字节数组。
 func get_next_asr_test_audio_data() -> PackedByteArray:
 	if asr_test_audio_files.is_empty():
 		push_warning("[HybridAPI] ASR test-audio mode enabled but no wav files configured")
@@ -229,6 +261,11 @@ func get_next_asr_test_audio_data() -> PackedByteArray:
 	print("[HybridAPI] ASR test audio loaded: ", path, " size=", data.size(), " index=", index)
 	return data
 
+## 把轮换位置归零：场景自己带一套"本场景该说的话"时，从第一条开始取，
+## 不受上一个场景用到第几条的影响（见 ChangAnMarketController._configure_test_asr_audio）。
+func reset_asr_test_audio_index() -> void:
+	_asr_test_audio_index = 0
+
 func _emit_asr_received(result: Dictionary) -> void:
 	asr_received.emit(result)
 
@@ -240,6 +277,8 @@ func ping_services() -> void:
 		push_warning("[HybridAPI] Failed to ping services: " + str(error))
 
 func synthesize_tts(text: String, voice_id: String = "spirit", lang: String = "zh") -> void:
+	if recorded_tts_enabled and _play_recorded_tts(text, voice_id, lang):
+		return
 	var body = JSON.stringify({
 		"text": text,
 		"voice_id": voice_id,
@@ -249,6 +288,53 @@ func synthesize_tts(text: String, voice_id: String = "spirit", lang: String = "z
 	var error = tts_http_request.request(API_BASE_URL + "/tts/synthesize", headers, HTTPClient.METHOD_POST, body)
 	if error != OK:
 		push_warning("[HybridAPI] TTS request deferred (HTTPRequest busy): ", error)
+
+## 录制 TTS 回放：命中则直接播放预先录好的 wav 并返回 true。
+## 未命中返回 false（调用方回退到实时 TTS），并记账到 _recorded_tts_misses。
+## NOTE 键必须与 scripts/record_dialogue_tts.py 的 record_key 完全一致：
+## md5("<voice>|<language>|<text>")[:16]，文件名为 "<voice>_<language>_<key>.wav"。
+func _play_recorded_tts(text: String, voice_id: String, lang: String) -> bool:
+	if text.strip_edges().is_empty():
+		return false
+	var path := recorded_tts_path(text, voice_id, lang)
+	if not FileAccess.file_exists(path):
+		_recorded_tts_misses[_recorded_tts_key(text, voice_id, lang)] = {
+			"voice": voice_id,
+			"language": lang,
+			"text": text,
+		}
+		push_warning("[HybridAPI] 录制 TTS 未命中，回退实时 TTS: %s" % path)
+		return false
+	var bytes := FileAccess.get_file_as_bytes(path)
+	if bytes.is_empty():
+		push_warning("[HybridAPI] 录制 TTS 文件为空: %s" % path)
+		return false
+	# 直接构造 AudioStreamWAV，不依赖 Godot 的 .wav 导入产物——
+	# 录音目录是脚本产出、随时可重新生成，避免每次录制都触发全量重导入。
+	var stream := AudioManager.create_wav_stream_from_bytes(bytes)
+	if stream == null:
+		push_warning("[HybridAPI] 录制 TTS 解码失败: %s" % path)
+		return false
+	print("[HybridAPI] 录制 TTS 命中: ", path)
+	AudioManager.play_tts(stream)
+	return true
+
+func recorded_tts_path(text: String, voice_id: String, lang: String) -> String:
+	return "%s%s_%s_%s.wav" % [recorded_tts_dir, voice_id, lang, _recorded_tts_key(text, voice_id, lang)]
+
+func _recorded_tts_key(text: String, voice_id: String, lang: String) -> String:
+	return ("%s|%s|%s" % [voice_id, lang, text]).md5_text().substr(0, 16)
+
+## 本次运行里没能命中录音的台词（key -> {voice, language, text}）。
+## 用来发现"改了文案但没重录"的漂移；补录后重启即可清零。
+func get_recorded_tts_misses() -> Dictionary:
+	return _recorded_tts_misses.duplicate(true)
+
+func set_recorded_tts_enabled(enabled: bool) -> void:
+	recorded_tts_enabled = enabled
+	if enabled:
+		_recorded_tts_misses.clear()
+	print("[HybridAPI] 录制 TTS 回放模式: ", "on" if enabled else "off")
 
 func _build_asr_request_body(audio_data: PackedByteArray, lang: String = "en", context: Dictionary = {}) -> String:
 	var payload := {

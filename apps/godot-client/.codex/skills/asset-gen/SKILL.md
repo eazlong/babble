@@ -64,7 +64,7 @@ Match the current PRD and docs:
 - Child-friendly, readable silhouettes, warm but not beige-dominated, vivid accents, clean contrast.
 - Feifei is the AI companion. Do not generate old Spark / blue-bird assets.
 - Children's client should feel like an RPG adventure, not a learning analytics dashboard.
-- Voice interaction objects should look tactile and safe for 6-13 year olds.
+- Voice interaction objects should look tactile and safe for 9-10 year olds (Chinese Grade 4).
 
 For prompt writing, include:
 

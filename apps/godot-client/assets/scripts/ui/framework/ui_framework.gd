@@ -91,10 +91,11 @@ func _ready() -> void:
 
 
 func _setup_cjk_font() -> void:
-	# Disabled: STHeiti font files (both .ttc and .ttf) not importing in Godot 4.6
-	# var font := load("res://assets/resources/fonts/STHeiti-Regular.ttf") as Font
-	# if font:
-	# 	get_tree().root.add_theme_font_override("font", font)
+	# Disabled: CJK fonts are supplied by the project theme instead
+	# (project.godot [gui] theme/custom -> ChineseTheme.tres, whose fallback is
+	# STHeiti.ttc; DialogueBox.gd loads the same .ttc directly).
+	# The duplicate STHeiti-Regular.ttf was removed in the 2026-09-22 asset
+	# cleanup: it was a single-face subset of STHeiti.ttc and had no references.
 	pass
 
 

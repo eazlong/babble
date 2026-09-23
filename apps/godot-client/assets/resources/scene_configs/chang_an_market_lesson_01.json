@@ -274,5 +274,15 @@
       "flow_id": "gate_01.gate_open",
       "reward_words": []
     }
-  ]
+  ],
+  "test_asr_audio_names": [
+    "pa_05_lesson01_name_register.wav",
+    "pa_06_lesson01_where_live.wav",
+    "pa_07_lesson01_restore_city.wav",
+    "pa_08_lesson01_restore_street.wav",
+    "pa_09_lesson01_restore_building.wav",
+    "pa_10_lesson01_restore_house.wav",
+    "pa_11_lesson01_where_is_home.wav"
+  ],
+  "test_asr_audio_dir": "res://assets/test_audio/"
 }

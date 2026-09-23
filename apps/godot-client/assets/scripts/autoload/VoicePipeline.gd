@@ -80,10 +80,12 @@ func _ready() -> void:
 func start_listening(recording_context: Dictionary = {}) -> void:
 	if is_listening:
 		return
+
 	# ASR 测试模式：跳过麦克风与静音等待，直接用录制好的音频文件触发 voice_ended。
 	if HybridAPI.asr_default_answer_test_enabled:
 		_start_test_audio_flow(recording_context)
 		return
+		
 	_start_microphone()
 
 	is_listening = true

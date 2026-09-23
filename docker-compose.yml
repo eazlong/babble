@@ -68,6 +68,36 @@ services:
       - ./services/summary-service/src:/app/src:ro
     depends_on: [postgres]
 
+  # 家长控制台依赖：auth-service（认证 + 家长 API 代理，内部跑在 8303）
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    ports: ["8310:8303"]
+    environment:
+      # auth-service 监听 8303，直连 compose 的 postgres（原 Supabase 已移除）
+      DATABASE_URL: ${DATABASE_URL:-postgres://postgres:postgres@postgres:5432/linguaquest}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      SUMMARY_SERVICE_URL: ${SUMMARY_SERVICE_URL:-http://summary-service:8303}
+    depends_on: [postgres]
+
+  # 家长控制台 web (Next.js standalone)
+  # Dockerfile 以仓库根为 build context，因为它需要 workspace 各 importer 的 package.json 来满足 pnpm --frozen-lockfile
+  parent-dashboard:
+    build:
+      context: .
+      dockerfile: apps/parent-dashboard/Dockerfile
+      args:
+        # NEXT_PUBLIC_* 在 next build 期内联进浏览器 bundle，故作为 build arg 传入。
+        # 浏览器在宿主侧运行，需经 auth-service 的宿主映射端口 8310 访问。
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8310/api/v1}
+    ports: ["3333:3333"]
+    environment:
+      PORT: 3333
+      HOSTNAME: "0.0.0.0"
+    depends_on:
+      - auth-service
+
 volumes:
   pgdata:
   whisper_cache:

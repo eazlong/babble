@@ -34,7 +34,7 @@ func test_special_name_context_includes_proposed_value() -> void:
 
 func test_pick_special_name_candidate_excludes_recent_proposals() -> void:
 	var controller = BeginningFPControllerScript.new()
-	controller.recent_proposed_special_names = [GameManager.DEFAULT_SPECIAL_LANGUAGE_PLAYER_NAME]
+	controller.recent_proposed_special_names.append(GameManager.DEFAULT_SPECIAL_LANGUAGE_PLAYER_NAME)
 
 	var picked := controller._pick_special_name_candidate()
 
