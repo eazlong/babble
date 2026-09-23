@@ -1,7 +1,9 @@
 [gd_scene format=3 uid="uid://c5idka2f4x3qy"]
 
 [ext_resource type="Script" uid="uid://bdmcfu3wvt8we" path="res://assets/scripts/scenes/BeginningFPController.gd" id="1_scene_ctrl"]
-[ext_resource type="Texture2D" uid="uid://daxfiiqdw513g" path="res://assets/textures/backgrounds/mirage_inn_owner_room_bg.png" id="2_tov5l"]
+[ext_resource type="Texture2D" uid="uid://d3mfebogco6fk" path="res://assets/textures/backgrounds/mirage_inn_owner_room_layer_plate.png" id="2_tov5l"]
+[ext_resource type="Texture2D" uid="uid://bfd667bpq43n2" path="res://assets/textures/backgrounds/mirage_inn_owner_room_layer_lantern.png" id="20_lantern"]
+[ext_resource type="Texture2D" uid="uid://ss4k1bhc2a8r" path="res://assets/textures/backgrounds/mirage_inn_owner_room_layer_scroll.png" id="21_scroll"]
 [ext_resource type="Texture2D" uid="uid://o72pfohmsj4x" path="res://assets/textures/ui/fp/ui_starbar_bg.png" id="6_81tbv"]
 [ext_resource type="Texture2D" uid="uid://cx11cvl7rdcn3" path="res://assets/textures/ui/fp/ui_starbar_fill.png" id="8_star_fill"]
 [ext_resource type="Texture2D" uid="uid://pjkoh3hv2q6l" path="res://assets/textures/ui/fp/ui_quest_tracker_bg.png" id="9_quest_bg"]
@@ -17,6 +19,20 @@ script = ExtResource("1_scene_ctrl")
 [node name="OwnerRoomBackground" type="Sprite2D" parent="." unique_id=257890102]
 z_index = -100
 texture = ExtResource("2_tov5l")
+centered = false
+
+[node name="OwnerRoomScroll" type="Sprite2D" parent="."]
+z_index = -90
+position = Vector2(1002, 226)
+offset = Vector2(-170, -34)
+texture = ExtResource("21_scroll")
+centered = false
+
+[node name="OwnerRoomLantern" type="Sprite2D" parent="."]
+z_index = -90
+position = Vector2(991, 0)
+offset = Vector2(-95, 0)
+texture = ExtResource("20_lantern")
 centered = false
 
 [node name="InnLayer" type="Node2D" parent="." unique_id=766447333]
