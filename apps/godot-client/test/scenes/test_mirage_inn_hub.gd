@@ -76,7 +76,7 @@ func test_scroll_matcher_normalizes_traditional_output() -> void:
 	assert_true(controller._is_scroll_call("畫中小世界"), "繁体「畫中小世界」（畫→画）应被识别为口令")
 	assert_true(controller._is_scroll_call("画中小世界"), "简体口令应被识别")
 	assert_true(controller._is_scroll_call("little world in the painting"), "英文口令应被识别")
-	assert_false(controller._is_scroll_call("衣橱"), "衣橱不是口令")
+	assert_false(controller._is_scroll_call("灯笼"), "灯笼不是口令")
 	controller.free()
 
 
@@ -94,8 +94,8 @@ func test_intro_and_hub_declare_their_own_test_answers() -> void:
 	)
 	assert_true(
 		ControllerScript.TEST_ASR_HUB_ANSWERS.size() == 1
-		and str(ControllerScript.TEST_ASR_HUB_ANSWERS[0]).contains("hub_depart"),
-		"hub 模式应自带出发的答案，实际=%s" % str(ControllerScript.TEST_ASR_HUB_ANSWERS)
+		and str(ControllerScript.TEST_ASR_HUB_ANSWERS[0]).contains("hub_"),
+		"hub 模式应自带答案（出发 pa_04 / 词灵阁 pa_19 任一支），实际=%s" % str(ControllerScript.TEST_ASR_HUB_ANSWERS)
 	)
 
 

@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://8of2kfy3fits" path="res://assets/scripts/scenes/MirageInnIntroductionController.gd" id="1_controller"]
 [ext_resource type="PackedScene" uid="uid://cdbswl26swcee" path="res://assets/scenes/components/FeifeiBody.tscn" id="2_feifei_body"]
 [ext_resource type="PackedScene" path="res://assets/scenes/ui/VoiceMicIndicator.tscn" id="4_mic_button"]
+[ext_resource type="PackedScene" path="res://assets/scenes/components/PaintingScroll.tscn" id="5_wall_painting"]
 
 [node name="MirageInnIntroduction" type="Node2D" unique_id=906173929]
 script = ExtResource("1_controller")
@@ -66,3 +67,8 @@ scale = Vector2(0.15, 0.15)
 
 [node name="OverlayLayer" type="CanvasLayer" parent="." unique_id=835753050]
 layer = 30
+
+[node name="WallPainting" parent="." instance=ExtResource("5_wall_painting")]
+visible = false
+position = Vector2(1001, 457.5)
+z_index = 20

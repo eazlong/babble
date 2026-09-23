@@ -129,8 +129,11 @@ func test_mirage_inn_intro_uses_owner_room_and_hall_flows():
 	assert_false(loader.has_flow("inn_introduction.player_room"), "旧 player_room flow 应退役")
 
 	var lines: Array[Dictionary] = loader.get_lines("inn_introduction.owner_room", "zh")
-	assert_eq(lines.size(), 3)
+	# 2 句：醒来接续 + 直接讲墙上画卷。「这里有两样重要的东西：画卷，还有衣橱」那句
+	# 已随衣橱一起删除（用户 2026-09-23：「删除掉衣橱及其介绍」）。
+	assert_eq(lines.size(), 2)
 	assert_true(str(lines[0]["text"]).contains("你醒来的地方"), "owner_room 应从醒来地点接续")
+	assert_true(str(lines[1]["text"]).contains("词灵书阁"), "第二句应把墙上画卷讲成通往词灵书阁的入口")
 	assert_true(loader.has_flow("inn_introduction.hub_depart_prompt"), "hub 出发提示 flow 应存在")
 	assert_true(loader.has_flow("inn_introduction.hub_depart_ack"), "hub 出发确认 flow 应存在")
 	assert_true(loader.has_flow("inn_introduction.hub_stay"), "hub 无下一课时停留 flow 应存在")
@@ -152,7 +155,6 @@ func test_mirage_inn_intro_flow_order_matches_canon():
 		"inn_introduction.scroll_voice_prompt",
 		"inn_introduction.scroll_opened",
 		"inn_introduction.word_spirit_library",
-		"inn_introduction.wardrobe_preview",
 		"inn_introduction.hall",
 		"inn_introduction.formation_room",
 		"inn_introduction.guest_room_preview",
@@ -167,7 +169,7 @@ func test_mirage_inn_intro_flow_order_matches_canon():
 		"inn_introduction.hub_choice_charge_prompt",
 		"inn_introduction.hub_choice_practice_prompt",
 	]
-	assert_eq(ids, expected, "导览 flow 顺序应为主人房→画卷→书阁→衣橱→大厅→阵法→客房→总结，hub 段末尾接回客栈二选一")
+	assert_eq(ids, expected, "导览 flow 顺序应为主人房→画卷→书阁→大厅→阵法→客房→总结，hub 段末尾接回客栈二选一")
 
 func test_get_lines_falls_back_to_english_for_unknown_language():
 	var loader: Variant = DialogueFlowLoaderScript.new()

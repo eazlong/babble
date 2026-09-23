@@ -11,7 +11,6 @@ enum InnIntroState {
 	OWNER_ROOM,
 	AWAIT_SCROLL_CALL,
 	WORD_SPIRIT_LIBRARY,
-	WARDROBE_PREVIEW,
 	HALL,
 	FORMATION_ROOM,
 	GUEST_ROOM_PREVIEW,
@@ -58,10 +57,9 @@ const WORD_SPIRIT_LIBRARY_BACKGROUND = preload("res://assets/textures/background
 const GUEST_ROOM_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_guest_room_bg.png")
 const ARTIFACT_SEAT_EMPTY = preload("res://assets/textures/objects/inn/artifact_seat_empty.png")
 const ARTIFACT_FIRST_LIGHT = preload("res://assets/textures/objects/inn/artifact_first_light.png")
-## 书阁入口已从书柜改为墙上画卷（口令「画中小世界」）。
-const SCROLL_DORMANT = preload("res://assets/textures/objects/inn/scroll_dormant.png")
-const SCROLL_AWAKE = preload("res://assets/textures/objects/inn/scroll_awake.png")
-const WARDROBE_EMPTY = preload("res://assets/textures/objects/inn/wardrobe_empty.png")
+## 书阁入口是墙上画卷（口令「画中小世界」）。画本身**独立成精灵**（见
+## `assets/scenes/components/PaintingScroll.tscn`）：入口命中后它要脱离房间视图
+## 演完"亮起来 → 飞向玩家"，所以挂在场景根下，不再在这里用两张 TextureRect 拼。
 const WORD_SPIRIT_HELLO = preload("res://assets/textures/objects/inn/word_spirit_hello.png")
 const GUEST_ROOM_DISTANT_LIGHT = preload("res://assets/textures/objects/inn/guest_room_distant_light.png")
 
@@ -77,6 +75,10 @@ const LESSON_COMPLETION_IDS: Array[String] = [
 @onready var feifei: FeifeiBody = $FeifeiLayer
 @onready var mic_button: Control = $MicLayer/MicButton
 @onready var quest_label: Label = $HUDLayer/QuestTracker/QuestLabel
+## 墙上画卷（词灵书阁入口）。**场景根下的独立精灵**，不属于任何房间视图——
+## 它要演完"亮起来 → 飞向玩家 → 淡出"才轮到书阁露出来（见 `_show_view` 与
+## `_continue_after_scroll_call`）。hub 场景（MirageInnHub.tscn）没有这个节点。
+@onready var wall_painting: Sprite2D = get_node_or_null("WallPainting") as Sprite2D
 
 var state: InnIntroState = InnIntroState.OWNER_ROOM
 var dialogue_flow_loader: Variant = DialogueFlowLoaderScript.new()
@@ -94,9 +96,6 @@ var library_view: Control
 var guest_view: Control
 var fade_overlay: ColorRect
 var first_light: TextureRect
-var scroll_dormant_prop: TextureRect
-var scroll_awake_prop: TextureRect
-var wardrobe_empty: TextureRect
 var formation_pips: Array[TextureRect] = []
 var formation_projection: TextureRect
 
@@ -106,7 +105,13 @@ var formation_projection: TextureRect
 ## 孩子被反复重问，看起来就是"说画中小世界一直不成功"）。
 const TEST_ASR_AUDIO_DIR: String = "res://assets/test_audio/"
 const TEST_ASR_INTRO_ANSWERS: Array[String] = ["pa_03_intro_scroll_call.wav"]
-const TEST_ASR_HUB_ANSWERS: Array[String] = ["pa_04_hub_depart.wav"]
+## hub 是二选一，两条路各有一条录音，改成哪条就决定 test 模式跑哪一支：
+##   "pa_04_hub_depart.wav"  → 说「出发」，走主线去长安西市
+##   "pa_19_hub_library.wav" → 说「我要去词灵阁玩小游戏。」，进归卷厅玩复习小游戏
+## 当前选**词灵阁**那一支（想在 test 模式验证归卷厅小游戏）。
+## 注意别把 pa_04 的文案改成词灵阁：主人房「续行」那一步只认 StoryContinueMarkers
+## （出发/走吧/继续…），改了会让续行卡死在主人房——续行和 hub 是两道不同的门。
+const TEST_ASR_HUB_ANSWERS: Array[String] = ["pa_19_hub_library.wav"]
 
 func _ready() -> void:
 	var manager: Variant = _game_manager()
@@ -159,16 +164,22 @@ func _process(delta: float) -> void:
 			silence_timer = 0.0
 			await _handle_voice_attempt_failed("silence")
 
+## 导览开场：主人房**首帧就亮**，腓腓直接站在肩位待命。
+##
+## 这里原本是「等 0.35s → 腓腓从画面外飞进来（2s）→ 落地小节拍（0.4s）→ 房间淡入（0.45s）」。
+## 那三段演出期间场上没有任何房间视图（`_build_visuals` 里所有视图都是 alpha 0），
+## 屏幕是空的，孩子进场景先看约 3 秒黑屏加一只飞进来的腓腓，才等到主人房
+## （用户 2026-09-23：去掉开始时的黑屏及腓腓的飞出动画）。
 func _start_intro() -> void:
-	await get_tree().create_timer(0.35).timeout
 	if feifei:
 		feifei.visible = true
-		await feifei.play_entry_fly_in()
-		await feifei.settle_to_shoulder()
+		# 不播飞入，直接进 idle：收尾姿态与飞入结束时一致（`play_entry_fly_in` 末尾也是 go_idle）。
+		feifei.go_idle()
 
 	state = InnIntroState.OWNER_ROOM
 	_set_quest_text(_loc("quest_owner_room"))
-	await _show_view(owner_room_view)
+	# 首屏不做淡入：淡入从 alpha 0 起步，等于开局再黑 0.45s（见 `_show_view`）。
+	await _show_view(owner_room_view, false)
 	await _speak_flow("inn_introduction.owner_room", 2.0)
 
 	state = InnIntroState.AWAIT_SCROLL_CALL
@@ -314,25 +325,34 @@ func _depart_for_next_lesson() -> void:
 	if change_result != OK:
 		push_error("[MirageInnHub] Failed to change scene: %s" % error_string(change_result))
 
+## 口令命中：画亮起来 → 飞向玩家 → 书阁从满屏的画里淡出来。
+##
+## 亮起来故意**不 await**：它要和画卷那句台词同拍（台词在响、画在亮），
+## 而不是等画亮完再开口。
 func _continue_after_scroll_call() -> void:
 	_stop_voice_listening()
 	if feifei:
 		feifei.play_happy()
+	if wall_painting:
+		wall_painting.awaken()
 	await _speak_flow("inn_introduction.scroll_opened", 1.5)
+
+	# 画扑到脸上，收尾盖满舞台：玩家最后看到的是画里的小世界。
+	if wall_painting:
+		await wall_painting.fly_to_player()
 
 	state = InnIntroState.WORD_SPIRIT_LIBRARY
 	_set_quest_text(_loc("quest_library"))
+	# 书阁在满屏的画**下面**淡入，再让画淡掉 —— 露出来的就是刚飞进来的那方小世界。
 	await _show_view(library_view)
+	if wall_painting:
+		await wall_painting.dissolve()
 	await _speak_flow("inn_introduction.word_spirit_library", 2.0, {
 		"word_text": "hello",
 	})
 
-	state = InnIntroState.WARDROBE_PREVIEW
-	_set_quest_text(_loc("quest_wardrobe"))
-	await _show_view(owner_room_view)
-	await _focus_wardrobe()
-	await _speak_flow("inn_introduction.wardrobe_preview", 2.0)
-
+	# 衣橱预告那一拍已删（用户 2026-09-23：「删除掉衣橱及其介绍」）：书阁之后直接进大厅总览，
+	# 导览不再折回主人房。
 	state = InnIntroState.HALL
 	_set_quest_text(_loc("quest_hall"))
 	await _show_view(hall_view)
@@ -433,14 +453,12 @@ func _build_formation_view() -> Control:
 
 func _build_owner_room_view() -> Control:
 	var root := _new_full_view("OwnerRoomView", OWNER_ROOM_BACKGROUND)
-	# 书阁入口已从书柜改为墙上画卷（口令「画中小世界」）。
-	# 画卷贴在背景画卷的画心位置（背景画心实测 x908-1092, y288-624），
-	# 贴图 198x351 四周留 6px 余量盖住旧画心，避免残留原先那张画。
-	scroll_dormant_prop = _add_texture(root, "ScrollDormant", SCROLL_DORMANT, Vector2(902, 282), Vector2(198, 351))
-	scroll_awake_prop = _add_texture(root, "ScrollAwake", SCROLL_AWAKE, Vector2(902, 282), Vector2(198, 351))
-	scroll_awake_prop.visible = false
-	# 书柜已随入口改画卷一并删除（用户 2026-09-20：删除书柜美术资源），房间里不再有书柜。
-	wardrobe_empty = _add_texture(root, "Wardrobe", WARDROBE_EMPTY, Vector2(1240, 335), Vector2(360, 460))
+	# 画卷不在这里建：它是场景根下的独立精灵（`WallPainting`），贴在背景画卷的画心位置
+	# （背景画心实测 x908-1092, y288-624；精灵中心 (1001, 457.5) 的 198×351 四周留 6px
+	# 余量盖住旧画心）。做成视图子节点的话，切到书阁那一帧就会把正在飞的画一起按掉。
+	# 家具已全部删除：书柜随入口改画卷删除（用户 2026-09-20），衣橱随后一并删除
+	# （用户 2026-09-23：「删除掉衣橱及其介绍」）。主人房现在只剩背景 + 墙上画卷（入口）
+	# + 衣橱位那面空墙，不再有独立家具 cutout。
 	return root
 
 func _build_library_view() -> Control:
@@ -472,23 +490,21 @@ func _add_texture(parent: Control, node_name: String, texture: Texture2D, positi
 	parent.add_child(texture_rect)
 	return texture_rect
 
-func _show_view(target: Control) -> void:
+## 切到某个房间视图：非目标视图按掉，目标视图登场。
+##
+## `fade_in = false` 只给**开局首屏**用：那一刻场上还没有任何视图，从 alpha 0 淡入
+## 就是先给孩子看接近一屏的黑（开局黑屏的另一半原因）。后续房间之间照旧淡入。
+func _show_view(target: Control, fade_in: bool = true) -> void:
 	for child in visual_root.get_children():
 		if child is Control and child != target:
 			child.visible = false
+	_sync_wall_painting(target == owner_room_view)
 	target.visible = true
-	target.modulate.a = 0.0
+	target.modulate.a = 1.0 if not fade_in else 0.0
+	if not fade_in:
+		return
 	var tween := create_tween()
 	tween.tween_property(target, "modulate:a", 1.0, 0.45).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_SINE)
-	await tween.finished
-
-func _focus_wardrobe() -> void:
-	if not wardrobe_empty:
-		return
-	var original_modulate: Color = wardrobe_empty.modulate
-	var tween := create_tween()
-	tween.tween_property(wardrobe_empty, "modulate", Color(1.22, 1.10, 0.78, 1.0), 0.35)
-	tween.tween_property(wardrobe_empty, "modulate", original_modulate, 0.35)
 	await tween.finished
 
 func _animate_first_light(delta: float) -> void:
@@ -497,11 +513,11 @@ func _animate_first_light(delta: float) -> void:
 	var pulse := 0.55 + sin(Time.get_ticks_msec() / 1000.0 * 3.0) * 0.30
 	first_light.modulate.a = lerpf(first_light.modulate.a, pulse, delta * 4.0)
 
-func _set_scroll_awake(is_awake: bool) -> void:
-	if scroll_dormant_prop:
-		scroll_dormant_prop.visible = not is_awake
-	if scroll_awake_prop:
-		scroll_awake_prop.visible = is_awake
+## 画卷只在主人房视图里出现 —— 但**表演期间它说了算**：组件自己会把这次请求压后
+## （`stage_visible` 的表演锁），否则切到书阁那一帧会把正在飞的画按掉，画在半空消失。
+func _sync_wall_painting(should_show: bool) -> void:
+	if wall_painting:
+		wall_painting.stage_visible(should_show)
 
 func _fade_to_black() -> void:
 	if not fade_overlay:
@@ -592,8 +608,9 @@ func _start_voice_listening() -> void:
 	record_duration = 0.0
 	if mic_button:
 		mic_button.visible = true
-	if state == InnIntroState.AWAIT_SCROLL_CALL:
-		_set_scroll_awake(true)
+	# NOTE: 这里**不**让画亮起来。原先"一进监听就换苏醒贴图"是反的：画在玩家开口之前
+	# 就亮了，口令命中反而没有任何变化。亮起来挂在口令命中之后
+	# （见 `_continue_after_scroll_call`）。
 	var voice_pipeline: Variant = _voice_pipeline()
 	if voice_pipeline:
 		voice_pipeline.start_listening()
@@ -711,7 +728,6 @@ const LOC_STRINGS: Dictionary = {
 	"quest_hall": {"zh": "任务：认识客栈大厅", "en": "Quest: Learn about the hall"},
 	"quest_scroll": {"zh": "任务：说“画中小世界”", "en": "Quest: Say \"the little world in the painting\""},
 	"quest_library": {"zh": "任务：进入词灵书阁", "en": "Quest: Enter the Word Spirit Library"},
-	"quest_wardrobe": {"zh": "任务：查看衣橱", "en": "Quest: Preview the wardrobe"},
 	"quest_guest_room": {"zh": "任务：查看客房", "en": "Quest: Preview the guest room"},
 	"quest_summary": {"zh": "任务：记住客栈的三个房间", "en": "Quest: Remember the three rooms"},
 	"quest_complete": {"zh": "客栈介绍完成：前往长安西市", "en": "Inn introduction complete: Go to Chang'an Market"},
@@ -890,7 +906,14 @@ func _localized_flow_text(flow_id: String) -> String:
 	return str(flow_lines[0].get("text", ""))
 
 func _is_library_entry_call(text: String) -> bool:
-	var lower := text.to_lower()
+	# 与 _is_scroll_call / _is_depart_call 对齐：先归一繁体再比。
+	# LIBRARY_ENTRY_MARKERS 只有简体，而 whisper 对普通话口令经常输出繁体
+	# （实录音频 pa_19_hub_library 的原始 ASR 就是「我要去慈陵閣玩小遊戲」，
+	# 閣/遊/戲 全是繁体）。原来这里漏了归一，只有靠 voice-service postprocess
+	# 纠回简体才认得出——postprocess 一旦没接上（规则层未接入 / 服务降级），
+	# 孩子说对了也会被判 wrong_answer 卡在二选一。
+	# 注：归一只解决「用字是繁体」，不解决同音误听（慈陵→词灵 得靠 candidate_answers+postprocess）。
+	var lower := StoryContinueMarkersScript.normalize_variants(text).to_lower()
 	for marker in LIBRARY_ENTRY_MARKERS:
 		if lower.contains(marker.to_lower()):
 			return true

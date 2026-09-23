@@ -378,7 +378,7 @@ no horror, no dark haunted mood, no messy props, no text baked into image
 | 观星台（岛心） | `mountaintop observatory at night, deep blue-purple starry sky, star mirror artifact, serene cosmic mood` |
 | 客栈（蜃影客栈） | `warm oriental fantasy inn interior, rounded wooden shapes, three clear doors, central faint purple-gold formation light` |
 | 客栈阵法房间 | `hexagonal formation room, six empty artifact seats, faint gold hope light at center, quiet and purposeful` |
-| 客栈玩家房间 | `cozy child-friendly room, large bookshelf with magic light seams, wardrobe with empty reward slots` |
+| 客栈玩家房间 | `cozy child-friendly room, one wall scroll painting with warm inner glow, simple round-corner wooden furniture, calm personal space` |
 | 客房预告 | `quiet guest room door, faint warm light through crack, soft sound wave hint, sense of invitation not horror` |
 
 ### 7.3 小朋友吸引力检查清单

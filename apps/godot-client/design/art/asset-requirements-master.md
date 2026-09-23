@@ -255,7 +255,7 @@ no horror, no dark haunted mood, no messy props, no text baked into image
 | 资源 | 规格 | 状态 |
 |------|------|------|
 | `scroll_dormant.png` / `scroll_awake.png` | 198×351 | ✅ |
-| `wardrobe_empty.png` | 360×460 | ✅ |
+| ~~`wardrobe_empty.png`~~ | 360×460 | ❌ 已删除（2026-09-23 删衣橱及其导览预告） |
 | `word_spirit_hello.png` | 256×256 | ✅ |
 | `guest_room_distant_light.png` | 420×520 | ✅ |
 | ~~`bookshelf_open_01~04.png`~~ | — | ❌ 取消（2026-09-20 随书柜美术删除） |

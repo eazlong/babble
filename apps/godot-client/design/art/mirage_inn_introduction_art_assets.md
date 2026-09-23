@@ -1,11 +1,13 @@
 # MirageInnIntroduction 美术资源需求文档
 
-**版本**: 2.0（正典：主人房开场 + 导览顺序调整）
-**日期**: 2026-09-14
+**版本**: 2.1（正典：删掉衣橱预告，导览不再折回主人房）
+**日期**: 2026-09-23
 **所属场景**: MirageInnIntroduction（蜃影客栈首次导览 / 第三幕「大本营导览」）
 **依赖文档/场景**: `assets/scenes/MirageInnIntroduction.tscn`, `assets/scripts/scenes/MirageInnIntroductionController.gd`, `assets/resources/dialogue_flows/inn_introduction.json`, `apps/godot-client/docs/adr/0001-prologue-owner-room-canon.md`
 
 > **v2.0 正典变更**：玩家在 `BeginningFP` 主人房醒来后进入本场景，不再有“走进客栈”演出。导览第一站是主人房本身；主人房基准背景与 `BeginningFP` 共用 `mirage_inn_owner_room_bg.png`。旧 `mirage_inn_player_room_bg.png` 与旧“大厅作为第一站”的顺序退役。
+
+> **v2.1 正典变更（2026-09-23）**：用户「删除掉衣橱及其介绍」——主人房不再有衣橱 cutout（`wardrobe_empty.png` 与 `BeginningFP` 用的 `wardrobe_empty_fp.png` 均已删除），`inn_introduction.wardrobe_preview` 这一拍连同 `quest_wardrobe` 文案、`WARDROBE_PREVIEW` 状态一起下线。导览顺序改为 主人房 → 词灵书阁 → 大厅总览 → 阵法房间 → 客房预告 → 大厅总结，**不再折回主人房**；主人房现在只剩背景 + 墙上画卷（入口）。
 
 ---
 
@@ -31,7 +33,7 @@
 | **安全温暖** | 木质圆角、暖光、柔和阴影；破损只表现为空缺和旧痕，不表现尖刺、霉斑、恐怖暗影 | 保持冒险感，但不制造害怕情绪 |
 | **小惊喜** | 每个房间至少一个“会动/会亮”的细节：阵法微光、画卷内光、漂浮书页、词灵呼吸光 | 提高探索期待，让导览不枯燥 |
 | **大形清楚** | 主要物体轮廓用大块面表达，装饰纹样不抢主轮廓 | 适合儿童快速识别，也适合移动端缩放 |
-| **奖励感** | 衣橱空位、词灵变清楚、第一微光都要有“以后会变多”的期待 | 把学习和收集感连接起来 |
+| **奖励感** | 阵法空座、词灵变清楚、第一微光都要有“以后会变多”的期待 | 把学习和收集感连接起来 |
 | **克制装饰** | 不堆满道具、文字、图标；每个房间保留 20-30% 安静区域 | 保证画面大方，不像杂乱活动页 |
 
 ### 视觉禁忌
@@ -39,7 +41,7 @@
 - 不使用恐怖废墟、鬼屋、阴森旅店、破败血迹、尖锐裂纹等表达。
 - 不使用过度饱和的糖果色铺满全屏；重点光效可以鲜明，背景必须稳。
 - 不在背景图中写死大量文字、英文单词或教程说明，避免本地化和教学词变化问题。
-- 不把三扇门、墙上画卷、衣橱画成明显按钮；本场景没有点击事件。
+- 不把三扇门、墙上画卷画成明显按钮；本场景没有点击事件。
 - 不让装饰物遮挡 Feifei 气泡、任务面板、麦克风按钮和主视觉焦点。
 
 ### 色彩系统
@@ -74,21 +76,20 @@
 
 | 顺序 | 流程段 | 对应 flow_id | 视觉 | 正式美术目标 |
 |------|--------|--------------|------|--------------|
-| 1 | 主人房（醒来接续） | `inn_introduction.owner_room` | 复用序章主人房基准背景 | 确认这是玩家自己的房间；书柜和衣橱是主视觉；房间延续 `BeginningFP` 的同一空间 |
+| 1 | 主人房（醒来接续） | `inn_introduction.owner_room` | 复用序章主人房基准背景 | 确认这是玩家自己的房间；墙上画卷是唯一主视觉（家具已全部删除）；房间延续 `BeginningFP` 的同一空间 |
 | 2 | 呼唤画卷 | `inn_introduction.scroll_voice_prompt` | 麦克风按钮显示，墙上画卷可被叫醒 | 画卷的洞门内透出暖光，明确“叫出「画中小世界」”是唯一主动输入 |
 | 3 | 词灵书阁 | `inn_introduction.word_spirit_library` | 青绿色空间 + `hello` 词灵 | 独立空间，区别于主人房；第一个词灵清楚可爱 |
-| 4 | 衣橱预告 | `inn_introduction.wardrobe_preview` | 衣橱高亮 | 回到主人房；只展示空奖励位，不暗示复杂换装系统已开放 |
-| 5 | 大厅三房间总览 | `inn_introduction.hall` | 三个房间入口 | 导览中段的空间总览；清楚显示左/中/右三间房 |
-| 6 | 阵法房间 | `inn_introduction.formation_room` | 六个空神器座 + 微光 | 六个空位和第一点光；空缺感明确但不压抑 |
-| 7 | 客房预告 | `inn_introduction.guest_room_preview` | 客房门 + “Hello...?” | 最后一个房间预告；远方的旅客与真实会话，不展开经营系统 |
-| 8 | 总结转场 | `inn_introduction.summary` | 回到大厅 | 三房间关系收束，淡出进入长安西市；大厅比开场更亮一点 |
+| 4 | 大厅三房间总览 | `inn_introduction.hall` | 三个房间入口 | 导览中段的空间总览；清楚显示左/中/右三间房 |
+| 5 | 阵法房间 | `inn_introduction.formation_room` | 六个空神器座 + 微光 | 六个空位和第一点光；空缺感明确但不压抑 |
+| 6 | 客房预告 | `inn_introduction.guest_room_preview` | 客房门 + “Hello...?” | 最后一个房间预告；远方的旅客与真实会话，不展开经营系统 |
+| 7 | 总结转场 | `inn_introduction.summary` | 回到大厅 | 三房间关系收束，淡出进入长安西市；大厅比开场更亮一点 |
 
 ### 1.2 当前程序化占位说明
 
 当前 `MirageInnIntroductionController.gd` 使用 `ColorRect`、`Label`、背景图和少量 cutout 动态搭建视图。正式美术交付后，建议保持“每个视图一张 1920x1080 背景 + 少量独立可动画元素”的结构：
 
-- 主人房第一站与 `BeginningFP` 共用 `mirage_inn_owner_room_bg.png`；书柜/衣橱为独立 cutout。
-- 大厅不再是第一站，而是主人房书柜/书阁/衣橱之后的空间总览。
+- 主人房第一站与 `BeginningFP` 共用 `mirage_inn_owner_room_bg.png`；房间内已无独立家具 cutout，只有墙上画卷精灵（`PaintingScroll.tscn`）压在画心上。
+- 大厅不再是第一站，而是主人房画卷/书阁之后的空间总览。
 - 不要把 Feifei、任务面板、麦克风按钮画进背景。
 
 ---
@@ -97,16 +98,16 @@
 
 | 资源名 | 路径建议 | 尺寸 | 格式 | 用途 |
 |--------|----------|------|------|------|
-| `mirage_inn_hall_bg.png` | `assets/textures/backgrounds/` | 1920x1080 | PNG-24 | 大厅总览，导览第 5 站；导览中段重新理解三房间结构 |
+| `mirage_inn_hall_bg.png` | `assets/textures/backgrounds/` | 1920x1080 | PNG-24 | 大厅总览，导览第 4 站；导览中段重新理解三房间结构 |
 | `mirage_inn_formation_room_bg.png` | `assets/textures/backgrounds/` | 1920x1080 | PNG-24 | 阵法房间背景，中心留给阵法与神器座 |
-| `mirage_inn_owner_room_bg.png` | `assets/textures/backgrounds/` | 1920x1080 | PNG-24 | 主人房基准背景（与 BeginningFP 共用）；墙上画卷的**画心**与衣橱以 cutout 叠加（画卷的木杆/青色绫裱已画死在背景里） |
+| `mirage_inn_owner_room_bg.png` | `assets/textures/backgrounds/` | 1920x1080 | PNG-24 | 主人房基准背景（与 BeginningFP 共用）；墙上画卷的**画心**以 cutout 叠加（画卷的木杆/青色绫裱已画死在背景里；衣橱 cutout 已于 2026-09-23 删除，右墙恢复为空墙） |
 | `word_spirit_library_bg.png` | `assets/textures/backgrounds/` | 1920x1080 | PNG-24 | 词灵书阁独立空间 |
 | `mirage_inn_guest_room_bg.png` | `assets/textures/backgrounds/` | 1920x1080 | PNG-24 | 客房预告背景，门后保留远方光感 |
 | `artifact_seat_empty.png` | `assets/textures/objects/inn/` | 128x128 | PNG + Alpha | 空神器座，阵法房间使用6个 |
 | `artifact_first_light.png` | `assets/textures/objects/inn/` | 96x96 | PNG + Alpha | 第一神器线索微光，可循环呼吸 |
 | `scroll_dormant.png` | `assets/textures/objects/inn/` | 198x351 | PNG + Alpha | 主人房墙上画卷的**画心**（书阁入口，静置态） |
 | `scroll_awake.png` | `assets/textures/objects/inn/` | 198x351 | PNG + Alpha | 玩家说“画中小世界”后画心内亮起（由静置态确定性派生，剪影一致） |
-| `wardrobe_empty.png` | `assets/textures/objects/inn/` | 360x460 | PNG + Alpha | 衣橱和空奖励位 |
+| ~~`wardrobe_empty.png`~~ | — | — | — | **【2026-09-23 已删除】** 原为「衣橱 + 空奖励位」；用户要求删除衣橱及其导览预告，导览场景与序章场景同时退场（`BeginningFP` 用的 `wardrobe_empty_fp.png` 一并删除） |
 | `word_spirit_hello.png` | `assets/textures/objects/inn/` | 256x256 | PNG + Alpha | 第一个词灵，可用于 `hello` 教学 |
 | `guest_room_distant_light.png` | `assets/textures/objects/inn/` | 420x520 | PNG + Alpha | 客房门后远方声音/光影 |
 
@@ -121,7 +122,7 @@
 | ~~`bookshelf_open_01.png` ~ `bookshelf_open_04.png`~~ | — | — | — | **【2026-09-20 已删除】** 原为「书架打开成入口」的短动画；入口改成画卷后取消（本就 0 代码引用） |
 | `word_spirit_glow.png` | `assets/textures/objects/inn/` | 320x320 | PNG + Alpha | 词灵外圈呼吸光 |
 | `library_floating_books.png` | `assets/textures/objects/inn/` | 1400x520 | PNG + Alpha | 词灵书阁漂浮书页/书脊层 |
-| `wardrobe_reward_slot_empty.png` | `assets/textures/objects/inn/` | 96x160 | PNG + Alpha | 空服装奖励槽，可复用2-4次 |
+| `wardrobe_reward_slot_empty.png` | `assets/textures/objects/inn/` | 96x160 | PNG + Alpha | 空服装奖励槽，可复用2-4次；**【2026-09-23 起无归属】** 衣橱删除后无处可挂（本就 0 代码引用），暂留待定 |
 | `inn_room_dust_motes.png` | `assets/textures/particles/` | 512x512 | PNG + Alpha | 客栈内轻微尘光粒子 |
 | `inn_magic_spark.png` | `assets/textures/particles/` | 256x256 | PNG + Alpha | 阵法、画卷、词灵通用魔法粒子 |
 
@@ -168,16 +169,15 @@
 
 ### 5.3 主人房
 
-**画面目标**: 这是玩家醒来的房间，也是书柜与衣橱两个成长入口；导览第一站要回答“我在自己的房间里”。
+**画面目标**: 这是玩家醒来的房间，导览第一站要回答“我在自己的房间里”；房间里唯一的成长入口是墙上画卷（通往词灵书阁）。
 
 | 元素 | 规格 |
 |------|------|
 | 房间基调 | 暖木色、安稳、像玩家可以回来的地方 |
 | 共用规范 | 使用与 `BeginningFP` 相同的 `mirage_inn_owner_room_bg.png`，保证醒来与导览是同一空间 |
 | 床 | 第一人称醒来时床在镜头外；导览第一站背景不需要完整床铺 |
-| 墙上画卷 | 比衣橱更显眼；画心内可有暖光暗示里面有一方小世界（通往词灵书阁） |
-| 衣橱 | 有 2-4 个空奖励位；不要展示太多服装，避免玩家误以为已开放 |
-| 空间布局 | 画卷挂在后墙中央（背景画死的立轴，实测 x890-1112 / y222-676），衣橱在右侧，符合当前实现 |
+| 墙上画卷 | 房间唯一的主视觉；画心内可有暖光暗示里面有一方小世界（通往词灵书阁） |
+| 空间布局 | 画卷挂在后墙中央（背景画死的立轴，实测 x890-1112 / y222-676）；左墙木格窗、右墙为空墙，房间不放独立家具（书柜 2026-09-20、衣橱 2026-09-23 相继删除） |
 | 视觉状态 | `scroll_dormant` 和 `scroll_awake` 要明显区分（实测两态平均像素差 13.1），但不要刺眼 |
 
 ### 5.4 词灵书阁
@@ -255,7 +255,7 @@ no horror, no dark haunted mood, no messy props, no text baked into image
 |------|--------------|
 | 客栈大厅 | 温暖木质大厅，三扇清楚的房门，中央门带微弱紫金阵法光，左门温馨，右门安静，画面干净大方 |
 | 阵法房间 | 六角阵法房，六个空神器座，中心有一小点金色希望光，神秘但不阴森 |
-| 主人房 | 儿童友好的温暖房间，后墙立轴的画心会亮（书阁入口），右侧衣橱有空奖励展示格，像玩家自己的小窝；与 `BeginningFP` 主人房基准背景共用同一张 owner room 背景 |
+| 主人房 | 儿童友好的温暖房间，后墙立轴的画心会亮（书阁入口），像玩家自己的小窝；与 `BeginningFP` 主人房基准背景共用同一张 owner room 背景 |
 | 词灵书阁 | 青绿色魔法书阁，漂浮书页，小小发光词灵，梦幻但清楚，空间轻盈 |
 | 客房预告 | 安静客房门，门缝透出远方光，浅色声波暗示“Hello”，有期待感，不恐怖 |
 
@@ -297,7 +297,7 @@ no horror, no dark haunted mood, no messy props, no text baked into image
 当前场景由脚本动态创建占位视图。正式资源接入时推荐分两步：
 
 1. 先用背景图替换每个 `_build_*_view()` 的纯色背景和程序化大型形状，保持现有流程不变。
-2. 再把需要动画的元素拆成独立 `TextureRect` 或 `Sprite2D`，替换 `ColorRect` 占位：神器座、第一微光、书架、词灵、客房门光。
+2. 再把需要动画的元素拆成独立 `TextureRect` 或 `Sprite2D`，替换 `ColorRect` 占位：神器座、第一微光、墙上画卷、词灵、客房门光。
 
 ---
 
@@ -306,17 +306,17 @@ no horror, no dark haunted mood, no messy props, no text baked into image
 ### P0 验收
 
 - 五个视图在 1920x1080 下均无拉伸、裁切、关键元素遮挡。
-- 导览顺序必须是 主人房 → 书柜/词灵书阁 → 衣橱 → 大厅 → 阵法房间 → 客房预告 → 大厅总结；`BeginningFP` 与主人房第一站必须使用同一张 `mirage_inn_owner_room_bg.png`。
+- 导览顺序必须是 主人房 → 词灵书阁 → 大厅 → 阵法房间 → 客房预告 → 大厅总结（2026-09-23 起不再折回主人房）；`BeginningFP` 与主人房第一站必须使用同一张 `mirage_inn_owner_room_bg.png`。
 - 大厅中左/中/右三间房可一眼区分。
 - 阵法房间明确显示六个空神器座，第一微光可辨。
-- 主人房中书架比衣橱更突出，符合首次教学重点。
+- 主人房只有墙上画卷一个视觉重点（家具已全部删除），符合首次教学重点。
 - 词灵书阁明显是独立空间，不像普通书房。
 - 客房预告只有期待感，不引入复杂经营信息。
 - Feifei气泡、任务面板、麦克风按钮不遮挡核心视觉。
 
 ### 动态验收
 
-- 书架从 `closed` 到 `awake/open` 的状态变化能配合玩家说“书架”。
+- 画卷从 `scroll_dormant` 到 `scroll_awake` 的状态变化能配合玩家说「画中小世界」，并接上“飞向玩家 → 淡出”。
 - 第一微光、词灵光效可循环呼吸，亮度不刺眼。
 - 词灵 `hello` 成功反馈后可以明显“变清楚”。
 - 结尾淡出时背景不应出现硬边或明显压缩噪点。
@@ -325,4 +325,4 @@ no horror, no dark haunted mood, no messy props, no text baked into image
 
 - 画面支持 feifei“知道神器已丢失”的设定，不表现成现场惊吓发现。
 - 场景语气轻松但坚定：受损、空缺、等待修复，而不是失败或废弃。
-- 首次体验只真正强调“书架/词灵书阁”，衣橱和客房保持预告级信息。
+- 首次体验只真正强调“画卷/词灵书阁”，客房保持预告级信息。

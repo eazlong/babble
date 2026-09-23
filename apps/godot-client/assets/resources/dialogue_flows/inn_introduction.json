@@ -15,17 +15,10 @@
 					}
 				},
 				{
-					"key": "inn_intro_owner_room_two_things",
-					"text": {
-						"en": "There are two important things here: the scroll on the wall, and the wardrobe.",
-						"zh": "这里有两样重要的东西：墙上的画卷，还有衣橱。"
-					}
-				},
-				{
 					"key": "inn_intro_owner_room_scroll_tease",
 					"text": {
-						"en": "That is no ordinary painting. A small world is hidden inside it, and that world leads to the Word Spirit Library.",
-						"zh": "那不是一幅普通的画。画卷里藏着一方小世界，那里连着词灵书阁。"
+						"en": "That is no ordinary painting. A small world is sleeping inside it, and that world leads to the Word Spirit Library. Call it, and the painting will light up—then it will fly to you and carry you in.",
+						"zh": "那不是一幅普通的画。画里睡着一方小世界，那里连着词灵书阁。只要叫它一声，画就会亮起来，然后朝你飞来，带你进去。"
 					}
 				}
 			]
@@ -38,8 +31,8 @@
 				{
 					"key": "inn_intro_scroll_try_call",
 					"text": {
-						"en": "Now try calling it. Just say: the little world in the painting.",
-						"zh": "现在，试着叫它。只要说：画中小世界。"
+						"en": "Now try calling it. Look at the painting and say: the little world in the painting.",
+						"zh": "现在，试着叫它。看着墙上的画，说：画中小世界。"
 					}
 				}
 			]
@@ -54,15 +47,15 @@
 					"speaker": "scroll",
 					"voice": "object",
 					"text": {
-						"en": "I heard you. The little world inside the painting is waking up.",
-						"zh": "我听见了。画里的小世界，醒了。"
+						"en": "I heard you. The little world inside the painting is waking up—and it is coming to you.",
+						"zh": "我听见了。画里的小世界醒了——它正朝你过来。"
 					}
 				},
 				{
 					"key": "inn_intro_scroll_voice_known",
 					"text": {
-						"en": "Good. The scroll on the wall knows your voice now.",
-						"zh": "很好。墙上的画卷，现在认得你的声音了。"
+						"en": "Good. The scroll on the wall knows your voice now. Watch—its world is opening for you.",
+						"zh": "很好。墙上的画卷现在认得你的声音了。看——画里的世界正向你展开。"
 					}
 				}
 			]
@@ -146,34 +139,6 @@
 					"text": {
 						"en": "They are not homework. They are friends you know, and keys to the roads ahead.",
 						"zh": "它们不是作业。它们是你认识的朋友，也是打开远方道路的钥匙。"
-					}
-				}
-			]
-		},
-		{
-			"flow_id": "inn_introduction.wardrobe_preview",
-			"speaker": "feifei",
-			"voice": "spirit",
-			"lines": [
-				{
-					"key": "inn_intro_wardrobe_other_side",
-					"text": {
-						"en": "On the other side is the wardrobe.",
-						"zh": "另一边是衣橱。"
-					}
-				},
-				{
-					"key": "inn_intro_wardrobe_rewards",
-					"text": {
-						"en": "New outfits and new looks you earn will wait for you here.",
-						"zh": "你得到的新衣服、新装扮，都会在这里等你。"
-					}
-				},
-				{
-					"key": "inn_intro_wardrobe_empty_space",
-					"text": {
-						"en": "It is a little empty now. That is fine. Empty space is for future rewards.",
-						"zh": "它现在还空着一点。没关系，空位是留给以后奖励的。"
 					}
 				}
 			]

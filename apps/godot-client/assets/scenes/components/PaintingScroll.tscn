@@ -1,0 +1,23 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://assets/scripts/components/PaintingScroll.gd" id="1_painting_scroll"]
+[ext_resource type="Texture2D" uid="uid://c5r8dq82jawlr" path="res://assets/textures/objects/inn/scroll_dormant.png" id="2_dormant"]
+[ext_resource type="Texture2D" uid="uid://bkpf4j4fncoae" path="res://assets/textures/objects/inn/scroll_awake.png" id="3_awake"]
+[ext_resource type="Texture2D" uid="uid://4tqp8vpf8vpr" path="res://assets/textures/objects/inn/word_spirit_glow.png" id="4_glow"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_wall_glow"]
+blend_mode = 1
+
+[node name="PaintingScroll" type="Sprite2D"]
+texture = ExtResource("2_dormant")
+script = ExtResource("1_painting_scroll")
+
+[node name="WallGlow" type="Sprite2D" parent="."]
+material = SubResource("CanvasItemMaterial_wall_glow")
+modulate = Color(1, 0.93, 0.72, 0)
+texture = ExtResource("4_glow")
+scale = Vector2(1.6, 1.6)
+
+[node name="AwakeArt" type="Sprite2D" parent="."]
+modulate = Color(1, 1, 1, 0)
+texture = ExtResource("3_awake")
