@@ -33,7 +33,7 @@ func _make() -> Sprite2D:
 	return painting
 
 
-# ── 结构：独立精灵 + 三层（沉睡画心 / 光晕 / 苏醒画心）────────────────
+# ── 结构：独立精灵 + 四层（装裱 / 沉睡画心 / 光晕 / 苏醒画心）──────────
 
 func test_scene_is_a_sprite_with_the_two_painting_states_and_a_glow() -> void:
 	var painting := _make()
@@ -52,6 +52,78 @@ func test_scene_is_a_sprite_with_the_two_painting_states_and_a_glow() -> void:
 	if awake_art == null or wall_glow == null:
 		return
 	assert_ne(awake_art.texture, painting.texture, "苏醒态必须是另一张贴图（沉睡/苏醒两态）")
+
+
+## 装裱（木杆 + 青绫 + 挂绳）跟着画心一起演：主人房底图已拆层，立轴只在这里画一次。
+func test_mount_travels_with_the_painting_and_keeps_the_core_centered() -> void:
+	var painting := _make()
+	if painting == null:
+		return
+	var mount: Sprite2D = painting.get_node_or_null("MountArt")
+	assert_not_null(mount, "应有装裱层 MountArt（分层底图里的立轴那一层）")
+	if mount == null:
+		return
+	assert_not_null(mount.texture, "装裱层应有贴图")
+	assert_ne(mount.texture, painting.texture, "装裱层不能用画心贴图")
+	assert_true(
+		mount.texture.get_size().x > painting.texture.get_size().x
+		and mount.texture.get_size().y > painting.texture.get_size().y,
+		"装裱层应比画心大（木杆/青绫围在画心外），实际 %s vs 画心 %s" % [
+			str(mount.texture.get_size()), str(painting.texture.get_size())]
+	)
+	assert_true(mount.z_index < 0, "装裱要垫在画心底下（画心盖住装裱里那块画心）")
+	# 装裱里那块画心必须**正好**落在根节点画心底下。它**不在层中心**：分层 320×512 里画心区
+	# (70,90)-(268,441)（= 平铺底图上画心实测区 x908-1092 / y288-624 减去层原点 (832,192)），
+	# 中心 (169, 265.5)，而层中心是 (160, 256) → 装裱要偏 (−9, −9.5)。差一像素，墙上就会
+	# 露出双影边。这个矩形是**量出来的**，所以下面对贴图本身再核一遍（防止有人重切了层）。
+	var layer_core := Rect2(70, 90, 198, 351)
+	assert_eq(
+		layer_core.size, painting.texture.get_size(),
+		"分层里那块画心的尺寸应与画心贴图一致（分层重切后要同步这个矩形）"
+	)
+	var expected := (mount.texture.get_size() * 0.5) - layer_core.get_center()
+	assert_almost_eq(mount.position.x, expected.x, 0.01, "装裱的横向落点应让两层画心重合")
+	assert_almost_eq(mount.position.y, expected.y, 0.01, "装裱的纵向落点应让两层画心重合")
+	# 自证：按这个矩形去读贴图，那块必须基本上是实的 —— 否则说明层被重切、画心挪位了。
+	var image: Image = mount.texture.get_image()
+	if image == null:
+		gut.p("跳过像素自证：headless 拿不到贴图 image")
+		return
+	var opaque := 0
+	var total := 0
+	for y in range(int(layer_core.position.y), int(layer_core.end.y)):
+		for x in range(int(layer_core.position.x), int(layer_core.end.x)):
+			total += 1
+			if image.get_pixel(x, y).a > 0.03:
+				opaque += 1
+	assert_true(
+		float(opaque) / float(maxi(total, 1)) >= 0.99,
+		"分层里 (70,90)-(268,441) 这块应是实心画心（实测不透明占比 %.2f%%）—— 低于 99%% 说明层被重切过，装裱落点要重新量"
+		% (100.0 * float(opaque) / float(maxi(total, 1)))
+	)
+
+
+## 飞行/盖满的度量必须落在**画心**上，不能落在带透明留白的装裱层上。
+func test_flight_math_measures_the_opaque_core_not_the_mount() -> void:
+	var painting := _make()
+	if painting == null:
+		return
+	var mount: Sprite2D = painting.get_node_or_null("MountArt")
+	if mount == null:
+		return
+	var core_cover: float = painting.cover_scale_for(painting.STAGE_SIZE)
+	assert_almost_eq(
+		core_cover,
+		maxf(painting.STAGE_SIZE.x / painting.texture.get_size().x,
+			painting.STAGE_SIZE.y / painting.texture.get_size().y) * painting.COVER_MARGIN,
+		0.001,
+		"盖满比例应按画心（不透明核心）算"
+	)
+	assert_true(
+		core_cover * painting.texture.get_size().x >= painting.STAGE_SIZE.x
+		and core_cover * painting.texture.get_size().y >= painting.STAGE_SIZE.y,
+		"按画心算出来的比例必须真的盖满舞台"
+	)
 
 
 func test_glow_adds_light_instead_of_covering_the_painting() -> void:

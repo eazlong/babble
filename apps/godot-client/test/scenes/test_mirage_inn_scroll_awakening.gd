@@ -4,12 +4,14 @@ extends GutTest
 ##
 ## 需求：把画独立成精灵，玩家**说完**「画中小世界」之后，画亮起来，然后飞向玩家。
 ##
-## 三件事必须同时成立，缺一件演出就是错的：
+## 四件事必须同时成立，缺一件演出就是错的：
 ## 1. 画是**场景根下的独立精灵**，不属于任何房间视图 —— 控制器切到书阁时
 ##    `_show_view` 会把非目标视图 `visible = false`，画挂在 OwnerRoomView 里就会在半空消失；
 ## 2. 画**只在口令命中之后**才亮 —— 原先 `_start_voice_listening()` 里"一进监听就换苏醒贴图"
 ##    是反的：玩家还没开口画就亮了，说完反而没有变化；
-## 3. 亮 → 飞 → 淡出三步齐全，且书阁在满屏的画**下面**淡入，最后由画自己淡出露出来。
+## 3. 亮 → 飞 → 淡出三步齐全，且书阁在满屏的画**下面**淡入，最后由画自己淡出露出来；
+## 4. 主人房底图拆层后，立轴那一层**只能画一遍**（装裱作为 MountArt 进了 WallPainting，
+##    控制器不再补画），灯笼那一层则必须补回来（底板上那块是留白的）。
 
 const SCENE_PATH: String = "res://assets/scenes/MirageInnIntroduction.tscn"
 const CONTROLLER_PATH: String = "res://assets/scripts/scenes/MirageInnIntroductionController.gd"
@@ -83,6 +85,55 @@ func test_controller_no_longer_builds_the_painting_from_texture_rects() -> void:
 		source.contains("scroll_dormant_prop") or source.contains("scroll_awake_prop"),
 		"画卷道具句柄应已删除（画由组件事务自己管）"
 	)
+
+
+# ── 分层底图：立轴只能画一遍 ────────────────────────────────────────
+#
+# 主人房底图已拆层（灯笼 / 画 / 其它）。这里守两条：
+# 1. 底板那一块在底板上是空白的 → 灯笼必须单独补一层，否则屋顶吊灯变成一个洞；
+# 2. 立轴那一层**不能**由控制器补画 —— 装裱已经作为 `MountArt` 进了 WallPainting，
+#    控制器再画一遍就是一幅画叠两遍（这正是"介绍场景也换分层底图"要躲的坑）。
+
+func test_owner_room_uses_the_layered_background_with_a_lantern_layer() -> void:
+	var source := _source(CONTROLLER_PATH)
+	assert_true(
+		source.contains("mirage_inn_owner_room_layer_plate.png"),
+		"主人房应用分层底图的底板（..._layer_plate.png）"
+	)
+	assert_true(
+		source.contains("mirage_inn_owner_room_layer_lantern.png"),
+		"灯笼要从分层底图里补一层回来（底板上那块是留白的）"
+	)
+	assert_false(
+		source.contains("mirage_inn_owner_room_bg.png"),
+		"扁平底图（..._owner_room_bg.png）应退役：它把灯笼和画都烤在一起了"
+	)
+
+
+func test_scroll_layer_is_drawn_only_by_the_painting_sprite() -> void:
+	var source := _source(CONTROLLER_PATH)
+	assert_false(
+		source.contains("owner_room_layer_scroll"),
+		"控制器不应补画立轴那一层：装裱已作为 MountArt 进了 WallPainting，两处都画就是一幅画叠两遍"
+	)
+	var packed: PackedScene = load(SCENE_PATH)
+	if packed == null:
+		return
+	var scene: Node = packed.instantiate()
+	var painting: Node = scene.get_node_or_null("WallPainting")
+	if painting == null:
+		scene.free()
+		return
+	var mount: Sprite2D = painting.get_node_or_null("MountArt")
+	assert_not_null(mount, "立轴那一层应由 WallPainting 的 MountArt 承担")
+	if mount != null:
+		assert_not_null(mount.texture, "MountArt 应有贴图")
+		if mount.texture != null:
+			assert_true(
+				mount.texture.resource_path.ends_with("mirage_inn_owner_room_layer_scroll.png"),
+				"MountArt 用的应是分层底图里的立轴那一层，实际=%s" % mount.texture.resource_path
+			)
+	scene.free()
 
 
 # ── 亮起来必须挂在口令命中之后 ───────────────────────────────────────

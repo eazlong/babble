@@ -52,7 +52,12 @@ const HUB_CHOICE_PRACTICE_FLOW: String = "inn_introduction.hub_choice_practice_p
 
 const HALL_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_hall_bg.png")
 const FORMATION_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_formation_room_bg.png")
-const OWNER_ROOM_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_owner_room_bg.png")
+## 主人房改用**分层底图**（用户 2026-09-23 拆层：灯笼 / 画 / 其它；见 `BeginningFP.tscn`
+## 的 OwnerRoomBackground / OwnerRoomScroll / OwnerRoomLantern）。这里只取「底板 + 灯笼」两层：
+## 立轴那一层**故意不在这里画** —— 它由场景根下的 `WallPainting` 承担（沉睡画心 + 苏醒画心
+## + 装裱三层），两处都画就是一幅画叠两遍。
+const OWNER_ROOM_PLATE = preload("res://assets/textures/backgrounds/mirage_inn_owner_room_layer_plate.png")
+const OWNER_ROOM_LANTERN = preload("res://assets/textures/backgrounds/mirage_inn_owner_room_layer_lantern.png")
 const WORD_SPIRIT_LIBRARY_BACKGROUND = preload("res://assets/textures/backgrounds/word_spirit_library_bg.png")
 const GUEST_ROOM_BACKGROUND = preload("res://assets/textures/backgrounds/mirage_inn_guest_room_bg.png")
 const ARTIFACT_SEAT_EMPTY = preload("res://assets/textures/objects/inn/artifact_seat_empty.png")
@@ -452,12 +457,17 @@ func _build_formation_view() -> Control:
 	return root
 
 func _build_owner_room_view() -> Control:
-	var root := _new_full_view("OwnerRoomView", OWNER_ROOM_BACKGROUND)
-	# 画卷不在这里建：它是场景根下的独立精灵（`WallPainting`），贴在背景画卷的画心位置
-	# （背景画心实测 x908-1092, y288-624；精灵中心 (1001, 457.5) 的 198×351 四周留 6px
-	# 余量盖住旧画心）。做成视图子节点的话，切到书阁那一帧就会把正在飞的画一起按掉。
+	var root := _new_full_view("OwnerRoomView", OWNER_ROOM_PLATE)
+	# 灯笼单出一层：分层底图的顶部在底板上留白，不补上就是一盏灯的黑洞。
+	# 落点与 BeginningFP 的 OwnerRoomLantern 一致：position (991, 0) + offset (-95, 0)。
+	_add_texture(root, "Lantern", OWNER_ROOM_LANTERN, Vector2(896, 0), Vector2(192, 352))
+	# 立轴不在这里建：它由场景根下的独立精灵（`WallPainting`）承担 —— 沉睡画心 + 苏醒画心
+	# + 装裱三层，画心贴在原位置（背景画心实测 x908-1092, y288-624；精灵中心 (1001, 457.5)
+	# 的 198×351 四周留 6px 余量）。做成视图子节点的话，切到书阁那一帧就会把正在飞的画一起
+	# 按掉；而分层底图那层 `..._layer_scroll` 也**不能**在这里补画一遍 —— 那会把一幅画叠两遍
+	# （它已经作为装裱进了 WallPainting）。
 	# 家具已全部删除：书柜随入口改画卷删除（用户 2026-09-20），衣橱随后一并删除
-	# （用户 2026-09-23：「删除掉衣橱及其介绍」）。主人房现在只剩背景 + 墙上画卷（入口）
+	# （用户 2026-09-23：「删除掉衣橱及其介绍」）。主人房现在只剩背景 + 灯笼 + 墙上画卷（入口）
 	# + 衣橱位那面空墙，不再有独立家具 cutout。
 	return root
 
